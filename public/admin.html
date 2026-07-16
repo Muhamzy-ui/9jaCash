@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>9jaCash Admin HQ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="firebase-init.js"></script>
+<style>
+:root{
+  --bg:#070b14;
+  --surface:#0f1623;
+  --surface2:#161f30;
+  --surface3:#1e2a40;
+  --border:#253049;
+  --border2:#2d3d5c;
+  --accent:#00d4aa;
+  --accent2:#00b894;
+  --accent-glow:rgba(0,212,170,0.15);
+  --danger:#ff4757;
+  --danger2:#ff6b81;
+  --warning:#ffa502;
+  --info:#3742fa;
+  --purple:#a55eea;
+  --pink:#ff6b81;
+  --text:#c8d6e5;
+  --text2:#8395a7;
+  --text3:#576574;
+  --text4:#2f3542;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;}
+.bg-anim{position:fixed;inset:0;z-index:0;overflow:hidden;}
+.bg-anim::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 30%,rgba(0,212,170,0.03) 0%,transparent 50%),radial-gradient(circle at 70% 70%,rgba(165,94,234,0.03) 0%,transparent 50%);animation:bgFloat 20s ease-in-out infinite;}
+@keyframes bgFloat{0%,100%{transform:translate(0,0) rotate(0deg);}50%{transform:translate(-2%,2%) rotate(1deg);}}
+.grid-overlay{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:0.15;}
+.login-wrap{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);}
+.login-box{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:40px 32px;position:relative;overflow:hidden;}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--purple),var(--danger));}
+.login-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,var(--accent-glow),transparent 70%);pointer-events:none;}
+.login-avatar{width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:28px;color:#fff;box-shadow:0 8px 32px rgba(0,212,170,0.3);position:relative;}
+.login-avatar::after{content:'';position:absolute;inset:-3px;border-radius:23px;border:2px solid var(--accent);opacity:0.3;animation:avatarPulse 2s ease-in-out infinite;}
+@keyframes avatarPulse{0%,100%{transform:scale(1);opacity:0.3;}50%{transform:scale(1.05);opacity:0.1;}}
+.login-title{font-size:26px;font-weight:700;text-align:center;margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--text2);text-align:center;margin-bottom:32px;}
+.input-wrap{margin-bottom:16px;}
+.input-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block;}
+.input-field{width:100%;padding:16px 18px;border-radius:14px;background:var(--surface2);border:2px solid var(--border);color:var(--text);font-size:15px;font-weight:500;transition:all 0.3s;font-family:'Space Grotesk',sans-serif;}
+.input-field:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-glow);}
+.input-field::placeholder{color:var(--text4);}
+.login-btn{width:100%;padding:18px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(0,212,170,0.25);position:relative;overflow:hidden;}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,212,170,0.35);}
+.login-btn:active{transform:scale(0.97);}
+.login-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none;}
+.login-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:0.5s;}
+.login-btn:hover::before{left:100%;}
+.login-error{color:var(--danger);font-size:13px;font-weight:600;margin-top:16px;text-align:center;padding:12px;border-radius:12px;background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.15);display:none;}
+.login-error.show{display:block;}
+.app{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 16px 40px;}
+.hidden{display:none !important;}
+.nav-sidebar{position:fixed;top:0;left:0;bottom:0;width:70px;background:var(--surface);border-right:1px solid var(--border);z-index:100;display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:8px;}
+.nav-item{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:18px;cursor:pointer;transition:all 0.3s;position:relative;}
+.nav-item:hover{background:var(--surface2);color:var(--text2);}
+.nav-item.active{background:var(--accent);color:#fff;box-shadow:0 4px 16px rgba(0,212,170,0.3);}
+.nav-item .badge{position:absolute;top:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:var(--danger);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.nav-logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;margin-bottom:24px;box-shadow:0 4px 16px rgba(0,212,170,0.3);}
+.nav-bottom{margin-top:auto;display:flex;flex-direction:column;gap:8px;}
+.logout-btn{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--danger);font-size:18px;cursor:pointer;transition:all 0.3s;}
+.logout-btn:hover{background:rgba(255,71,87,0.1);}
+.content{margin-left:70px;padding:24px 20px;}
+.content-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.header-left{display:flex;align-items:center;gap:16px;}
+.header-title{font-size:24px;font-weight:700;}
+.header-sub{font-size:13px;color:var(--text2);margin-top:2px;}
+.live-pill{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:50px;background:var(--surface2);border:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text2);}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:liveBlink 2s infinite;}
+@keyframes liveBlink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;transition:all 0.3s;position:relative;overflow:hidden;}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-card.green::before{background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.stat-card.blue::before{background:linear-gradient(90deg,var(--info),var(--purple));}
+.stat-card.amber::before{background:linear-gradient(90deg,var(--warning),#ff6348);}
+.stat-card.red::before{background:linear-gradient(90deg,var(--danger),var(--danger2));}
+.stat-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px;}
+.stat-icon.green{background:rgba(0,212,170,0.1);color:var(--accent);}
+.stat-icon.blue{background:rgba(55,66,250,0.1);color:var(--info);}
+.stat-icon.amber{background:rgba(255,165,2,0.1);color:var(--warning);}
+.stat-icon.red{background:rgba(255,71,87,0.1);color:var(--danger);}
+.stat-num{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+.stat-num.green{color:var(--accent);}
+.stat-num.blue{color:var(--info);}
+.stat-num.amber{color:var(--warning);}
+.stat-num.red{color:var(--danger);}
+.stat-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;margin-bottom:20px;transition:all 0.3s;}
+.panel:hover{border-color:var(--border2);}
+.panel-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.panel-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.panel-icon.green{background:rgba(0,212,170,0.1);color:var(--accent);}
+.panel-icon.blue{background:rgba(55,66,250,0.1);color:var(--info);}
+.panel-icon.purple{background:rgba(165,94,234,0.1);color:var(--purple);}
+.panel-icon.red{background:rgba(255,71,87,0.1);color:var(--danger);}
+.panel-icon.amber{background:rgba(255,165,2,0.1);color:var(--warning);}
+.panel-title{font-size:16px;font-weight:700;}
+.panel-sub{font-size:13px;color:var(--text2);margin-top:2px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.form-group{margin-bottom:16px;}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+.form-input{width:100%;padding:14px 16px;border-radius:12px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);font-size:14px;font-weight:500;transition:all 0.3s;font-family:'Space Grotesk',sans-serif;}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+.form-input::placeholder{color:var(--text4);}
+textarea.form-input{min-height:80px;resize:vertical;}
+select.form-input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23576574' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);}
+.toggle-row:last-child{border-bottom:none;padding-bottom:0;}
+.toggle-info{flex:1;}
+.toggle-name{font-size:14px;font-weight:600;}
+.toggle-desc{font-size:12px;color:var(--text2);margin-top:2px;}
+.toggle-track{position:relative;width:48px;height:26px;border-radius:26px;background:var(--surface3);border:2px solid var(--border);cursor:pointer;transition:all 0.3s;}
+.toggle-track.on{background:var(--accent);border-color:var(--accent);}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+.toggle-track.on .toggle-thumb{transform:translateX(22px);}
+.key-box{background:var(--surface2);border-radius:16px;padding:24px;text-align:center;border:2px solid var(--border);margin-bottom:16px;position:relative;overflow:hidden;}
+.key-box::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,212,170,0.05),transparent);pointer-events:none;}
+.key-value{font-size:36px;font-weight:700;letter-spacing:10px;color:var(--accent);font-family:'JetBrains Mono',monospace;position:relative;z-index:1;}
+.key-label{font-size:11px;color:var(--text3);margin-top:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;position:relative;z-index:1;}
+.key-actions{display:grid;grid-template-columns:3fr 1fr;gap:10px;}
+.key-input{width:100%;padding:14px;border-radius:12px;background:var(--surface3);border:1.5px solid var(--border);color:var(--text);font-size:16px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:4px;text-transform:uppercase;}
+.key-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+.key-gen-btn{padding:14px;border-radius:12px;background:var(--info);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.key-gen-btn:hover{background:var(--purple);transform:translateY(-2px);}
+.history-list{max-height:220px;overflow-y:auto;}
+.history-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:6px;transition:all 0.2s;}
+.history-item:hover{border-color:var(--border2);}
+.history-key{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--accent);}
+.history-date{font-size:11px;color:var(--text3);}
+.task-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.task-card{background:var(--surface2);border-radius:16px;padding:16px;border:1.5px solid var(--border);transition:all 0.3s;}
+.task-card:hover{border-color:var(--border2);}
+.task-card.hot{border-color:rgba(255,165,2,0.3);background:linear-gradient(135deg,rgba(255,165,2,0.03),transparent);}
+.task-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.task-num{width:32px;height:32px;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+.task-actions{display:flex;gap:6px;}
+.task-btn-sm{width:32px;height:32px;border-radius:8px;background:var(--surface3);border:1px solid var(--border);color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;font-size:12px;border:none;}
+.task-btn-sm:hover{background:var(--danger);color:#fff;}
+.task-btn-sm.fire:hover{background:var(--warning);color:#000;}
+.task-grid-inner{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.task-field{margin-bottom:0;}
+.task-field .form-label{font-size:10px;}
+.task-field .form-input{padding:10px 12px;font-size:13px;}
+.task-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:8px;}
+.tag-tiktok{background:rgba(255,255,255,0.05);color:var(--text);border:1px solid rgba(255,255,255,0.1);}
+.tag-facebook{background:rgba(55,66,250,0.1);color:var(--info);border:1px solid rgba(55,66,250,0.2);}
+.tag-other{background:rgba(165,94,234,0.1);color:var(--purple);border:1px solid rgba(165,94,234,0.2);}
+.add-btn{width:100%;padding:16px;border-radius:14px;background:var(--surface2);border:2px dashed var(--border);color:var(--text3);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,212,170,0.03);}
+.redirect-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.redirect-row .form-input{flex:1;}
+.redirect-name{font-size:12px;font-weight:600;color:var(--text3);min-width:80px;}
+.save-btn{width:100%;padding:18px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(0,212,170,0.25);position:relative;overflow:hidden;margin-bottom:20px;}
+.save-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,212,170,0.35);}
+.save-btn:active{transform:scale(0.97);}
+.save-btn:disabled{background:var(--surface3);color:var(--text3);box-shadow:none;cursor:not-allowed;}
+.save-btn .spin{width:18px;height:18px;border:3px solid rgba(255,255,255,0.3);border-top:3px solid #fff;border-radius:50%;animation:spin 1s linear infinite;}
+.preview-box{background:var(--surface2);border-radius:16px;padding:20px;border:1px solid var(--border);}
+.preview-header{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.preview-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.preview-row:last-child{border-bottom:none;}
+.preview-key{font-size:12px;color:var(--text3);font-weight:600;}
+.preview-val{font-size:13px;font-weight:700;color:var(--text);font-family:'JetBrains Mono',monospace;}
+.toast{position:fixed;top:20px;right:20px;background:var(--surface);border:1px solid var(--border);padding:16px 20px;border-radius:16px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;color:var(--text);z-index:200;transition:all 0.4s cubic-bezier(0.16,1,0.3,1);box-shadow:0 20px 60px rgba(0,0,0,0.5);transform:translateX(150%);opacity:0;}
+.toast.show{transform:translateX(0);opacity:1;}
+.toast i{color:var(--accent);font-size:18px;}
+.toast.error i{color:var(--danger);}
+.loading-wrap{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:1000;}
+.loading-wrap.active{display:flex;}
+.load-spinner{width:56px;height:56px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent);border-right-color:var(--purple);animation:spin 1.2s linear infinite;}
+.load-text{color:var(--text);font-size:20px;font-weight:700;margin-top:24px;}
+.load-sub{color:var(--text2);font-size:13px;margin-top:8px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;animation:fadeIn 0.4s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+.plan-select-card{background:var(--surface2);border:2px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;transition:all 0.3s;position:relative;}
+.plan-select-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.plan-select-card.selected{border-color:var(--accent);background:linear-gradient(135deg,rgba(0,212,170,0.05),transparent);}
+.plan-select-card.selected .plan-check{opacity:1 !important;}
+@media(max-width:768px){
+  .nav-sidebar {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 60px !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 0 12px !important;
+    gap: 6px !important;
+    border-right: none !important;
+    border-top: 1px solid var(--border) !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: var(--surface) !important;
+  }
+  .nav-logo {
+    display: none !important;
+  }
+  .nav-item {
+    width: 40px !important;
+    height: 40px !important;
+    flex-shrink: 0 !important;
+  }
+  .nav-bottom {
+    margin-top: 0 !important;
+    margin-left: auto !important;
+    flex-direction: row !important;
+    gap: 6px !important;
+  }
+  .logout-btn {
+    width: 40px !important;
+    height: 40px !important;
+    flex-shrink: 0 !important;
+  }
+  .content {
+    margin-left: 0 !important;
+    padding: 16px 12px 80px !important;
+  }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+  .task-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .key-value {
+    font-size: 24px !important;
+    letter-spacing: 6px !important;
+  }
+  .key-actions {
+    grid-template-columns: 1fr !important;
+  }
+}
+@media(max-width:480px){
+  .stats-row {
+    grid-template-columns: 1fr !important;
+  }
+  .content-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="bg-anim"></div>
+<div class="grid-overlay"></div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginScreen">
+  <div class="login-box">
+    <div class="login-glow"></div>
+    <div class="login-avatar"><i class="fa-solid fa-shield-halved"></i></div>
+    <div class="login-title">9jaCash HQ</div>
+    <div class="login-sub">Admin Control Center</div>
+    <div class="input-wrap">
+      <label class="input-label">Email</label>
+      <input type="email" class="input-field" id="loginEmail" placeholder="admin@9jacash.com">
+    </div>
+    <div class="input-wrap">
+      <label class="input-label">Password</label>
+      <input type="password" class="input-field" id="loginPassword" placeholder="Enter password">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">
+      <i class="fa-solid fa-arrow-right-to-bracket"></i> Access Control
+    </button>
+    <div class="login-error" id="loginError">
+      <i class="fa-solid fa-circle-xmark"></i> <span id="loginErrorText">Invalid</span>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-wrap" id="loadingScreen">
+  <div class="load-spinner"></div>
+  <div class="load-text">Loading HQ</div>
+  <div class="load-sub">Syncing with Firebase...</div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app hidden" id="mainApp">
+
+<!-- Sidebar -->
+<div class="nav-sidebar">
+  <div class="nav-logo">9</div>
+  <div class="nav-item active" onclick="switchTab('overview',this)" title="Overview"><i class="fa-solid fa-chart-pie"></i></div>
+  <div class="nav-item" onclick="switchTab('payments',this)" title="Payments"><i class="fa-solid fa-credit-card"></i></div>
+  <div class="nav-item" onclick="switchTab('tasks',this)" title="Tasks"><i class="fa-solid fa-list-check"></i></div>
+  <div class="nav-item" onclick="switchTab('keys',this)" title="Keys"><i class="fa-solid fa-key"></i><span class="badge" id="keyBadge">0</span></div>
+  <div class="nav-item" onclick="switchTab('users',this); loadAllUsersList();" title="All Users"><i class="fa-solid fa-users"></i><span class="badge" id="usersBadge" style="background:#8b5cf6;">0</span></div>
+  <div class="nav-item" onclick="switchTab('receipts',this); loadAllReceipts();" title="Verify Receipts"><i class="fa-solid fa-file-invoice-dollar"></i><span class="badge" id="receiptsBadge" style="background:#f59e0b; display:none;">0</span></div>
+  <div class="nav-item" onclick="switchTab('withdrawals',this); loadSuperWithdrawals();" title="Withdrawals"><i class="fa-solid fa-money-bill-transfer"></i><span class="badge" id="withdrawalsBadge" style="background:#10b981; display:none;">0</span></div>
+  <div class="nav-item" onclick="switchTab('juniors',this)" title="Junior Admins"><i class="fa-solid fa-users-gear"></i></div>
+  <div class="nav-item" onclick="switchTab('redirects',this)" title="Redirects"><i class="fa-solid fa-route"></i></div>
+  <div class="nav-item" onclick="switchTab('videos',this); loadAllVideoSubmissions();" title="Video Submissions"><i class="fa-solid fa-video"></i><span class="badge" id="videosBadge" style="background:#8b5cf6; display:none;">0</span></div>
+  <div class="nav-bottom">
+    <div class="logout-btn" onclick="doLogout()" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></div>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+<!-- OVERVIEW TAB -->
+<div class="tab-panel active" id="tab-overview">
+  <div class="content-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">Overview</div>
+        <div class="header-sub">Platform status & quick controls</div>
+      </div>
+    </div>
+    <div class="live-pill"><span class="live-dot"></span>System Online</div>
+  </div>
+
+  <div class="stats-row" style="display:grid; gap:15px; margin-bottom:20px;">
+    <div class="stat-card green">
+      <div class="stat-icon green"><i class="fa-solid fa-list-check"></i></div>
+      <div class="stat-num green" id="statTasks">0</div>
+      <div class="stat-label">Active Tasks</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon blue"><i class="fa-solid fa-clock"></i></div>
+      <div class="stat-num blue" id="statPending">0</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-icon amber"><i class="fa-solid fa-key"></i></div>
+      <div class="stat-num amber" id="statKeys">0</div>
+      <div class="stat-label">Key History</div>
+    </div>
+    <div class="stat-card purple" style="border: 1px solid var(--border); background: var(--surface);">
+      <div class="stat-icon purple" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;"><i class="fa-solid fa-users"></i></div>
+      <div class="stat-num purple" id="statUsers" style="color: #8b5cf6;">0</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-icon red"><i class="fa-solid fa-bolt"></i></div>
+      <div class="stat-num red" id="statStatus">OFF</div>
+      <div class="stat-label">Withdrawal</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon green"><i class="fa-solid fa-money-bill-transfer"></i></div>
+      <div><div class="panel-title">Withdrawal Flow</div><div class="panel-sub">Where users land after withdrawal</div></div>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <div class="toggle-name">Success Mode</div>
+        <div class="toggle-desc">ON = success.html • OFF = pending.html</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="toggle-track" id="wdToggle" onclick="toggleWithdrawal()"><div class="toggle-thumb"></div></div>
+        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,71,87,0.1);color:var(--danger);" id="wdState">OFF</span>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-top:8px;">
+      <i class="fa-solid fa-arrow-right" style="color:var(--text3);font-size:11px;"></i>
+      <span style="font-size:12px;color:var(--text2);">Redirect: <span id="wdRedirect" style="color:var(--danger);font-weight:700;">pending.html</span></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon blue"><i class="fa-solid fa-credit-card"></i></div>
+      <div><div class="panel-title">Payment Flow</div><div class="panel-sub">Where users land after payment</div></div>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <div class="toggle-name">Success Mode</div>
+        <div class="toggle-desc">ON = payment-success • OFF = payment-failed</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="toggle-track" id="pmToggle" onclick="togglePayment()"><div class="toggle-thumb"></div></div>
+        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,71,87,0.1);color:var(--danger);" id="pmState">OFF</span>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-top:8px;">
+      <i class="fa-solid fa-arrow-right" style="color:var(--text3);font-size:11px;"></i>
+      <span style="font-size:12px;color:var(--text2);">Redirect: <span id="pmRedirect" style="color:var(--danger);font-weight:700;">payment-failed.html</span></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div><div class="panel-title">User Warning</div><div class="panel-sub">Shown on payment page</div></div>
+    </div>
+    <div class="form-group" style="margin-bottom:0;">
+      <textarea id="noticeText" class="form-input" placeholder="Do NOT use Opay for transfers..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPTS TAB -->
+<div class="tab-panel" id="tab-receipts">
+  <div class="content-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">Payment & Verification Receipts</div>
+        <div class="header-sub">Verify user plan upgrades, payout key purchases, and account verifications</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+      <button onclick="loadAllReceipts()" class="btn btn-secondary" style="border:1px solid var(--border); padding: 8px 16px; border-radius:10px; background:var(--surface); color:var(--text); cursor:pointer;"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+      <button onclick="purgeAllReceipts()" class="btn btn-secondary" style="border:1px solid var(--danger); padding: 8px 16px; border-radius:10px; background:var(--surface); color:var(--danger); cursor:pointer; font-weight: 700;"><i class="fa-solid fa-trash-can"></i> Purge All History</button>
+    </div>
+  </div>
+
+  <!-- Send Notification Message Section -->
+  <div class="panel mb-6" style="margin-bottom:20px;">
+    <div class="panel-header">
+      <div class="panel-icon purple" style="background:rgba(139,92,246,0.1); color:#8b5cf6;"><i class="fa-solid fa-paper-plane"></i></div>
+      <div><div class="panel-title">Send Broadcast Message</div><div class="panel-sub">Send alert announcements to user activities feed</div></div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Recipient Phone Number (or 'all' for everyone)</label>
+          <input type="text" id="msgRecipient" class="form-input" placeholder="e.g. all or 08012345678" value="all" style="width:100%;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message Title</label>
+          <input type="text" id="msgTitle" class="form-input" placeholder="e.g. System Upgrade / Payment Successful" style="width:100%;">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message Content</label>
+        <textarea id="msgBody" class="form-input" style="height:80px; width:100%; resize:none; font-family:inherit; padding:10px;" placeholder="Type your notification message details here..."></textarea>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <button onclick="sendAdminNotification()" class="btn-primary" style="padding: 12px 24px; font-weight: 700; border-radius: 12px; background: var(--accent); color: white; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-paper-plane"></i> Send Message
+        </button>
+        <button onclick="triggerDailyReminders()" class="btn-secondary" style="padding: 12px 24px; font-weight: 700; border-radius: 12px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-clock"></i> Send Daily Mining Reminders
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon orange" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fa-solid fa-receipt"></i></div>
+      <div><div class="panel-title">Pending Payment Receipts</div><div class="panel-sub">Inspect uploaded transaction proofs</div></div>
+    </div>
+    <div class="table-wrap overflow-x-auto">
+      <table class="w-full text-left" style="width:100%; border-collapse:collapse; min-width:800px;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Date</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">User</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Type</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Amount / Details</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Receipt Image</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="receiptListTable">
+          <tr>
+            <td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Loading receipts from Firestore...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- WITHDRAWALS TAB -->
+<div class="tab-panel" id="tab-withdrawals">
+  <div class="content-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">Withdrawal Requests</div>
+        <div class="header-sub">Approve or reject user payout withdrawals</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="loadSuperWithdrawals()" class="btn btn-secondary" style="border:1px solid var(--border); padding: 8px 16px; border-radius:10px; background:var(--surface); color:var(--text); cursor:pointer;"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon green" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="fa-solid fa-money-bill-transfer"></i></div>
+      <div><div class="panel-title">Pending & Past Withdrawals</div><div class="panel-sub">Inspect and process users payouts</div></div>
+    </div>
+    <div class="table-wrap overflow-x-auto">
+      <table class="w-full text-left" style="width:100%; border-collapse:collapse; min-width:800px;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:15%;">Date</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:25%;">User Name / Phone</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:25%;">Bank Details</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:15%;">Amount</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:10%;">Status</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:10%; text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="superWithdrawalsTable">
+          <tr>
+            <td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Loading withdrawals...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENTS TAB -->
+<div class="tab-panel" id="tab-payments">
+  <div class="content-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">Payments</div>
+        <div class="header-sub">Bank accounts & crypto setup</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon green"><i class="fa-solid fa-building-columns"></i></div>
+      <div><div class="panel-title">Main Account</div><div class="panel-sub">For payout key purchases</div></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Account Number</label>
+        <input type="text" id="accNumber" class="form-input" maxlength="10" placeholder="10 digits">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bank Name</label>
+        <input type="text" id="bankName" class="form-input" placeholder="GTBank, Access...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Account Holder</label>
+        <input type="text" id="accName" class="form-input" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (₦)</label>
+        <input type="number" id="amount" class="form-input" placeholder="6100">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon amber"><i class="fa-solid fa-bolt"></i></div>
+      <div><div class="panel-title">Transfer Fee</div><div class="panel-sub">Second billing for withdrawals</div></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Account Number</label>
+        <input type="text" id="feeAccNumber" class="form-input" maxlength="10" placeholder="10 digits">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bank Name</label>
+        <input type="text" id="feeBank" class="form-input" placeholder="GTBank, Access...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Account Holder</label>
+        <input type="text" id="feeAccName" class="form-input" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fee Amount (₦)</label>
+        <input type="number" id="feeAmount" class="form-input" placeholder="12500">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon blue"><i class="fa-brands fa-telegram"></i></div>
+      <div><div class="panel-title">Telegram</div><div class="panel-sub">Support channel link</div></div>
+    </div>
+    <div class="form-group" style="margin-bottom:0;">
+      <label class="form-label">Channel URL</label>
+      <input type="url" id="telegramLink" class="form-input" placeholder="https://t.me/9jaCashSupport">
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon purple"><i class="fa-brands fa-bitcoin"></i></div>
+      <div><div class="panel-title">Crypto Payment</div><div class="panel-sub">USDT wallet (optional)</div></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Wallet Address</label>
+        <input type="text" id="cryptoAddress" class="form-input" placeholder="0x... or TRC20">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Network</label>
+        <input type="text" id="cryptoNetwork" class="form-input" placeholder="TRC20, BEP20, ERC20">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TASKS TAB -->
+<div class="tab-panel" id="tab-tasks">
+  <div class="content-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">Tasks</div>
+        <div class="header-sub">Manage earning tasks</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon purple"><i class="fa-solid fa-fire"></i></div>
+      <div><div class="panel-title">Daily Tasks</div><div class="panel-sub">Max 10 tasks across platforms</div></div>
+    </div>
+    <div id="taskList"></div>
+    <button class="add-btn" id="addTaskBtn" onclick="addNewTask()"><i class="fa-solid fa-plus"></i> Add Task</button>
+  </div>
+</div>
+
+<!-- KEYS TAB -->
+<div class="tab-panel" id="tab-keys">
+  <div class="content-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">Payout Key</div>
+        <div class="header-sub">Generate & control payout keys</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plan Selector -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon purple"><i class="fa-solid fa-layer-group"></i></div>
+      <div><div class="panel-title">Select Plan</div><div class="panel-sub">Choose which plan to generate key for</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
+      <div class="plan-select-card" id="planBasic" onclick="selectPlan('Basic', 8550, 3)" data-plan="Basic" data-price="8550" data-limit="3">
+        <div style="font-size:14px;font-weight:700;color:var(--text);">Basic Key</div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent);margin-top:4px;">₦8,550</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">3 withdrawals/day</div>
+        <div class="plan-check" style="position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.3s;"><i class="fa-solid fa-check" style="color:var(--accent);font-size:12px;"></i></div>
+      </div>
+      <div class="plan-select-card" id="planStandard" onclick="selectPlan('Standard', 15500, 5)" data-plan="Standard" data-price="15500" data-limit="5">
+        <div style="font-size:14px;font-weight:700;color:var(--text);">Standard Key</div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent);margin-top:4px;">₦15,500</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">5 withdrawals/day</div>
+        <div class="plan-check" style="position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.3s;"><i class="fa-solid fa-check" style="color:var(--accent);font-size:12px;"></i></div>
+      </div>
+      <div class="plan-select-card" id="planPremium" onclick="selectPlan('Premium', 35000, 15)" data-plan="Premium" data-price="35000" data-limit="15">
+        <div style="font-size:14px;font-weight:700;color:var(--text);">Premium Key</div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent);margin-top:4px;">₦35,000</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">15 withdrawals/day</div>
+        <div class="plan-check" style="position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.3s;"><i class="fa-solid fa-check" style="color:var(--accent);font-size:12px;"></i></div>
+      </div>
+      <div class="plan-select-card" id="planUnlimited" onclick="selectPlan('Unlimited', 75000, 999999)" data-plan="Unlimited" data-price="75000" data-limit="999999">
+        <div style="font-size:14px;font-weight:700;color:var(--text);">Unlimited Key</div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent);margin-top:4px;">₦75,000</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">Unlimited withdrawals</div>
+        <div class="plan-check" style="position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.3s;"><i class="fa-solid fa-check" style="color:var(--accent);font-size:12px;"></i></div>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+      <i class="fa-solid fa-circle-info" style="color:var(--accent);font-size:16px;"></i>
+      <div style="font-size:13px;color:var(--text2);">
+        Selected: <span id="selectedPlanDisplay" style="color:var(--accent);font-weight:700;">None</span> • 
+        Price: <span id="selectedPriceDisplay" style="color:var(--accent);font-weight:700;">—</span> • 
+        Limit: <span id="selectedLimitDisplay" style="color:var(--accent);font-weight:700;">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Generator -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon green"><i class="fa-solid fa-fingerprint"></i></div>
+      <div><div class="panel-title">Generate Payout Key</div><div class="panel-sub">Auto-generate for selected plan</div></div>
+    </div>
+    
+    <div class="key-box" id="generatedKeyBox" style="display:none;">
+      <div class="key-value" id="generatedKeyValue">••••••••</div>
+      <div class="key-label" id="generatedKeyLabel">Generated Key</div>
+    </div>
+
+    <div class="key-box" id="currentKeyBox">
+      <div class="key-value" id="payoutKeyDisplay">NOT SET</div>
+      <div class="key-label">Current Active Key</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;">
+      <button class="save-btn" style="margin:0;background:linear-gradient(135deg,var(--purple),var(--info));" onclick="generatePayoutKeyForPlan()">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Key
+      </button>
+      <button class="save-btn" style="margin:0;" onclick="saveGeneratedKey()">
+        <i class="fa-solid fa-floppy-disk"></i> Save Key
+      </button>
+    </div>
+    
+    <div style="margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;font-weight:600;">Manual Override</div>
+      <div class="key-actions">
+        <input type="text" id="payoutKeyInput" class="key-input" maxlength="12" placeholder="Or type key manually">
+        <button class="key-gen-btn" onclick="generateRandomKey()"><i class="fa-solid fa-shuffle"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key History -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon blue"><i class="fa-solid fa-clock-rotate-left"></i></div>
+      <div><div class="panel-title">Key History</div><div class="panel-sub">Last 10 generated keys</div></div>
+    </div>
+    <div class="history-list" id="keyHistory">
+      <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">No history yet</div>
+    </div>
+  </div>
+</div>
+
+<!-- REDIRECTS TAB -->
+<div class="tab-panel" id="tab-redirects">
+  <div class="content-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">Redirects</div>
+        <div class="header-sub">Page flow control</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon green"><i class="fa-solid fa-circle-check"></i></div>
+      <div><div class="panel-title">Success Redirects</div><div class="panel-sub">After successful payment</div></div>
+    </div>
+    <div class="redirect-row"><span class="redirect-name">Primary</span><input type="text" id="successPrimary" class="form-input" placeholder="dashboard.html"></div>
+    <div class="redirect-row"><span class="redirect-name">Secondary</span><input type="text" id="successSecondary" class="form-input" placeholder="buy.html"></div>
+    <div class="redirect-row"><span class="redirect-name">Delay</span><input type="number" id="successDelay" class="form-input" placeholder="2000"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon red"><i class="fa-solid fa-circle-xmark"></i></div>
+      <div><div class="panel-title">Failed Redirects</div><div class="panel-sub">After failed payment</div></div>
+    </div>
+    <div class="redirect-row"><span class="redirect-name">Retry</span><input type="text" id="failedRetry" class="form-input" placeholder="payment.html"></div>
+    <div class="redirect-row"><span class="redirect-name">Dashboard</span><input type="text" id="failedDashboard" class="form-input" placeholder="dashboard.html"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon amber"><i class="fa-solid fa-headset"></i></div>
+      <div><div class="panel-title">Support</div><div class="panel-sub">Handle shown on failed pages</div></div>
+    </div>
+    <div class="form-group" style="margin-bottom:0;">
+      <label class="form-label">Telegram Handle</label>
+      <input type="text" id="supportHandle" class="form-input" placeholder="@9jaCash_Support">
+    </div>
+  </div>
+</div>
+
+<!-- USERS TAB -->
+<div class="tab-panel" id="tab-users">
+  <div class="content-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">Registered Users</div>
+        <div class="header-sub">View and manage all registered members on the platform</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon purple"><i class="fa-solid fa-users"></i></div>
+      <div><div class="panel-title">Users Directory</div><div class="panel-sub">Total: <span id="usersListCount">0</span> users</div></div>
+    </div>
+    <div class="table-wrap overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
+      <table class="w-full text-left" style="border-collapse: collapse; width:100%;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Joined</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Name</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Phone</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Email</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Referred By</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Balance</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
+          </tr>
+        </thead>
+        <tbody id="allUsersListTable">
+          <tr>
+            <td colspan="7" style="padding: 15px; text-align: center; color: var(--text3);">Loading registered users...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- JUNIOR ADMINS TAB -->
+<div class="tab-panel" id="tab-juniors">
+  <div class="content-header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">Junior Admins</div>
+        <div class="header-sub">Manage referred-user network administrators</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon green"><i class="fa-solid fa-user-plus"></i></div>
+      <div><div class="panel-title">Create New Junior Admin</div><div class="panel-sub">Enter credentials and unique referral code</div></div>
+    </div>
+    <form id="createJuniorForm" onsubmit="createJuniorAdmin(event)" class="space-y-4">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="juniorEmail" class="form-input" placeholder="junior1@9jacash.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="juniorPassword" class="form-input" placeholder="Enter secure password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Referral Code</label>
+          <input type="text" id="juniorRefCode" class="form-input" placeholder="e.g. JUNIOR01" required>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top: 10px;">
+        <div class="form-group">
+          <label class="form-label">Bank Name</label>
+          <input type="text" id="juniorBankName" class="form-input" placeholder="Moniepoint, GTBank...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Number</label>
+          <input type="text" id="juniorAccountNumber" class="form-input" maxlength="10" placeholder="10 digits">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Name</label>
+          <input type="text" id="juniorAccountName" class="form-input" placeholder="Account holder name">
+        </div>
+      </div>
+      <div class="form-group flex items-end" style="margin-top: 15px;">
+        <button type="submit" class="save-btn" style="margin-bottom:0; height:48px; width:100%; background:linear-gradient(135deg,var(--purple),var(--accent));">
+          <i class="fa-solid fa-user-plus"></i> Create Junior Account
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon blue"><i class="fa-solid fa-users-line"></i></div>
+      <div><div class="panel-title">Active Junior Admins</div><div class="panel-sub">Manage existing network coordinators</div></div>
+    </div>
+    <div class="table-wrap overflow-x-auto">
+      <table class="w-full text-left" style="border-collapse: collapse; width:100%;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Email</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Referral Code</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Bank Details</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Created Date</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="juniorAdminListTable">
+          <tr>
+            <td colspan="6" style="padding: 15px; text-align: center; color: var(--text3);">Loading junior admins...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+</div>
+
+<!-- Videos Panel -->
+<div class="tab-panel" id="tab-videos">
+  <div class="panel-card mb-4">
+    <div class="panel-header">
+      <div class="panel-icon purple" style="background:rgba(139,92,246,0.1); color:var(--accent);"><i class="fa-solid fa-video"></i></div>
+      <div>
+        <div class="panel-title">Video Testimony Challenge</div>
+        <div class="panel-sub">Review user testimonial videos and approve rewards</div>
+      </div>
+    </div>
+    <div class="table-wrap overflow-x-auto">
+      <table class="w-full text-left" style="border-collapse: collapse; width:100%;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">User Name</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Phone Number</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Video URL Link</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Submitted Date</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="videoSubmissionListTable">
+          <tr>
+            <td colspan="6" style="padding: 15px; text-align: center; color: var(--text-muted);">No video submissions yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE ALL -->
+<button class="save-btn" id="saveBtn" onclick="saveAll()">
+  <i class="fa-solid fa-cloud-arrow-up"></i>
+  <span id="saveText">Save All Changes</span>
+</button>
+
+<!-- PREVIEW -->
+<div class="preview-box">
+  <div class="preview-header"><i class="fa-solid fa-eye"></i> Live Preview</div>
+  <div class="preview-row"><span class="preview-key">Withdrawal</span><span class="preview-val" id="previewWithdrawal" style="color:var(--danger);">Pending</span></div>
+  <div class="preview-row"><span class="preview-key">Payment</span><span class="preview-val" id="previewPayment" style="color:var(--danger);">Failed</span></div>
+  <div class="preview-row"><span class="preview-key">Payout Key</span><span class="preview-val" id="previewPayoutKey" style="color:var(--accent);">Not set</span></div>
+  <div class="preview-row"><span class="preview-key">Main Amt</span><span class="preview-val" id="previewMainAmt" style="color:var(--accent);">₦—</span></div>
+  <div class="preview-row"><span class="preview-key">Fee Amt</span><span class="preview-val" id="previewFeeAmt" style="color:var(--warning);">₦—</span></div>
+  <div class="preview-row"><span class="preview-key">Tasks</span><span class="preview-val" id="previewTasks" style="color:var(--purple);">0</span></div>
+</div>
+
+</div><!-- end content -->
+</div><!-- end app -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Saved!</span></div>
+
+<script>
+const firebaseConfig={apiKey: "AIzaSyAojnW_iRXCk4mR9ihRz8GwQI4aPWIXepA",
+  authDomain: "jacash-51c97.firebaseapp.com",
+  databaseURL: "https://jacash-51c97-default-rtdb.firebaseio.com",
+  projectId: "jacash-51c97",
+  storageBucket: "jacash-51c97.firebasestorage.app",
+  messagingSenderId: "662540432833",
+  appId: "1:662540432833:web:244b7af8ea02ab56b76b40",
+  measurementId: "G-CEN430143Z"
+};
+
+
+
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
+const db=firebase.firestore();
+try {
+  db.settings({ experimentalForceLongPolling: true });
+} catch(e) {}
+window._9jaCash = {
+  app: firebase.app(),
+  db: db,
+  auth: auth
+};
+
+let wdSuccess=false;
+let pmSuccess=false;
+let payoutKey='';
+let keyHistory=[];
+let tasks=[];
+let selectedPlanData=null;
+let generatedKey='';
+const MAX_TASKS=10;
+const CATS=['tiktok','facebook','other'];
+const CAT_LABELS={tiktok:'TikTok',facebook:'Facebook',other:'Other'};
+const CAT_ICONS={tiktok:'fa-brands fa-tiktok',facebook:'fa-brands fa-facebook',other:'fa-solid fa-globe'};
+const DEFAULT_TASKS=[
+  {id:'t1',name:'Follow TikTok',cat:'tiktok',link:'',amt:500,hot:false},
+  {id:'t2',name:'Like TikTok',cat:'tiktok',link:'',amt:500,hot:false},
+  {id:'t3',name:'Share TikTok',cat:'tiktok',link:'',amt:500,hot:false},
+  {id:'t4',name:'Like Facebook',cat:'facebook',link:'',amt:500,hot:false},
+  {id:'t5',name:'Share Facebook',cat:'facebook',link:'',amt:500,hot:false},
+  {id:'t6',name:'Comment FB',cat:'facebook',link:'',amt:500,hot:false},
+  {id:'t7',name:'Join FB Group',cat:'facebook',link:'',amt:500,hot:false},
+  {id:'t8',name:'Watch YouTube',cat:'other',link:'',amt:500,hot:false},
+  {id:'t9',name:'Subscribe',cat:'other',link:'',amt:500,hot:false},
+  {id:'t10',name:'Download App',cat:'other',link:'',amt:500,hot:false}
+];
+
+// ========== AUTH ==========
+function initAuth(){
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('loadingScreen').classList.add('active');
+      loadData();
+    }else{
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('mainApp').classList.add('hidden');
+      document.getElementById('loadingScreen').classList.remove('active');
+    }
+  });
+}
+
+function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPassword').value;
+  const errDiv=document.getElementById('loginError');
+  const errText=document.getElementById('loginErrorText');
+  const btn=document.getElementById('loginBtn');
+  
+  if(!email||!pass){
+    errText.textContent='Enter email and password';
+    errDiv.classList.add('show');
+    return;
+  }
+  
+  btn.disabled=true;
+  btn.innerHTML='<i class="fa-solid fa-circle-notch fa-spin"></i> Accessing...';
+  errDiv.classList.remove('show');
+  
+  auth.signInWithEmailAndPassword(email,pass)
+    .then(()=>{errDiv.classList.remove('show');})
+    .catch(e=>{
+      let msg=e.message;
+      if(msg.includes('user-not-found'))msg='No account found';
+      else if(msg.includes('wrong-password'))msg='Wrong password';
+      else if(msg.includes('invalid-email'))msg='Invalid email';
+      else if(msg.includes('invalid-credential'))msg='Invalid credentials';
+      else msg=msg.replace('Firebase: ','').replace(/\(.+\)/,'');
+      errText.textContent=msg;
+      errDiv.classList.add('show');
+      btn.disabled=false;
+      btn.innerHTML='<i class="fa-solid fa-arrow-right-to-bracket"></i> Access Control';
+    });
+}
+
+function doLogout(){auth.signOut().then(()=>location.reload());}
+
+['loginEmail','loginPassword'].forEach(id=>{
+  document.getElementById(id).addEventListener('keypress',e=>{
+    if(e.key==='Enter')doLogin();
+  });
+});
+
+// ========== TABS ==========
+function switchTab(tab,el){
+  document.querySelectorAll('.tab-panel').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ========== TOGGLES ==========
+function toggleWithdrawal(){
+  wdSuccess=!wdSuccess;
+  const t=document.getElementById('wdToggle');
+  const s=document.getElementById('wdState');
+  const r=document.getElementById('wdRedirect');
+  const p=document.getElementById('previewWithdrawal');
+  const stat=document.getElementById('statStatus');
+  if(wdSuccess){
+    t.classList.add('on');s.textContent='ON';s.style.background='rgba(0,212,170,0.1)';s.style.color='var(--accent)';
+    r.textContent='success.html';r.style.color='var(--accent)';
+    p.textContent='Success';p.style.color='var(--accent)';
+    stat.textContent='ON';stat.style.color='var(--accent)';
+  }else{
+    t.classList.remove('on');s.textContent='OFF';s.style.background='rgba(255,71,87,0.1)';s.style.color='var(--danger)';
+    r.textContent='pending.html';r.style.color='var(--danger)';
+    p.textContent='Pending';p.style.color='var(--danger)';
+    stat.textContent='OFF';stat.style.color='var(--danger)';
+  }
+  showToast(wdSuccess?'Withdrawal success ON':'Withdrawal pending ON');
+}
+
+function togglePayment(){
+  pmSuccess=!pmSuccess;
+  const t=document.getElementById('pmToggle');
+  const s=document.getElementById('pmState');
+  const r=document.getElementById('pmRedirect');
+  const p=document.getElementById('previewPayment');
+  if(pmSuccess){
+    t.classList.add('on');s.textContent='ON';s.style.background='rgba(0,212,170,0.1)';s.style.color='var(--accent)';
+    r.textContent='payment-success.html';r.style.color='var(--accent)';
+    p.textContent='Success';p.style.color='var(--accent)';
+  }else{
+    t.classList.remove('on');s.textContent='OFF';s.style.background='rgba(255,71,87,0.1)';s.style.color='var(--danger)';
+    r.textContent='payment-failed.html';r.style.color='var(--danger)';
+    p.textContent='Failed';p.style.color='var(--danger)';
+  }
+  showToast(pmSuccess?'Payment success ON':'Payment failed ON');
+}
+
+// ========== PAYOUT KEY ==========
+function selectPlan(name, price, limit) {
+  document.querySelectorAll('.plan-select-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('plan' + name).classList.add('selected');
+  
+  selectedPlanData = { name, price, limit };
+  document.getElementById('selectedPlanDisplay').textContent = name + ' Key';
+  document.getElementById('selectedPriceDisplay').textContent = '₦' + price.toLocaleString();
+  document.getElementById('selectedLimitDisplay').textContent = limit === 999999 ? 'Unlimited' : limit + '/day';
+  
+  showToast(name + ' Key selected — ready to generate');
+}
+
+function generatePayoutKeyForPlan() {
+  if (!selectedPlanData) {
+    showToast('Select a plan first!', 'error');
+    document.querySelectorAll('.plan-select-card').forEach(c => {
+      c.style.animation = 'shake 0.5s ease';
+      setTimeout(() => c.style.animation = '', 500);
+    });
+    return;
+  }
+  
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let key = '';
+  for (let i = 0; i < 8; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  generatedKey = key;
+  
+  document.getElementById('generatedKeyBox').style.display = 'block';
+  document.getElementById('currentKeyBox').style.display = 'none';
+  document.getElementById('generatedKeyValue').textContent = key;
+  document.getElementById('generatedKeyLabel').textContent = 'Generated for ' + selectedPlanData.name + ' Key (₦' + selectedPlanData.price.toLocaleString() + ')';
+  
+  document.getElementById('payoutKeyInput').value = key;
+  
+  showToast('Key generated for ' + selectedPlanData.name + '!');
+}
+
+function generateRandomKey() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let key = '';
+  for (let i = 0; i < 8; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  document.getElementById('payoutKeyInput').value = key;
+  showToast('Random key generated');
+}
+
+function saveGeneratedKey() {
+  const k = generatedKey || document.getElementById('payoutKeyInput').value.trim().toUpperCase();
+  if (!k || k.length < 4) {
+    showToast('Enter valid key (min 4 chars)', 'error');
+    return;
+  }
+  
+  if (payoutKey && payoutKey !== k && !keyHistory.includes(payoutKey)) {
+    keyHistory.unshift(payoutKey);
+    if (keyHistory.length > 10) keyHistory.pop();
+  }
+  
+  payoutKey = k;
+  if (!keyHistory.includes(k)) keyHistory.unshift(k);
+  if (keyHistory.length > 10) keyHistory.pop();
+  
+  document.getElementById('payoutKeyDisplay').textContent = k;
+  document.getElementById('previewPayoutKey').textContent = k;
+  document.getElementById('statKeys').textContent = keyHistory.length;
+  document.getElementById('keyBadge').textContent = keyHistory.length;
+  
+  document.getElementById('generatedKeyBox').style.display = 'none';
+  document.getElementById('currentKeyBox').style.display = 'block';
+  
+  showToast('Payout key saved! Click "Save All Changes" to store in Firebase.');
+  renderKeyHistory();
+}
+
+function renderKeyHistory(){
+  const el=document.getElementById('keyHistory');
+  if(keyHistory.length===0){
+    el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">No history yet</div>';
+    return;
+  }
+  el.innerHTML='';
+  keyHistory.forEach((k,i)=>{
+    const div=document.createElement('div');
+    div.className='history-item';
+    div.innerHTML='<span class="history-key">'+k+'</span><span class="history-date">'+(i===0?'Current':'#'+(i+1))+'</span>';
+    el.appendChild(div);
+  });
+}
+
+// ========== TASKS ==========
+function renderTasks(){
+  const el=document.getElementById('taskList');
+  el.innerHTML='';
+  tasks.forEach((t,i)=>{
+    const div=document.createElement('div');
+    div.className='task-card'+(t.hot?' hot':'');
+    div.innerHTML='<div class="task-top"><div style="display:flex;align-items:center;gap:10px;"><div class="task-num">'+(i+1)+'</div><input type="text" class="form-input" style="padding:8px 12px;font-size:13px;min-width:160px;" value="'+t.name+'" onchange="updateTask('+i+',\'name\',this.value)" placeholder="Task name"></div><div class="task-actions"><button class="task-btn-sm fire" onclick="toggleHot('+i+')" title="Hot"><i class="fa-solid fa-fire" style="color:'+(t.hot?'var(--warning)':'var(--text3)')+'"></i></button><button class="task-btn-sm" onclick="deleteTask('+i+')" title="Delete"><i class="fa-solid fa-trash"></i></button></div></div><div class="task-grid-inner"><div class="task-field"><label class="form-label">Category</label><select class="form-input" onchange="updateTask('+i+',\'cat\',this.value)">'+CATS.map(c=>'<option value="'+c+'"'+(t.cat===c?' selected':'')+'>'+CAT_LABELS[c]+'</option>').join('')+'</select></div><div class="task-field"><label class="form-label">Amount</label><input type="number" class="form-input" value="'+t.amt+'" onchange="updateTask('+i+',\'amt\',Number(this.value))" placeholder="500"></div><div class="task-field"><label class="form-label">Link</label><input type="url" class="form-input" value="'+t.link+'" onchange="updateTask('+i+',\'link\',this.value)" placeholder="https://..."></div></div><span class="task-tag tag-'+t.cat+'"><i class="'+CAT_ICONS[t.cat]+'"></i> '+CAT_LABELS[t.cat]+'</span>';
+    el.appendChild(div);
+  });
+  updateTaskBtn();
+  document.getElementById('previewTasks').textContent=tasks.length+' ('+tasks.filter(t=>t.hot).length+' hot)';
+  document.getElementById('statTasks').textContent=tasks.length;
+}
+
+function updateTask(i,f,v){tasks[i][f]=v;if(f==='cat'||f==='hot')renderTasks();}
+function toggleHot(i){tasks[i].hot=!tasks[i].hot;renderTasks();}
+function deleteTask(i){
+  if(tasks.length<=1){showToast('Need at least 1 task','error');return;}
+  Swal.fire({title:'Delete?',text:'Remove "'+tasks[i].name+'"?',icon:'warning',showCancelButton:true,confirmButtonColor:'#ff4757',cancelButtonColor:'#576574',confirmButtonText:'Delete',background:'#0f1623',color:'#c8d6e5'}).then(r=>{if(r.isConfirmed){tasks.splice(i,1);renderTasks();showToast('Deleted');}});
+}
+function addNewTask(){
+  if(tasks.length>=MAX_TASKS){showToast('Max '+MAX_TASKS,'error');return;}
+  tasks.push({id:'t'+Date.now(),name:'New Task',cat:CATS[Math.floor(Math.random()*3)],link:'',amt:500,hot:false});
+  renderTasks();showToast('Task added');
+}
+function updateTaskBtn(){
+  const btn=document.getElementById('addTaskBtn');
+  if(tasks.length>=MAX_TASKS){btn.style.opacity='0.5';btn.style.pointerEvents='none';btn.innerHTML='<i class="fa-solid fa-lock"></i> Max 10';}
+  else{btn.style.opacity='1';btn.style.pointerEvents='auto';btn.innerHTML='<i class="fa-solid fa-plus"></i> Add ('+tasks.length+'/'+MAX_TASKS+')';}
+}
+
+// ========== LOAD DATA (NO USERS) ==========
+async function loadData(){
+  try{
+    const [payDoc,feeDoc,taskDoc,wdDoc,pmDoc,keyDoc,redirDoc]=await Promise.all([
+      db.collection('settings').doc('payment').get(),
+      db.collection('settings').doc('secondBilling').get(),
+      db.collection('settings').doc('tasks').get(),
+      db.collection('settings').doc('withdrawalStatus').get(),
+      db.collection('settings').doc('paymentStatus').get(),
+      db.collection('settings').doc('payoutKeys').get(),
+      db.collection('settings').doc('redirects').get()
+    ]);
+    
+    const pay=payDoc.exists?payDoc.data():{};
+    const fee=feeDoc.exists?feeDoc.data():{};
+    const taskData=taskDoc.exists?taskDoc.data():{};
+    const wdData=wdDoc.exists?wdDoc.data():{};
+    const pmData=pmDoc.exists?pmDoc.data():{};
+    const keyData=keyDoc.exists?keyDoc.data():{};
+    const redirData=redirDoc.exists?redirDoc.data():{};
+    
+    document.getElementById('telegramLink').value=pay.telegramLink||'';
+    document.getElementById('accNumber').value=pay.accNumber||'';
+    document.getElementById('bankName').value=pay.bank||'';
+    document.getElementById('accName').value=pay.accName||'';
+    document.getElementById('amount').value=pay.amount||'';
+    document.getElementById('cryptoAddress').value=pay.cryptoAddress||'';
+    document.getElementById('cryptoNetwork').value=pay.cryptoNetwork||'';
+    document.getElementById('noticeText').value=pay.notice||'';
+    document.getElementById('feeAccNumber').value=fee.accNumber||'';
+    document.getElementById('feeBank').value=fee.bank||'';
+    document.getElementById('feeAccName').value=fee.accName||'';
+    document.getElementById('feeAmount').value=fee.amount||'12500';
+    
+    wdSuccess=wdData.success===true;updateWdToggleUI();
+    pmSuccess=pmData.success===true;updatePmToggleUI();
+    
+    payoutKey=keyData.currentKey||'';
+    keyHistory=keyData.history||[];
+    document.getElementById('payoutKeyDisplay').textContent=payoutKey||'NOT SET';
+    document.getElementById('payoutKeyInput').value=payoutKey;
+    document.getElementById('previewPayoutKey').textContent=payoutKey||'Not set';
+    document.getElementById('statKeys').textContent=keyHistory.length;
+    document.getElementById('keyBadge').textContent=keyHistory.length;
+    renderKeyHistory();
+    
+    if(redirData.successPrimaryRedirect)document.getElementById('successPrimary').value=redirData.successPrimaryRedirect;
+    if(redirData.successSecondaryRedirect)document.getElementById('successSecondary').value=redirData.successSecondaryRedirect;
+    if(redirData.successDelay)document.getElementById('successDelay').value=redirData.successDelay;
+    if(redirData.failedRetryRedirect)document.getElementById('failedRetry').value=redirData.failedRetryRedirect;
+    if(redirData.failedDashboardRedirect)document.getElementById('failedDashboard').value=redirData.failedDashboardRedirect;
+    if(redirData.failedSupportHandle)document.getElementById('supportHandle').value=redirData.failedSupportHandle;
+    
+    tasks=taskData.tasks||DEFAULT_TASKS;renderTasks();
+    
+    // Fetch live SQL statistics from backend
+    loadSuperStats();
+    
+    updatePreview();
+    loadJuniorAdminsList();
+    loadAllReceipts();
+    loadAllVideoSubmissions();
+    
+    document.getElementById('loadingScreen').classList.remove('active');
+    document.getElementById('mainApp').classList.remove('hidden');
+  }catch(err){
+    console.error('Load error:',err);
+    document.getElementById('loadingScreen').classList.remove('active');
+    showToast('Failed to load: '+err.message,'error');
+  }
+}
+
+function updateWdToggleUI(){
+  const t=document.getElementById('wdToggle');
+  const s=document.getElementById('wdState');
+  const r=document.getElementById('wdRedirect');
+  const p=document.getElementById('previewWithdrawal');
+  const stat=document.getElementById('statStatus');
+  if(wdSuccess){
+    t.classList.add('on');s.textContent='ON';s.style.background='rgba(0,212,170,0.1)';s.style.color='var(--accent)';
+    r.textContent='success.html';r.style.color='var(--accent)';
+    p.textContent='Success';p.style.color='var(--accent)';
+    stat.textContent='ON';stat.style.color='var(--accent)';
+  }else{
+    t.classList.remove('on');s.textContent='OFF';s.style.background='rgba(255,71,87,0.1)';s.style.color='var(--danger)';
+    r.textContent='pending.html';r.style.color='var(--danger)';
+    p.textContent='Pending';p.style.color='var(--danger)';
+    stat.textContent='OFF';stat.style.color='var(--danger)';
+  }
+}
+
+function updatePmToggleUI(){
+  const t=document.getElementById('pmToggle');
+  const s=document.getElementById('pmState');
+  const r=document.getElementById('pmRedirect');
+  const p=document.getElementById('previewPayment');
+  if(pmSuccess){
+    t.classList.add('on');s.textContent='ON';s.style.background='rgba(0,212,170,0.1)';s.style.color='var(--accent)';
+    r.textContent='payment-success.html';r.style.color='var(--accent)';
+    p.textContent='Success';p.style.color='var(--accent)';
+  }else{
+    t.classList.remove('on');s.textContent='OFF';s.style.background='rgba(255,71,87,0.1)';s.style.color='var(--danger)';
+    r.textContent='payment-failed.html';r.style.color='var(--danger)';
+    p.textContent='Failed';p.style.color='var(--danger)';
+  }
+}
+
+function updatePreview(){
+  const p={amount:document.getElementById('amount').value};
+  const f={amount:document.getElementById('feeAmount').value};
+  document.getElementById('previewMainAmt').textContent=p.amount?'₦'+Number(p.amount).toLocaleString():'₦—';
+  document.getElementById('previewFeeAmt').textContent=f.amount?'₦'+Number(f.amount).toLocaleString():'₦—';
+}
+
+// ========== SAVE ALL ==========
+async function saveAll(){
+  const btn=document.getElementById('saveBtn');
+  const txt=document.getElementById('saveText');
+  const orig=txt.textContent;
+  
+  const pay={telegramLink:document.getElementById('telegramLink').value.trim(),accNumber:document.getElementById('accNumber').value.trim(),bank:document.getElementById('bankName').value.trim(),accName:document.getElementById('accName').value.trim(),amount:Number(document.getElementById('amount').value)||0,cryptoAddress:document.getElementById('cryptoAddress').value.trim(),cryptoNetwork:document.getElementById('cryptoNetwork').value.trim(),notice:document.getElementById('noticeText').value.trim(),updatedAt:new Date().toISOString()};
+  const fee={accNumber:document.getElementById('feeAccNumber').value.trim(),bank:document.getElementById('feeBank').value.trim(),accName:document.getElementById('feeAccName').value.trim(),amount:Number(document.getElementById('feeAmount').value)||0,updatedAt:new Date().toISOString()};
+  const taskD={tasks:tasks,updatedAt:new Date().toISOString()};
+  const wd={success:wdSuccess,updatedAt:new Date().toISOString()};
+  const pm={success:pmSuccess,updatedAt:new Date().toISOString()};
+  const keyD={currentKey:payoutKey,history:keyHistory,updatedAt:new Date().toISOString()};
+  const redir={successPrimaryRedirect:document.getElementById('successPrimary').value.trim()||'dashboard.html',successSecondaryRedirect:document.getElementById('successSecondary').value.trim()||'buy.html',successDelay:Number(document.getElementById('successDelay').value)||2000,successShowConfetti:true,successMessage:'Your payment has been confirmed',failedRetryRedirect:document.getElementById('failedRetry').value.trim()||'payment.html',failedDashboardRedirect:document.getElementById('failedDashboard').value.trim()||'dashboard.html',failedRetryLabel:'Retry Payment',failedDashboardLabel:'Back to Dashboard',failedMessage:'We could not confirm your payment. Please check your details and try again.',failedSupportHandle:document.getElementById('supportHandle').value.trim()||'@9jaCash_Support',failedShowSenderDetails:true,updatedAt:new Date().toISOString()};
+  
+  if(pay.accNumber&&pay.accNumber.length!==10){showToast('Main account: 10 digits','error');return;}
+  if(fee.accNumber&&fee.accNumber.length!==10){showToast('Fee account: 10 digits','error');return;}
+  
+  btn.disabled=true;txt.innerHTML='<div class="spin"></div> Saving...';
+  try{
+    await Promise.all([
+      db.collection('settings').doc('payment').set(pay),
+      db.collection('settings').doc('secondBilling').set(fee),
+      db.collection('settings').doc('tasks').set(taskD),
+      db.collection('settings').doc('withdrawalStatus').set(wd),
+      db.collection('settings').doc('paymentStatus').set(pm),
+      db.collection('settings').doc('payoutKeys').set(keyD),
+      db.collection('settings').doc('redirects').set(redir)
+    ]);
+    updatePreview();showToast('All saved!','success');
+  }catch(err){showToast('Failed: '+err.message,'error');}
+  finally{btn.disabled=false;txt.textContent=orig;}
+}
+
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  const m=document.getElementById('toastMsg');
+  const i=t.querySelector('i');
+  m.textContent=msg;
+  if(type==='error'){i.className='fa-solid fa-circle-xmark';i.style.color='var(--danger)';}
+  else{i.className='fa-solid fa-circle-check';i.style.color='var(--accent)';}
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+document.querySelectorAll('input,textarea').forEach(el=>el.addEventListener('input',updatePreview));
+
+window.addEventListener('load',initAuth);
+
+// ========== DYNAMIC API PREFIX ==========
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+
+// ========== JUNIOR ADMIN MANAGEMENT ==========
+function loadJuniorAdminsList() {
+  fetch(API_URL + '/api/admin/super/juniors')
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.getElementById('juniorAdminListTable');
+      if (data.status && Array.isArray(data.juniors)) {
+        if (data.juniors.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="padding:15px; text-align:center; color:var(--text3);">No junior admins found</td></tr>';
+          return;
+        }
+        tbody.innerHTML = '';
+        data.juniors.forEach(j => {
+          const statusText = j.is_active === 1 ? 'Active' : 'Deactivated';
+          const statusColor = j.is_active === 1 ? 'var(--accent)' : 'var(--danger)';
+          const actionText = j.is_active === 1 ? 'Deactivate' : 'Activate';
+          const bankDetailsStr = j.bank_name 
+            ? `<b>${j.bank_name}</b><br><span style="font-family:monospace;font-size:11px;">${j.account_number}</span><br><span style="font-size:10px;color:var(--text3);">${j.account_name || '—'}</span>` 
+            : '<span style="color:var(--text3);">None (Super Admin details)</span>';
+
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--border)';
+          tr.innerHTML = `
+            <td style="padding:12px; color:var(--text); font-weight:600;">${j.email}</td>
+            <td style="padding:12px; color:var(--accent); font-family:monospace; font-weight:700;">${j.referral_code}</td>
+            <td style="padding:12px; color:var(--text2); font-size:12px; line-height:1.4;">${bankDetailsStr}</td>
+            <td style="padding:12px; color:${statusColor}; font-weight:800; font-size:12px;">${statusText}</td>
+            <td style="padding:12px; color:var(--text2); font-size:12px;">${new Date(j.created_at).toLocaleDateString()}</td>
+            <td style="padding:12px; text-align:right;">
+              <div style="display:flex; gap:12px; justify-content:flex-end;">
+                <button onclick="toggleJuniorStatus('${j.email}', ${j.is_active === 1 ? 'false' : 'true'})" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;" class="hover:underline">
+                  <i class="fa-solid fa-power-off"></i> ${actionText}
+                </button>
+                <button onclick="deleteJuniorAdmin('${j.email}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer;" class="hover:underline">
+                  <i class="fa-solid fa-trash-can"></i> Delete
+                </button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    })
+    .catch(err => {
+      console.error('Error fetching junior admins:', err);
+    });
+}
+
+function toggleJuniorStatus(email, status) {
+  fetch(API_URL + '/api/admin/super/toggle-junior-status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, isActive: status })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status) {
+      showToast(data.message, 'success');
+      loadJuniorAdminsList();
+      loadSuperStats();
+    } else {
+      showToast(data.error || 'Failed to toggle status', 'error');
+    }
+  })
+  .catch(err => showToast('Connection error', 'error'));
+}
+
+function createJuniorAdmin(e) {
+  e.preventDefault();
+  const email = document.getElementById('juniorEmail').value.trim();
+  const password = document.getElementById('juniorPassword').value.trim();
+  const referralCode = document.getElementById('juniorRefCode').value.trim().toUpperCase();
+  const bankName = document.getElementById('juniorBankName').value.trim();
+  const accountNumber = document.getElementById('juniorAccountNumber').value.trim();
+  const accountName = document.getElementById('juniorAccountName').value.trim();
+
+  fetch(API_URL + '/api/admin/super/create-junior', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, referralCode, bankName, accountNumber, accountName })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status) {
+      showToast('Junior Admin created successfully!', 'success');
+      document.getElementById('createJuniorForm').reset();
+      loadJuniorAdminsList();
+      loadSuperStats();
+    } else {
+      showToast(data.error || 'Failed to create junior admin', 'error');
+    }
+  })
+  .catch(err => {
+    showToast('Connection error', 'error');
+  });
+}
+
+function deleteJuniorAdmin(email) {
+  Swal.fire({
+    title: 'Delete Junior Admin?',
+    text: `Remove admin account for ${email}?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ff4757',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Delete',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch(API_URL + '/api/admin/super/delete-junior', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          showToast('Junior Admin deleted', 'success');
+          loadJuniorAdminsList();
+          loadSuperStats();
+        } else {
+          showToast(data.error || 'Deletion failed', 'error');
+        }
+      })
+      .catch(err => showToast('Connection error', 'error'));
+    }
+  });
+}
+
+// ========== REGISTERED USERS DIRECTORY ==========
+function loadAllUsersList() {
+  fetch(API_URL + '/api/admin/super/users')
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.getElementById('allUsersListTable');
+      const countLabel = document.getElementById('usersListCount');
+      if (data.status && Array.isArray(data.users)) {
+        countLabel.textContent = data.users.length;
+        if (data.users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="padding:15px; text-align:center; color:var(--text3);">No registered users found in SQL database</td></tr>';
+          return;
+        }
+        tbody.innerHTML = '';
+        data.users.forEach(u => {
+          const joinedDate = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
+          const uStatusColor = u.status === 'suspended' ? 'var(--danger)' : 'var(--accent)';
+          
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--border)';
+          tr.innerHTML = `
+            <td style="padding:10px; color:var(--text3); font-size:12px;">${joinedDate}</td>
+            <td style="padding:10px; color:var(--text); font-weight:600;">${u.full_name || '9jaCash User'}</td>
+            <td style="padding:10px; color:var(--text2); font-family:monospace; font-size:12px;">${u.phone || '—'}</td>
+            <td style="padding:10px; color:var(--text2); font-size:12px;">${u.email || '—'}</td>
+            <td style="padding:10px; color:var(--accent); font-weight:700; font-size:12px;">${u.referred_by || 'Direct'}</td>
+            <td style="padding:10px; color:var(--text); font-weight:700;">₦${(u.balance || 0).toLocaleString()}</td>
+            <td style="padding:10px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase;">${u.status || 'ACTIVE'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    })
+    .catch(err => {
+      console.error('Error fetching registered users list:', err);
+    });
+}
+
+// ========== STATS LOADER ==========
+function loadSuperStats() {
+  fetch(API_URL + '/api/admin/super/stats')
+    .then(res => res.json())
+    .then(data => {
+      if (data.status) {
+        document.getElementById('statUsers').textContent = data.totalUsers;
+        document.getElementById('usersBadge').textContent = data.totalUsers;
+        document.getElementById('statPending').textContent = data.totalPendingWithdrawals;
+        const wdBadge = document.getElementById('withdrawalsBadge');
+        if (wdBadge) {
+          wdBadge.textContent = data.totalPendingWithdrawals;
+          wdBadge.style.display = data.totalPendingWithdrawals > 0 ? 'inline-block' : 'none';
+        }
+      }
+    })
+    .catch(err => {
+      console.warn('Failed to load SQL database stats:', err);
+    });
+}
+
+function parseLocaleDate(dateStr) {
+  if (!dateStr) return 0;
+  const parsed = Date.parse(dateStr);
+  if (!isNaN(parsed)) return parsed;
+  try {
+    const cleanStr = dateStr.replace(/[^0-9\/\-:\s,ap]/gi, '').trim();
+    const parts = cleanStr.split(/[\s,]+/);
+    if (parts.length >= 2) {
+      const datePart = parts[0];
+      const timePart = parts[1];
+      const isPM = dateStr.toLowerCase().includes('pm');
+      const isAM = dateStr.toLowerCase().includes('am');
+      const dateSubparts = datePart.split(/[\/\-]/);
+      const timeSubparts = timePart.split(':');
+      if (dateSubparts.length === 3 && timeSubparts.length >= 2) {
+        let year = parseInt(dateSubparts[2]);
+        if (year < 100) year += 2000;
+        let month = parseInt(dateSubparts[1]) - 1;
+        let day = parseInt(dateSubparts[0]);
+        if (day > 12) {
+          month = parseInt(dateSubparts[1]) - 1;
+          day = parseInt(dateSubparts[0]);
+        } else if (month + 1 > 12) {
+          month = parseInt(dateSubparts[0]) - 1;
+          day = parseInt(dateSubparts[1]);
+        }
+        let hour = parseInt(timeSubparts[0]);
+        const min = parseInt(timeSubparts[1]);
+        const sec = timeSubparts[2] ? parseInt(timeSubparts[2]) : 0;
+        if (isPM && hour < 12) hour += 12;
+        if (isAM && hour === 12) hour = 0;
+        const d = new Date(year, month, day, hour, min, sec);
+        if (!isNaN(d.getTime())) return d.getTime();
+      }
+    }
+  } catch (e) {
+    console.warn("Manual date parse failed:", dateStr, e);
+  }
+  return 0;
+}
+
+// ========== RECEIPTS CONTROLLERS ==========
+let allReceipts = [];
+
+function loadAllReceipts() {
+  const table = document.getElementById('receiptListTable');
+  const badgeEl = document.getElementById('receiptsBadge');
+  
+  if (typeof db === 'undefined') {
+    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Firebase not initialized</td></tr>';
+    return;
+  }
+  
+  Promise.all([
+    db.collection('paymentReceipts').get().then(snap => snap.docs.map(d => ({ id: d.id, _collection: 'paymentReceipts', ...d.data() }))),
+    db.collection('verifications').get().then(snap => snap.docs.map(d => ({ id: d.id, _collection: 'verifications', ...d.data() })))
+  ])
+  .then(function(results) {
+    const receipts = results[0].concat(results[1]);
+    
+    // Sort by date descending (safely using createdAt or robust parseLocaleDate fallback)
+    receipts.sort((a, b) => {
+      const timeA = a.createdAt || parseLocaleDate(a.date);
+      const timeB = b.createdAt || parseLocaleDate(b.date);
+      return timeB - timeA;
+    });
+    allReceipts = receipts;
+    
+    const pendingCount = receipts.filter(r => r.status === 'pending_verification' || r.status === 'pending').length;
+    if (badgeEl) badgeEl.textContent = pendingCount;
+    if (badgeEl) badgeEl.style.display = pendingCount > 0 ? 'flex' : 'none';
+    
+    renderReceiptsTable(receipts);
+  })
+  .catch(function(err) {
+    console.error('Error fetching receipts:', err);
+    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Failed to load receipts from Firebase</td></tr>';
+  });
+}
+
+function purgeAllReceipts() {
+  Swal.fire({
+    title: 'Purge Receipts History?',
+    text: 'This will delete ALL existing receipts and verification proofs permanently from the database. It should only show new ones.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Yes, Purge All',
+    background: '#1e293b',
+    color: '#f8fafc'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Purging receipts...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      const batch = db.batch();
+      
+      Promise.all([
+        db.collection('paymentReceipts').get(),
+        db.collection('verifications').get()
+      ]).then(results => {
+        const snap1 = results[0];
+        const snap2 = results[1];
+        
+        snap1.docs.forEach(doc => batch.delete(doc.ref));
+        snap2.docs.forEach(doc => batch.delete(doc.ref));
+        
+        return batch.commit();
+      }).then(() => {
+        Swal.fire({ icon: 'success', title: 'Purged!', text: 'All receipt and verification records have been deleted.', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+        loadAllReceipts();
+      }).catch(err => {
+        console.error('Purge failed:', err);
+        Swal.fire({ icon: 'error', title: 'Purge Failed', text: err.message, confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+      });
+    }
+  });
+}
+
+function renderReceiptsTable(receipts) {
+  const table = document.getElementById('receiptListTable');
+  if (receipts.length === 0) {
+    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No receipts found in database</td></tr>';
+    return;
+  }
+  
+  table.innerHTML = '';
+  receipts.forEach(function(r) {
+    const isPending = r.status === 'pending_verification' || r.status === 'pending';
+    let statusClass = 'badge-pending';
+    let statusLabel = 'Pending';
+    
+    if (r.status === 'Approved' || r.status === 'approved' || r.status === 'verified') {
+      statusClass = 'badge-approved';
+      statusLabel = 'Approved ✅';
+    } else if (r.status === 'Declined' || r.status === 'declined' || r.status === 'rejected') {
+      statusClass = 'badge-rejected';
+      statusLabel = 'Declined ❌';
+    }
+    
+    const typeLabel = r.type === 'account_verification' ? 'Account Verification' : (r.flowType || r.type || 'Payment');
+    const details = r.plan ? `${r.plan} (₦${parseFloat(r.amount || 0).toLocaleString()})` : `Verify Fee (₦${parseFloat(r.feeAmount || 35200).toLocaleString()})`;
+    
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    
+    tr.innerHTML = `
+      <td style="padding:12px; font-size:12px; color:var(--text);">${r.date || '—'}</td>
+      <td style="padding:12px; font-size:12px;">
+        <div style="font-weight:700; color:var(--text);">${r.userName || r.accountName || 'Unknown'}</div>
+        <div style="font-size:11px; color:var(--text3); font-family:monospace;">${r.userId || r.phone || '—'}</div>
+      </td>
+      <td style="padding:12px; font-size:12px;"><span style="background:var(--surface2); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; color:var(--accent);">${typeLabel.toUpperCase()}</span></td>
+      <td style="padding:12px; font-size:12px; color:var(--text); font-weight:600;">${details}</td>
+      <td style="padding:12px; font-size:12px;">
+        ${r.receiptImage ? `
+          <button onclick="viewReceiptImage('${r.id}')" style="background:#4f46e5; border:none; padding:6px 12px; border-radius:6px; color:white; font-size:11px; font-weight:700; cursor:pointer;">
+            <i class="fa-solid fa-image"></i> View Proof
+          </button>
+        ` : '<span style="color:var(--text3); font-size:11px;">No attachment</span>'}
+      </td>
+      <td style="padding:12px; font-size:12px; text-align:right;">
+        ${isPending ? `
+          <button onclick="approveReceipt('${r.id}', '${r._collection}')" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer; margin-right:6px;">Approve</button>
+          <button onclick="declineReceipt('${r.id}', '${r._collection}')" style="background:#ef4444; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Decline</button>
+        ` : `<span class="${statusClass}" style="padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700;">${statusLabel}</span>`}
+      </td>
+    `;
+    table.appendChild(tr);
+  });
+}
+
+function viewReceiptImage(id) {
+  const receipt = allReceipts.find(r => r.id === id);
+  if (receipt && receipt.receiptImage) {
+    Swal.fire({
+      title: 'Payment Proof',
+      html: `
+        <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">Submitted by ${receipt.userName || 'User'} (${receipt.userId || receipt.phone})</div>
+        <img src="${receipt.receiptImage}" style="max-width:100%; border-radius:8px; border:1px solid #334155; max-height: 450px; object-fit: contain;" />
+      `,
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#6366f1',
+      background: '#1e293b',
+      color: '#f8fafc'
+    });
+  } else {
+    Swal.fire({ icon: 'error', title: 'No Image Found', text: 'Proof does not contain image attachment', confirmButtonColor: '#6366f1' });
+  }
+}
+
+function approveReceipt(id, collectionName) {
+  const receipt = allReceipts.find(r => r.id === id);
+  if (!receipt) return;
+  
+  const phone = receipt.userId || receipt.phone;
+  
+  Swal.fire({
+    title: 'Approve Payment?',
+    text: `Are you sure you want to approve this ${receipt.type || 'payment'} for ₦${parseFloat(receipt.amount || receipt.feeAmount || 0).toLocaleString()}?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Yes, Approve'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      // db is globally defined in admin.html
+      db.collection(collectionName).doc(id).update({ status: 'Approved' })
+        .then(() => {
+          // If account verification
+          if (collectionName === 'verifications' || receipt.type === 'account_verification') {
+            return db.collection('users').doc(phone).get().then(uDoc => {
+              if (uDoc.exists) {
+                const uData = uDoc.data();
+                const newBal = (parseFloat(uData.balance) || 0) + 35000;
+                
+                return db.collection('users').doc(phone).update({
+                  balance: newBal,
+                  status: 'active'
+                }).then(() => {
+                  return fetch(API_URL + '/api/user/update-balance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      phone: phone,
+                      balance: newBal,
+                      totalMined: uData.totalMined || 0,
+                      adminSecret: '9jaCashAdminMasterSecretCode1083'
+                    })
+                  });
+                }).then(() => {
+                  return fetch(API_URL + '/api/admin/super/send-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      phone: phone,
+                      title: 'Verification Approved',
+                      content: 'Your account has been fully verified. ₦35,000 refund was successfully credited to your wallet.',
+                      type: 'alert'
+                    })
+                  });
+                });
+              }
+            });
+          }
+          // If payout key purchase
+          else if (receipt.flowType === 'payoutKey' || receipt.type === 'payoutKey' || (receipt.plan && receipt.plan.includes('Key'))) {
+            const keyStr = 'KEY-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            return db.collection('users').doc(phone).update({
+              payoutKey: keyStr
+            }).then(() => {
+              return fetch(API_URL + '/api/admin/super/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  phone: phone,
+                  title: 'Payout Key Issued',
+                  content: `Your payout key was successfully generated: ${keyStr}. Copy this key to verify your withdrawal request.`,
+                  type: 'payout_key'
+                })
+              });
+            });
+          }
+          // If plan upgrade
+          else if (receipt.type === 'upgrade' || receipt.flowType === 'upgrade') {
+            let multiplier = 1.5;
+            if (receipt.plan && receipt.plan.includes('Silver')) multiplier = 2.0;
+            if (receipt.plan && receipt.plan.includes('Gold')) multiplier = 3.0;
+            if (receipt.plan && receipt.plan.includes('Diamond')) multiplier = 5.0;
+            
+            return db.collection('users').doc(phone).update({
+              miningPower: multiplier,
+              planName: receipt.plan
+            }).then(() => {
+              return fetch(API_URL + '/api/user/update-plan-power', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  phone: phone,
+                  plan: receipt.plan,
+                  miningPower: multiplier,
+                  adminSecret: '9jaCashAdminMasterSecretCode1083'
+                })
+              });
+            }).then(() => {
+              return fetch(API_URL + '/api/admin/super/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  phone: phone,
+                  title: 'Plan Upgrade Success',
+                  content: `Your purchase was verified. Your account is now active on the ${receipt.plan || 'Basic Plan'} (${multiplier}x mining power).`,
+                  type: 'alert'
+                })
+              });
+            });
+          }
+        })
+        .then(() => {
+          Swal.fire({ icon: 'success', title: 'Approved', text: 'Payment approved and notification sent!', confirmButtonColor: '#6366f1' });
+          loadAllReceipts();
+        })
+        .catch(err => {
+          console.error(err);
+          Swal.fire({ icon: 'error', title: 'Approval Failed', text: err.message || 'Operation failed', confirmButtonColor: '#6366f1' });
+        });
+    }
+  });
+}
+
+function declineReceipt(id, collectionName) {
+  const receipt = allReceipts.find(r => r.id === id);
+  if (!receipt) return;
+  
+  const phone = receipt.userId || receipt.phone;
+  
+  Swal.fire({
+    title: 'Decline Payment?',
+    text: 'Reason for decline:',
+    input: 'text',
+    inputPlaceholder: 'e.g. Invalid bank reference / receipt image not readable',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Yes, Decline'
+  }).then(res => {
+    if (res.isConfirmed) {
+      const reason = res.value || 'Payment proof could not be verified.';
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      // db is globally defined in admin.html
+      db.collection(collectionName).doc(id).update({ status: 'Declined' })
+        .then(() => {
+          return fetch(API_URL + '/api/admin/super/send-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: phone,
+              title: 'Payment Declined',
+              content: `Your payment request was declined. Reason: ${reason}. Please make a new submission with valid proof.`,
+              type: 'alert'
+            })
+          });
+        })
+        .then(() => {
+          Swal.fire({ icon: 'success', title: 'Declined', text: 'Payment status updated to Declined.', confirmButtonColor: '#6366f1' });
+          loadAllReceipts();
+        })
+        .catch(err => {
+          console.error(err);
+          Swal.fire({ icon: 'error', title: 'Failed to Decline', text: err.message || 'Operation failed', confirmButtonColor: '#6366f1' });
+        });
+    }
+  });
+}
+
+function sendAdminNotification() {
+  const phone = document.getElementById('msgRecipient').value.trim();
+  const title = document.getElementById('msgTitle').value.trim();
+  const content = document.getElementById('msgBody').value.trim();
+  
+  if (!phone || !title || !content) {
+    Swal.fire({ icon: 'error', title: 'Input Error', text: 'All message fields are required.', confirmButtonColor: '#6366f1' });
+    return;
+  }
+  
+  Swal.fire({ title: 'Sending...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+  
+  fetch(API_URL + '/api/admin/super/send-message', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, title, content, type: 'alert' })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status) {
+      Swal.fire({ icon: 'success', title: 'Message Sent', text: 'Your notification has been dispatched successfully!', confirmButtonColor: '#6366f1' });
+      document.getElementById('msgTitle').value = '';
+      document.getElementById('msgBody').value = '';
+    } else {
+      Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Could not send message', confirmButtonColor: '#6366f1' });
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    Swal.fire({ icon: 'error', title: 'Error', text: 'Server connection offline.', confirmButtonColor: '#6366f1' });
+  });
+}
+
+// ========== SUPER WITHDRAWALS ==========
+function loadSuperWithdrawals() {
+  const table = document.getElementById('superWithdrawalsTable');
+  fetch(API_URL + '/api/admin/super/withdrawals')
+    .then(res => res.json())
+    .then(data => {
+      if (data.status && Array.isArray(data.withdrawals)) {
+        renderSuperWithdrawals(data.withdrawals);
+      } else {
+        table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No withdrawal requests found</td></tr>';
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--danger);">Failed to load withdrawals</td></tr>';
+    });
+}
+
+function renderSuperWithdrawals(withdrawals) {
+  const table = document.getElementById('superWithdrawalsTable');
+  if (withdrawals.length === 0) {
+    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No withdrawal requests found</td></tr>';
+    return;
+  }
+
+  table.innerHTML = '';
+  withdrawals.forEach(w => {
+    let statusClass = 'badge-pending';
+    let statusLabel = 'Pending';
+    if (w.status === 'Approved' || w.status === 'approved') {
+      statusClass = 'badge-approved';
+      statusLabel = 'Approved ✅';
+    } else if (w.status === 'Rejected' || w.status === 'rejected') {
+      statusClass = 'badge-rejected';
+      statusLabel = 'Declined ❌';
+    }
+
+    const isPending = w.status === 'Pending' || w.status === 'pending';
+    const actionsHtml = isPending ? `
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button onclick="approveSuperWithdrawal('${w.id}')" style="padding:6px 12px; border:none; border-radius:6px; background:var(--accent); color:white; font-weight:700; cursor:pointer;">Approve</button>
+        <button onclick="rejectSuperWithdrawal('${w.id}')" style="padding:6px 12px; border:none; border-radius:6px; background:var(--danger); color:white; font-weight:700; cursor:pointer;">Decline</button>
+      </div>
+    ` : `<span class="${statusClass}" style="padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700;">${statusLabel}</span>`;
+
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    tr.innerHTML = `
+      <td style="padding:12px; font-size:12px; color:var(--text3);">${new Date(w.created_at).toLocaleString()}</td>
+      <td style="padding:12px;">
+        <div style="color:white; font-weight:700;">${w.full_name || '—'}</div>
+        <div style="font-size:11px; color:var(--text3); font-family:monospace; margin-top:2px;">${w.phone || '—'}</div>
+      </td>
+      <td style="padding:12px;">
+        <div style="color:var(--text);">${w.bank_name || '—'}</div>
+        <div style="font-size:11px; color:var(--text3); font-family:monospace; margin-top:2px;">${w.account_number || '—'}</div>
+      </td>
+      <td style="padding:12px; color:white; font-weight:700;">₦${parseFloat(w.amount || 0).toLocaleString()}</td>
+      <td style="padding:12px;"><span class="${statusClass}" style="padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700;">${w.status}</span></td>
+      <td style="padding:12px; text-align:right;">${actionsHtml}</td>
+    `;
+    table.appendChild(tr);
+  });
+}
+
+function approveSuperWithdrawal(id) {
+  Swal.fire({
+    title: 'Approve Payout?',
+    text: 'Are you sure you want to approve this withdrawal?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Yes, Approve',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/super/approve-withdrawal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Approved', text: 'Payout approved successfully!', confirmButtonColor: '#6366f1' });
+          loadSuperWithdrawals();
+          loadSuperStats();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Approval failed', confirmButtonColor: '#6366f1' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Server connection failed', confirmButtonColor: '#6366f1' });
+      });
+    }
+  });
+}
+
+function rejectSuperWithdrawal(id) {
+  Swal.fire({
+    title: 'Decline Payout?',
+    text: 'Reason for decline:',
+    input: 'text',
+    inputPlaceholder: 'e.g. Account number / name mismatch',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Yes, Decline',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(res => {
+    if (res.isConfirmed) {
+      const reason = res.value || 'Bank transfer details could not be verified.';
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/super/reject-withdrawal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, reason })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Declined', text: 'Payout declined and balance refunded!', confirmButtonColor: '#6366f1' });
+          loadSuperWithdrawals();
+          loadSuperStats();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Operation failed', confirmButtonColor: '#6366f1' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Server connection failed', confirmButtonColor: '#6366f1' });
+      });
+    }
+  });
+}
+
+function triggerDailyReminders() {
+  Swal.fire({
+    title: 'Send Daily Reminders?',
+    text: 'This will send a mining reminder email via Resend to all registered users who have linked a real email address.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#6366f1',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Yes, Send Reminders',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(result => {
+    if (result.isConfirmed) {
+      Swal.fire({ title: 'Sending...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      fetch(API_URL + '/api/admin/super/trigger-reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Sent', text: data.message, confirmButtonColor: '#6366f1' });
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Could not send reminders', confirmButtonColor: '#6366f1' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Server connection failed', confirmButtonColor: '#6366f1' });
+      });
+    }
+  });
+}
+
+// ========== VIDEO SUBMISSIONS CONTROLLERS ==========
+let allVideoSubmissions = [];
+
+function loadAllVideoSubmissions() {
+  const table = document.getElementById('videoSubmissionListTable');
+  const badgeEl = document.getElementById('videosBadge');
+  
+  if (!table) return;
+  table.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: var(--text-muted);">Loading submissions...</td></tr>';
+  
+  fetch(API_URL + '/api/admin/video-submissions')
+    .then(r => r.json())
+    .then(data => {
+      if (data.status && data.submissions) {
+        allVideoSubmissions = data.submissions;
+        const pendingCount = allVideoSubmissions.filter(s => s.status === 'Pending').length;
+        if (badgeEl) {
+          badgeEl.textContent = pendingCount;
+          badgeEl.style.display = pendingCount > 0 ? 'flex' : 'none';
+        }
+        renderVideoSubmissionsTable(allVideoSubmissions);
+      } else {
+        table.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: var(--text-muted);">Failed to load video submissions.</td></tr>';
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      table.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: var(--text-muted);">Connection error.</td></tr>';
+    });
+}
+
+function renderVideoSubmissionsTable(subs) {
+  const table = document.getElementById('videoSubmissionListTable');
+  if (!table) return;
+  if (subs.length === 0) {
+    table.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: var(--text-muted);">No video submissions yet.</td></tr>';
+    return;
+  }
+  
+  table.innerHTML = '';
+  subs.forEach(function(s) {
+    const isPending = s.status === 'Pending';
+    let statusClass = 'badge-pending';
+    let statusLabel = 'Pending';
+    
+    if (s.status === 'Approved') {
+      statusClass = 'badge-approved';
+      statusLabel = 'Approved ✅';
+    } else if (s.status === 'Rejected') {
+      statusClass = 'badge-rejected';
+      statusLabel = 'Declined ❌';
+    }
+    
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    tr.innerHTML = `
+      <td style="padding: 12px 10px; font-size: 13px; font-weight: 600; color: var(--text);">${s.full_name || '—'}</td>
+      <td style="padding: 12px 10px; font-size: 12px; font-weight: 500; color: var(--text-muted); font-family: monospace;">${s.phone || '—'}</td>
+      <td style="padding: 12px 10px; font-size: 12px; color: var(--text-muted);">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <a href="${s.video_url}" target="_blank" class="text-indigo-400 font-bold hover:underline" style="color:var(--accent); text-decoration:underline;">
+            <i class="fa-solid fa-play"></i> Watch Video
+          </a>
+          <a href="${s.video_url}" download="video_${s.phone}.mp4" class="text-emerald-400 font-bold hover:underline" style="color:var(--success); text-decoration:underline;">
+            <i class="fa-solid fa-download"></i> Save to Phone
+          </a>
+        </div>
+      </td>
+      <td style="padding: 12px 10px; font-size: 12px; color: var(--text-muted);">${new Date(s.created_at).toLocaleString('en-NG')}</td>
+      <td style="padding: 12px 10px; font-size: 11px;">
+        <span class="badge ${statusClass}" style="padding: 4px 8px; border-radius: 6px; font-weight: 700; display: inline-block;">${statusLabel}</span>
+      </td>
+      <td style="padding: 12px 10px; text-align: right;">
+        ${isPending ? `
+          <button class="btn" onclick="approveVideo('${s.id}')" style="background:var(--success); color:#fff; border:none; padding:6px 12px; border-radius:8px; font-weight:700; font-size:11px; cursor:pointer; margin-right:5px;"><i class="fa-solid fa-circle-check"></i> Approve</button>
+          <button class="btn" onclick="declineVideo('${s.id}')" style="background:var(--danger); color:#fff; border:none; padding:6px 12px; border-radius:8px; font-weight:700; font-size:11px; cursor:pointer;"><i class="fa-solid fa-circle-xmark"></i> Decline</button>
+        ` : 'Processed'}
+      </td>
+    `;
+    table.appendChild(tr);
+  });
+}
+
+function approveVideo(id) {
+  Swal.fire({
+    title: 'Approve Submission',
+    text: 'Reward amount to credit user (₦):',
+    input: 'number',
+    inputValue: '5000',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Approve & Credit',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(res => {
+    if (res.isConfirmed) {
+      const reward = parseFloat(res.value) || 5000;
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      fetch(API_URL + '/api/admin/approve-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, rewardAmount: reward })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Approved', text: `Submission approved and ₦${reward.toLocaleString()} credited successfully!`, confirmButtonColor: '#6366f1' });
+          loadAllVideoSubmissions();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Approval Failed', text: data.error || 'Unable to approve video.', confirmButtonColor: '#6366f1' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue.', confirmButtonColor: '#6366f1' });
+      });
+    }
+  });
+}
+
+function declineVideo(id) {
+  Swal.fire({
+    title: 'Decline Submission',
+    text: 'Reason for decline:',
+    input: 'text',
+    inputPlaceholder: 'e.g. Invalid link / Video does not talk about 9jaCash',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Decline',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(res => {
+    if (res.isConfirmed) {
+      const reason = res.value || 'Video does not meet guidelines.';
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      fetch(API_URL + '/api/admin/reject-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, reason: reason })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Declined', text: 'Submission successfully declined.', confirmButtonColor: '#6366f1' });
+          loadAllVideoSubmissions();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Operation Failed', text: data.error || 'Unable to decline video.', confirmButtonColor: '#6366f1' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue.', confirmButtonColor: '#6366f1' });
+      });
+    }
+  });
+}
+</script>
+</body>
+</html>

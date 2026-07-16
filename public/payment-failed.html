@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Payment Failed - 9jaCash</title>
+
+
+
+
+<script src="firebase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;color:#f8fafc;min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;transition:all 0.3s ease;}
+
+/* LIGHT MODE */
+body.light-mode{background:#f8fafc;color:#1e293b;}
+body.light-mode .bg-glow{background:radial-gradient(ellipse at 20% 20%,rgba(239,68,68,0.06),transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(236,72,153,0.04),transparent 50%),#f8fafc;}
+body.light-mode .main-card{background:#fff;border-color:#e2e8f0;box-shadow:0 4px 24px rgba(0,0,0,0.06);}
+body.light-mode .main-card::after{background:linear-gradient(90deg,transparent,#ef4444,transparent);}
+body.light-mode .detail-surface{background:#f8fafc;border-color:#e2e8f0;}
+body.light-mode .label-text{color:#94a3b8;}
+body.light-mode .value-text{color:#1e293b;}
+body.light-mode .error-ring{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 12px 40px rgba(239,68,68,0.2);}
+body.light-mode .error-ring i{color:#fff;}
+body.light-mode .fail-title{color:#1e293b;}
+body.light-mode .fail-sub{color:#64748b;}
+body.light-mode .btn-retry{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;}
+body.light-mode .btn-dash{background:#fff;border-color:#e2e8f0;color:#64748b;}
+body.light-mode .btn-dash:hover{border-color:#6366f1;color:#818cf8;}
+body.light-mode .support-card{background:#fff;border-color:#e2e8f0;}
+body.light-mode .support-text{color:#64748b;}
+body.light-mode .support-handle{background:#f8fafc;color:#1e293b;border-color:#e2e8f0;}
+body.light-mode .copy-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;}
+body.light-mode .footer-text{color:#94a3b8;}
+body.light-mode .top-bar{background:rgba(255,255,255,0.8);backdrop-filter:blur(20px);border-color:rgba(226,232,240,0.6);}
+body.light-mode .top-title{color:#1e293b;}
+
+/* BACKGROUND */
+.bg-glow{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 20% 20%,rgba(239,68,68,0.1),transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(236,72,153,0.06),transparent 50%),#0f172a;transition:all 0.3s ease;}
+
+/* TOP BAR */
+.top-bar{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(15,23,42,0.8);backdrop-filter:blur(20px);border-bottom:1px solid rgba(51,65,85,0.4);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;transition:all 0.3s;max-width:480px;margin:0 auto;}
+.top-btn{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:15px;cursor:pointer;transition:all 0.3s;}
+.top-btn:hover{background:rgba(255,255,255,0.1);color:#818cf8;}
+.top-btn:active{transform:scale(0.92);}
+.top-title{font-size:16px;font-weight:800;transition:color 0.3s;}
+
+/* APP */
+.app{width:100%;max-width:480px;text-align:center;position:relative;z-index:1;padding-top:80px;}
+
+/* ERROR HERO */
+.error-ring{width:90px;height:90px;border-radius:28px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 12px 40px rgba(239,68,68,0.3);animation:errorPop 0.7s cubic-bezier(0.34,1.56,0.64,1);}
+.error-ring i{color:#fff;font-size:38px;}
+@keyframes errorPop{0%{transform:scale(0) rotate(-20deg);}60%{transform:scale(1.15) rotate(5deg);}100%{transform:scale(1) rotate(0deg);}}
+
+.fail-title{font-size:28px;font-weight:900;letter-spacing:-0.5px;margin-bottom:8px;transition:color 0.3s;}
+.fail-sub{font-size:14px;color:#94a3b8;line-height:1.6;margin-bottom:28px;font-weight:500;transition:color 0.3s;max-width:320px;margin-left:auto;margin-right:auto;}
+
+/* MAIN CARD */
+.main-card{background:#1e293b;border-radius:24px;padding:24px;border:1px solid #334155;box-shadow:0 4px 24px rgba(0,0,0,0.2);margin-bottom:20px;text-align:left;transition:all 0.3s ease;position:relative;overflow:hidden;}
+.main-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#ef4444,transparent);}
+
+/* DETAIL ROWS */
+.detail-surface{background:#0f172a;border:1px solid #334155;border-radius:16px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:all 0.3s ease;}
+.detail-surface:last-child{margin-bottom:0;}
+.label-text{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.2px;}
+.value-text{font-size:15px;font-weight:800;color:#f8fafc;}
+.value-text.red{color:#f87171;}
+.value-text.mono{font-family:'Courier New',monospace;font-size:13px;letter-spacing:1px;}
+
+/* BUTTONS */
+.btn{width:100%;padding:18px;border-radius:18px;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;}
+.btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:0.5s;}
+.btn:hover::before{left:100%;}
+.btn:active{transform:scale(0.97);}
+
+.btn-retry{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;box-shadow:0 4px 20px rgba(239,68,68,0.3);margin-bottom:12px;}
+.btn-retry:hover{box-shadow:0 6px 24px rgba(239,68,68,0.4);}
+
+.btn-dash{background:#1e293b;color:#94a3b8;border:1.5px solid #334155;}
+.btn-dash:hover{border-color:#6366f1;color:#818cf8;}
+
+.actions{display:flex;flex-direction:column;gap:0;margin-bottom:20px;}
+
+/* SUPPORT CARD */
+.support-card{background:#1e293b;border-radius:20px;padding:20px;border:1px solid #334155;margin-bottom:20px;transition:all 0.3s ease;}
+.support-text{font-size:13px;color:#94a3b8;margin-bottom:14px;line-height:1.5;transition:color 0.3s;}
+.support-handle{display:inline-flex;align-items:center;gap:8px;background:#0f172a;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;color:#f8fafc;border:1px solid #334155;}
+.copy-btn{padding:6px 14px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;transition:all 0.3s;}
+.copy-btn:hover{box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+.copy-btn:active{transform:scale(0.95);}
+
+/* FOOTER */
+.footer-text{margin-top:24px;font-size:12px;color:#64748b;font-weight:500;transition:color 0.3s;}
+
+/* TOAST */
+.toast-box{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:#1e293b;color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.3);border:1px solid #334155;}
+.toast-box.show{transform:translateX(-50%) translateY(0);}
+.toast-box i{color:#10b981;}
+
+/* ANIMATIONS */
+@keyframes slideUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+.anim{animation:slideUp 0.7s cubic-bezier(0.16,1,0.3,1) both;}
+.d1{animation-delay:0.1s;}
+.d2{animation-delay:0.2s;}
+.d3{animation-delay:0.3s;}
+.d4{animation-delay:0.4s;}
+.d5{animation-delay:0.5s;}
+.d6{animation-delay:0.6s;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<!-- Top Bar -->
+<div class="top-bar anim d1">
+  <button class="top-btn" onclick="window.location.href='dashboard.html'">
+    <i class="fa-solid fa-arrow-left"></i>
+  </button>
+  <div class="top-title">Payment Failed</div>
+  <button class="top-btn" onclick="toggleTheme()">
+    <i class="fa-solid fa-sun" id="themeIcon"></i>
+  </button>
+</div>
+
+<div class="app">
+
+<!-- Error Hero -->
+<div class="error-ring anim d1">
+  <i class="fa-solid fa-circle-xmark"></i>
+</div>
+
+<div class="fail-title anim d1">Payment Failed</div>
+<div class="fail-sub anim d2" id="failMessage">We could not confirm your payment. Please check your details and try again.</div>
+
+<!-- Details Card -->
+<div class="main-card anim d3">
+  <div class="detail-surface">
+    <div class="label-text">Item</div>
+    <div class="value-text" id="detailItem">—</div>
+  </div>
+  <div class="detail-surface">
+    <div class="label-text">Amount Attempted</div>
+    <div class="value-text red" id="amountAttempted">₦0</div>
+  </div>
+  <div class="detail-surface hidden" id="detailExtraRow">
+    <div class="label-text" id="extraLabel">Extra</div>
+    <div class="value-text" id="extraValue">—</div>
+  </div>
+  <div class="detail-surface">
+    <div class="label-text">Status</div>
+    <div class="value-text red"><i class="fa-solid fa-circle-xmark" style="font-size:11px;margin-right:6px;"></i>Failed</div>
+  </div>
+  <div class="detail-surface">
+    <div class="label-text">Transaction ID</div>
+    <div class="value-text mono" id="detailTxId">TX-XXXXXXXX</div>
+  </div>
+  <div class="detail-surface">
+    <div class="label-text">Date & Time</div>
+    <div class="value-text" id="currentDate">—</div>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="actions anim d4">
+  <button class="btn btn-retry" id="retryBtn" onclick="handleRetry()">
+    <i class="fa-solid fa-rotate-right"></i> Retry Payment
+  </button>
+  <button class="btn btn-dash" id="dashBtn" onclick="handleDashboard()">
+    <i class="fa-solid fa-house"></i> Back to Dashboard
+  </button>
+</div>
+
+<!-- Support -->
+<div class="support-card anim d5">
+  <div class="support-text">Debited but seeing this? Contact our Telegram support team for assistance.</div>
+  <div class="support-handle">
+    <i class="fa-brands fa-telegram" style="color:#229ed9;font-size:18px;"></i>
+    <span id="supportHandle">@apex_customercare</span>
+    <button class="copy-btn" onclick="copySupport()">Copy</button>
+  </div>
+</div>
+
+<div class="footer-text anim d6">9jaCash 2026 • Secured Payments</div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast-box" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+<script>
+let userData = null;
+try {
+  userData = JSON.parse(localStorage.getItem("9jaCashUser"));
+} catch(e) { userData = null; }
+
+let flowType = "unknown";
+let flowData = null;
+let adminSettings = null;
+
+// ========== THEME ==========
+function initTheme() {
+  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  if (!isDark) {
+    document.body.classList.add("light-mode");
+    document.getElementById("themeIcon").className = "fa-solid fa-moon";
+  } else {
+    document.getElementById("themeIcon").className = "fa-solid fa-sun";
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle("light-mode");
+  localStorage.setItem("9jaCashDark", isLight ? "false" : "true");
+  document.getElementById("themeIcon").className = isLight ? "fa-solid fa-moon" : "fa-solid fa-sun";
+}
+
+// ========== FORMAT MONEY ==========
+function formatMoney(num) {
+  if (num === null || num === undefined || num === "") return "₦0";
+  let n = parseFloat(num);
+  if (isNaN(n)) return "₦0";
+  if (n >= 1000000) return "₦" + (n / 1000000).toFixed(2) + "M";
+  return "₦" + n.toLocaleString("en-NG");
+}
+
+// ========== DETECT FLOW — COMPLETELY FIXED ==========
+function detectFlow() {
+  flowData = null;
+  flowType = "unknown";
+
+  // 1. Check PAYOUT KEY FIRST (9jaCashPaymentData from buy.html)
+  const storedPayment = localStorage.getItem("9jaCashPaymentData");
+  if (storedPayment) {
+    try {
+      const parsed = JSON.parse(storedPayment);
+      if (parsed && parsed.type === "payout_key_purchase") {
+        flowData = parsed;
+        flowType = "payout_key";
+        return;
+      }
+    } catch(e) {
+      console.log("PaymentData parse error:", e);
+    }
+  }
+
+  // 2. Check PAYOUT KEY DETAILS (fallback)
+  const payoutDetails = localStorage.getItem("9jaCashPayoutKeyDetails");
+  if (payoutDetails) {
+    try {
+      const parsed = JSON.parse(payoutDetails);
+      if (parsed && (parsed.plan || parsed.type === "payout_key")) {
+        flowData = parsed;
+        flowType = "payout_key";
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // 3. Check UPGRADE (selectedPlan from upgrade.html)
+  const storedUpgrade = localStorage.getItem("selectedPlan");
+  if (storedUpgrade) {
+    try {
+      const parsed = JSON.parse(storedUpgrade);
+      if (parsed && (parsed.name || parsed.planName || parsed.plan)) {
+        flowData = {
+          name: parsed.name || parsed.planName || parsed.plan || "Plan Upgrade",
+          amount: parsed.amount || parsed.price || parsed.planPrice || 0,
+          earningLimit: parsed.earningLimit || parsed.limit || parsed.dailyEarning || 0
+        };
+        flowType = "upgrade";
+        return;
+      }
+    } catch(e) {
+      console.log("selectedPlan parse error:", e);
+    }
+  }
+
+  // 4. Fallback: check 9jaCashUpgradeSuccess
+  const upgradeSuccess = localStorage.getItem("9jaCashUpgradeSuccess");
+  if (upgradeSuccess) {
+    try {
+      const parsed = JSON.parse(upgradeSuccess);
+      if (parsed && (parsed.name || parsed.planName)) {
+        flowData = {
+          name: parsed.name || parsed.planName || "Plan Upgrade",
+          amount: parsed.amount || parsed.price || 0,
+          earningLimit: parsed.earningLimit || parsed.limit || 0
+        };
+        flowType = "upgrade";
+        return;
+      }
+    } catch(e) {}
+  }
+
+  flowType = "unknown";
+  flowData = null;
+}
+
+// ========== LOAD ADMIN SETTINGS ==========
+async function loadAdminSettings() {
+  if (window._9jaCash && window._9jaCash.db) {
+    try {
+      const doc = await window._9jaCash.db.collection("settings").doc("redirects").get();
+      if (doc.exists) {
+        adminSettings = doc.data();
+      }
+    } catch(err) {
+      console.error("Error loading admin settings:", err);
+    }
+  }
+
+  // Fallback defaults
+  if (!adminSettings) {
+    adminSettings = {
+      failedRetryRedirect: "payment.html",
+      failedDashboardRedirect: "dashboard.html",
+      failedRetryLabel: "Retry Payment",
+      failedDashboardLabel: "Back to Dashboard",
+      failedMessage: "We could not confirm your payment. Please check your details and try again.",
+      failedSupportHandle: "@apex_custometcare"
+    };
+  }
+}
+
+// ========== UPDATE UI — FIXED ==========
+function updateUI() {
+  detectFlow();
+
+  let amount = 0;
+  let itemName = "Payment";
+
+  if (flowType === "payout_key" && flowData) {
+    // ========== PAYOUT KEY FLOW ==========
+    amount = parseFloat(flowData.price) || 0;
+    itemName = flowData.plan || "Payout Key";
+
+    // Show extra row for daily limit
+    const extraRow = document.getElementById("detailExtraRow");
+    const extraLabel = document.getElementById("extraLabel");
+    const extraValue = document.getElementById("extraValue");
+    
+    extraRow.classList.remove("hidden");
+    extraLabel.textContent = "Daily Limit";
+    const dailyLimit = flowData.dailyLimit || 0;
+    extraValue.textContent = dailyLimit === 999999 ? "Unlimited" : dailyLimit + " withdrawals/day";
+
+  } else if (flowType === "upgrade" && flowData) {
+    // ========== UPGRADE FLOW ==========
+    amount = parseFloat(flowData.amount) || 0;
+    itemName = flowData.name || "Plan Upgrade";
+
+    // Show extra row for earning limit
+    const extraRow = document.getElementById("detailExtraRow");
+    const extraLabel = document.getElementById("extraLabel");
+    const extraValue = document.getElementById("extraValue");
+    
+    extraRow.classList.remove("hidden");
+    extraLabel.textContent = "Earning Limit";
+    extraValue.textContent = formatMoney(flowData.earningLimit || 0) + " max";
+
+  } else {
+    // ========== UNKNOWN ==========
+    document.getElementById("detailExtraRow").classList.add("hidden");
+  }
+
+  // Update all display fields
+  document.getElementById("detailItem").textContent = itemName;
+  document.getElementById("amountAttempted").textContent = formatMoney(amount);
+  document.getElementById("currentDate").textContent = new Date().toLocaleString("en-NG", {
+    day: "numeric", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit"
+  });
+  document.getElementById("detailTxId").textContent = "TX-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+  // Update message
+  document.getElementById("failMessage").textContent = adminSettings.failedMessage || "We could not confirm your payment. Please check your details and try again.";
+
+  // Update support handle
+  document.getElementById("supportHandle").textContent = adminSettings.failedSupportHandle || "@9jaCash_Support";
+
+  // Update buttons based on flow type
+  const rBtn = document.getElementById("retryBtn");
+  const dBtn = document.getElementById("dashBtn");
+
+  if (flowType === "payout_key") {
+    rBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Try Again';
+    dBtn.innerHTML = '<i class="fa-solid fa-house"></i> Back to Dashboard';
+  } else if (flowType === "upgrade") {
+    rBtn.innerHTML = '<i class="fa-solid fa-rocket"></i> Retry Upgrade';
+    dBtn.innerHTML = '<i class="fa-solid fa-house"></i> Back to Dashboard';
+  } else {
+    rBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry Payment';
+    dBtn.innerHTML = '<i class="fa-solid fa-house"></i> Back to Dashboard';
+  }
+}
+
+// ========== BUTTON ACTIONS ==========
+function handleRetry() {
+  if (flowType === "payout_key") {
+    window.location.href = "buy.html";
+  } else if (flowType === "upgrade") {
+    window.location.href = "upgrade.html";
+  } else {
+    window.location.href = adminSettings.failedRetryRedirect || "payment.html";
+  }
+}
+
+function handleDashboard() {
+  window.location.href = adminSettings.failedDashboardRedirect || "dashboard.html";
+}
+
+// ========== COPY SUPPORT ==========
+function copySupport() {
+  const handle = document.getElementById("supportHandle").textContent;
+  navigator.clipboard.writeText(handle).then(() => {
+    showToast("Support handle copied!");
+  }).catch(() => {
+    const ta = document.createElement("textarea");
+    ta.value = handle;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    showToast("Support handle copied!");
+  });
+}
+
+// ========== TOAST ==========
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+// ========== INIT ==========
+async function init() {
+  initTheme();
+  await loadAdminSettings();
+  updateUI();
+}
+
+window.addEventListener("DOMContentLoaded", init);
+</script>
+
+</body>
+</html>

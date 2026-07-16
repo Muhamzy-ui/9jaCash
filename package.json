@@ -1,0 +1,22 @@
+{
+  "name": "9jacash",
+  "version": "1.0.0",
+  "description": "9jaCash app with secure Paystack verification backend",
+  "main": "server.js",
+  "scripts": {},
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "node-fetch": "^2.7.0",
+    "nodemailer": "^9.0.3",
+    "pg": "^8.22.0",
+    "serverless-http": "^4.0.0",
+    "sqlite3": "^6.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

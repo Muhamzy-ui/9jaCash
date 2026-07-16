@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Payment Successful - 9jaCash</title>
+
+
+
+
+<script src="firebase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;color:#f8fafc;min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;transition:all 0.3s ease;}
+
+/* LIGHT MODE */
+body.light-mode{background:#f8fafc;color:#1e293b;}
+body.light-mode .bg-glow{background:radial-gradient(ellipse at 20% 20%,rgba(99,102,241,0.08),transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(236,72,153,0.06),transparent 50%),#f8fafc;}
+body.light-mode .success-ring{background:linear-gradient(135deg,#10b981,#34d399);}
+body.light-mode .card-surface{background:#fff;border-color:#e2e8f0;box-shadow:0 4px 24px rgba(0,0,0,0.06);}
+body.light-mode .detail-surface{background:#f8fafc;border-color:#e2e8f0;}
+body.light-mode .label-text{color:#94a3b8;}
+body.light-mode .value-text{color:#1e293b;}
+body.light-mode .key-box{background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(16,185,129,0.02));border-color:#10b981;}
+body.light-mode .key-dots{color:#cbd5e1;}
+body.light-mode .key-real{color:#10b981;}
+body.light-mode .btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;}
+body.light-mode .btn-secondary{background:#fff;border-color:#e2e8f0;color:#64748b;}
+body.light-mode .btn-secondary:hover{border-color:#6366f1;color:#818cf8;}
+body.light-mode .top-bar{background:rgba(255,255,255,0.8);backdrop-filter:blur(20px);border-color:rgba(226,232,240,0.6);}
+body.light-mode .top-title{color:#1e293b;}
+body.light-mode .badge-pill.upgrade{background:#eef2ff;border-color:#c7d2fe;color:#6366f1;}
+body.light-mode .badge-pill.payout{background:#ecfdf5;border-color:#a7f3d0;color:#10b981;}
+body.light-mode .success-title{color:#1e293b;}
+body.light-mode .success-sub{color:#64748b;}
+body.light-mode .amount-text{color:#10b981;}
+body.light-mode .bottom-bar{background:rgba(255,255,255,0.9);backdrop-filter:blur(20px);border-color:rgba(226,232,240,0.6);}
+body.light-mode .nav-link{color:#94a3b8;}
+body.light-mode .nav-link.active{color:#6366f1;}
+body.light-mode .nav-mid{background:linear-gradient(135deg,#6366f1,#8b5cf6);border-color:#f8fafc;}
+body.light-mode .toast-box{background:#1e293b;border-color:#334155;}
+
+/* BACKGROUND GLOW */
+.bg-glow{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 20% 20%,rgba(99,102,241,0.15),transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(236,72,153,0.1),transparent 50%),#0f172a;transition:all 0.3s ease;}
+
+/* APP CONTAINER */
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 20px 120px;}
+
+/* TOP BAR */
+.top-bar{position:sticky;top:0;z-index:50;background:rgba(15,23,42,0.8);backdrop-filter:blur(20px);border-bottom:1px solid rgba(51,65,85,0.4);padding:16px 0;display:flex;align-items:center;justify-content:space-between;transition:all 0.3s;}
+.top-btn{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:15px;cursor:pointer;transition:all 0.3s;}
+.top-btn:hover{background:rgba(255,255,255,0.1);color:#818cf8;}
+.top-btn:active{transform:scale(0.92);}
+.top-title{font-size:16px;font-weight:800;transition:color 0.3s;}
+
+/* SUCCESS HERO */
+.hero-wrap{text-align:center;padding:40px 0 32px;}
+.success-ring{width:100px;height:100px;border-radius:32px;background:linear-gradient(135deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 12px 40px rgba(16,185,129,0.3);animation:ringPop 0.7s cubic-bezier(0.34,1.56,0.64,1);}
+.success-ring i{color:#fff;font-size:40px;}
+@keyframes ringPop{0%{transform:scale(0) rotate(-20deg);}60%{transform:scale(1.15) rotate(5deg);}100%{transform:scale(1) rotate(0deg);}}
+
+.badge-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:50px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:20px;border:1px solid transparent;}
+.badge-pill.upgrade{background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.25);color:#818cf8;}
+.badge-pill.payout{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.25);color:#34d399;}
+.badge-pill i{font-size:11px;}
+
+.success-title{font-size:28px;font-weight:900;margin-bottom:8px;transition:color 0.3s;}
+.success-sub{font-size:14px;font-weight:500;line-height:1.6;max-width:320px;margin:0 auto 20px;transition:color 0.3s;}
+.amount-text{font-size:48px;font-weight:900;letter-spacing:-2px;line-height:1;}
+.amount-text span{font-size:22px;font-weight:700;opacity:0.7;}
+
+/* CARDS */
+.card-surface{background:#1e293b;border-radius:24px;padding:24px;border:1px solid #334155;box-shadow:0 4px 24px rgba(0,0,0,0.2);margin-bottom:16px;transition:all 0.3s ease;position:relative;overflow:hidden;}
+.card-surface::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6366f1,#8b5cf6,#ec4899);opacity:0.5;}
+
+/* DETAIL ROWS */
+.detail-surface{background:#0f172a;border:1px solid #334155;border-radius:16px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:all 0.3s ease;}
+.detail-surface:last-child{margin-bottom:0;}
+.label-text{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1.2px;}
+.value-text{font-size:15px;font-weight:800;color:#f8fafc;}
+.value-text.green{color:#34d399;}
+.value-text.purple{color:#818cf8;}
+.value-text.mono{font-family:'Courier New',monospace;font-size:13px;letter-spacing:1px;}
+
+/* PAYOUT KEY SECTION */
+.key-box{background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.02));border:2px dashed #10b981;border-radius:20px;padding:28px 24px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden;transition:all 0.3s ease;}
+.key-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#10b981,transparent);}
+.key-label{font-size:11px;font-weight:800;color:#10b981;text-transform:uppercase;letter-spacing:3px;margin-bottom:16px;}
+.key-dots{font-size:32px;font-weight:900;color:#475569;letter-spacing:6px;user-select:none;}
+.key-real{font-size:28px;font-weight:900;color:#34d399;font-family:'Courier New',monospace;letter-spacing:8px;}
+.reveal-btn{width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;box-shadow:0 4px 16px rgba(99,102,241,0.3);}
+.reveal-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,0.4);}
+.reveal-btn:active{transform:scale(0.97);}
+.key-hint{font-size:12px;color:#64748b;margin-top:14px;font-weight:500;}
+.key-hint i{color:#10b981;margin-right:4px;}
+.key-actions{display:flex;gap:10px;justify-content:center;margin-top:16px;}
+.key-actions .btn-primary,.key-actions .btn-secondary{flex:1;padding:12px 16px;font-size:13px;}
+
+/* BUTTONS */
+.btn-primary{width:100%;padding:18px;border-radius:18px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(99,102,241,0.3);position:relative;overflow:hidden;}
+.btn-primary::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:0.5s;}
+.btn-primary:hover::before{left:100%;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,0.4);}
+.btn-primary:active{transform:scale(0.97);}
+
+.btn-secondary{width:100%;padding:18px;border-radius:18px;background:#1e293b;color:#94a3b8;border:1.5px solid #334155;font-size:16px;font-weight:800;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn-secondary:hover{border-color:#6366f1;color:#818cf8;}
+
+/* BOTTOM NAV */
+.bottom-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(15,23,42,0.95);backdrop-filter:blur(20px);border-top:1px solid rgba(51,65,85,0.4);padding:10px 20px 28px;display:flex;justify-content:space-around;align-items:center;z-index:100;transition:all 0.3s ease;}
+.nav-link{display:flex;flex-direction:column;align-items:center;gap:4px;color:#64748b;text-decoration:none;font-size:10px;font-weight:600;transition:all 0.3s;border:none;background:none;cursor:pointer;}
+.nav-link i{font-size:20px;}
+.nav-link.active{color:#818cf8;}
+.nav-mid{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-top:-20px;box-shadow:0 4px 16px rgba(99,102,241,0.3);border:4px solid #0f172a;transition:all 0.3s;}
+.nav-mid:active{transform:scale(0.95);}
+body.light-mode .nav-mid{border-color:#f8fafc;}
+
+/* TOAST */
+.toast-box{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:#1e293b;color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.3);border:1px solid #334155;}
+.toast-box.show{transform:translateX(-50%) translateY(0);}
+.toast-box i{color:#10b981;}
+
+/* ANIMATIONS */
+@keyframes slideUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.anim{animation:slideUp 0.7s cubic-bezier(0.16,1,0.3,1) both;}
+.d1{animation-delay:0.1s;}
+.d2{animation-delay:0.25s;}
+.d3{animation-delay:0.4s;}
+.d4{animation-delay:0.55s;}
+.d5{animation-delay:0.7s;}
+.d6{animation-delay:0.85s;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<div class="app">
+
+<!-- Top Bar -->
+<div class="top-bar anim d1">
+  <button class="top-btn" onclick="window.location.href='dashboard.html'">
+    <i class="fa-solid fa-arrow-left"></i>
+  </button>
+  <div class="top-title">Success</div>
+  <button class="top-btn" onclick="toggleTheme()">
+    <i class="fa-solid fa-sun" id="themeIcon"></i>
+  </button>
+</div>
+
+<!-- Success Hero -->
+<div class="hero-wrap anim d1">
+  <div class="success-ring">
+    <i class="fa-solid fa-check"></i>
+  </div>
+  
+  <div class="badge-pill" id="flowBadge">
+    <i class="fa-solid fa-rocket"></i> <span id="flowText">Plan Upgrade</span>
+  </div>
+  
+  <div class="success-title" id="pageTitle">Upgrade Successful!</div>
+  <div class="success-sub" id="successMessage">Your plan is now active and ready to use</div>
+  
+  <div class="amount-text" id="amountDisplay">₦0<span>.00</span></div>
+</div>
+
+<!-- PAYOUT KEY — Only for buy.html flow -->
+<div class="key-box anim d2 hidden" id="keySection">
+  <div class="key-label">Your Payout Key</div>
+  
+  <div id="keyHiddenState">
+    <div class="key-dots">•••• •••• ••••</div>
+    <button class="reveal-btn" onclick="revealKey()">
+      <i class="fa-solid fa-eye"></i> View Key
+    </button>
+  </div>
+  
+  <div id="keyRevealedState" class="hidden">
+    <div class="key-real" id="keyDisplay">••••••••</div>
+    <div class="key-actions">
+      <button class="btn-primary" style="padding:12px 16px;font-size:13px;" onclick="copyKey()">
+        <i class="fa-solid fa-copy"></i> Copy
+      </button>
+      <button class="btn-secondary" style="padding:12px 16px;font-size:13px;" onclick="hideKey()">
+        <i class="fa-solid fa-eye-slash"></i> Hide
+      </button>
+    </div>
+  </div>
+  
+  <div class="key-hint">
+    <i class="fa-solid fa-shield-halved"></i>
+    Keep this key secure — use it to withdraw
+  </div>
+</div>
+
+<!-- Transaction Details -->
+<div class="card-surface anim d3">
+  <div class="detail-surface">
+    <div class="label-text">Item</div>
+    <div class="value-text" id="detailItem">—</div>
+  </div>
+  <div class="detail-surface">
+    <div class="label-text">Amount Paid</div>
+    <div class="value-text green" id="detailAmount">₦0</div>
+  </div>
+  <div class="detail-surface hidden" id="detailLimitRow">
+    <div class="label-text" id="limitLabel">Daily Limit</div>
+    <div class="value-text purple" id="detailLimit">—</div>
+  </div>
+  <div class="detail-surface">
+    <div class="label-text">Transaction ID</div>
+    <div class="value-text mono" id="detailTxId">TX-XXXXXXXX</div>
+  </div>
+  <div class="detail-surface">
+    <div class="label-text">Date & Time</div>
+    <div class="value-text" id="detailDate">—</div>
+  </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="anim d4" style="margin-bottom:20px;">
+  <button class="btn-primary" id="primaryBtn" onclick="goPrimary()" style="margin-bottom:12px;">
+    <i class="fa-solid fa-house"></i> Back to Dashboard
+  </button>
+  <button class="btn-secondary" id="secondaryBtn" onclick="goSecondary()">
+    <i class="fa-solid fa-cart-shopping"></i> Make Another Purchase
+  </button>
+</div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast-box" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+
+<!-- Bottom Nav -->
+<div class="bottom-bar">
+  <button class="nav-link" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-house"></i>Home</button>
+  <button class="nav-link" onclick="window.location.href='upgrade.html'"><i class="fa-solid fa-rocket"></i>Upgrade</button>
+  <button class="nav-mid" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-hammer"></i></button>
+  <button class="nav-link" onclick="window.location.href='tasks.html'"><i class="fa-solid fa-list-check"></i>Tasks</button>
+  <button class="nav-link" onclick="toggleDarkMode()"><i class="fa-solid fa-sun" id="themeIconNav"></i><span id="themeText">Light</span></button>
+</div>
+<script>
+let userData = null;
+try {
+  userData = JSON.parse(localStorage.getItem("9jaCashUser"));
+} catch(e) { userData = null; }
+
+let flowType = "unknown";
+let flowData = null;
+let payoutKey = "";
+let keyRevealed = false;
+
+// ========== THEME (Syncs with dashboard via 9jaCashDark) ==========
+function initTheme() {
+  // Dashboard uses 9jaCashDark = "true" for dark mode
+  // So if 9jaCashDark is NOT "true", we are in light mode
+  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  if (!isDark) {
+    document.body.classList.add("light-mode");
+    document.getElementById("themeIcon").className = "fa-solid fa-moon";
+    document.getElementById("themeIconNav").className = "fa-solid fa-moon";
+    document.getElementById("themeText").textContent = "Dark";
+  } else {
+    document.getElementById("themeIcon").className = "fa-solid fa-sun";
+    document.getElementById("themeIconNav").className = "fa-solid fa-sun";
+    document.getElementById("themeText").textContent = "Light";
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle("light-mode");
+  // Save opposite: light mode = 9jaCashDark = "false"
+  localStorage.setItem("9jaCashDark", isLight ? "false" : "true");
+  if (isLight) {
+    document.getElementById("themeIcon").className = "fa-solid fa-moon";
+    document.getElementById("themeIconNav").className = "fa-solid fa-moon";
+    document.getElementById("themeText").textContent = "Dark";
+  } else {
+    document.getElementById("themeIcon").className = "fa-solid fa-sun";
+    document.getElementById("themeIconNav").className = "fa-solid fa-sun";
+    document.getElementById("themeText").textContent = "Light";
+  }
+}
+
+function toggleDarkMode() {
+  toggleTheme();
+}
+
+// ========== DETECT FLOW ==========
+function detectFlow() {
+  // 1. PAYOUT KEY (from buy.html via payment.html)
+  const paymentData = localStorage.getItem("9jaCashPaymentData");
+  if (paymentData) {
+    try {
+      const data = JSON.parse(paymentData);
+      if (data && data.type === "payout_key_purchase") {
+        flowType = "payout_key";
+        flowData = data;
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // 2. UPGRADE (from upgrade.html via payment.html)
+  const upgradePlan = localStorage.getItem("selectedPlan");
+  if (upgradePlan) {
+    try {
+      const data = JSON.parse(upgradePlan);
+      if (data && data.name) {
+        flowType = "upgrade";
+        flowData = data;
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // 3. Fallback from payment.html stored details
+  const payoutDetails = localStorage.getItem("9jaCashPayoutKeyDetails");
+  if (payoutDetails) {
+    try {
+      const data = JSON.parse(payoutDetails);
+      if (data && data.plan) {
+        flowType = "payout_key";
+        flowData = data;
+        return;
+      }
+    } catch(e) {}
+  }
+
+  flowType = "unknown";
+  flowData = null;
+}
+
+// ========== LOAD ADMIN PAYOUT KEY FROM FIREBASE ==========
+async function loadAdminPayoutKey() {
+  if (flowType !== "payout_key") return;
+
+  let keyLoaded = false;
+
+  // Try Firebase first
+  if (window._9jaCash && window._9jaCash.db) {
+    try {
+      const doc = await window._9jaCash.db.collection("settings").doc("payoutKeys").get();
+      if (doc.exists && doc.data().currentKey) {
+        payoutKey = doc.data().currentKey;
+        keyLoaded = true;
+      }
+    } catch(err) {
+      console.error("Firebase key error:", err);
+    }
+  }
+
+  // Fallback to localStorage
+  if (!keyLoaded) {
+    const stored = localStorage.getItem("9jaCashUserPayoutKey");
+    if (stored && stored !== "PENDING" && stored.length > 3) {
+      payoutKey = stored;
+      keyLoaded = true;
+    }
+  }
+
+  // Hard fallback
+  if (!keyLoaded || !payoutKey) {
+    payoutKey = "8550-ABCD-EFGH";
+  }
+
+  // Save for future use
+  localStorage.setItem("9jaCashUserPayoutKey", payoutKey);
+
+  // Show key section
+  document.getElementById("keySection").classList.remove("hidden");
+  document.getElementById("keyDisplay").textContent = payoutKey;
+}
+
+// ========== KEY REVEAL/HIDE/COPY ==========
+function revealKey() {
+  keyRevealed = true;
+  document.getElementById("keyHiddenState").classList.add("hidden");
+  document.getElementById("keyRevealedState").classList.remove("hidden");
+  
+  // Confetti burst
+  if (typeof confetti !== "undefined") {
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.35 },
+      colors: ["#10b981", "#34d399", "#6366f1", "#8b5cf6"]
+    });
+  }
+}
+
+function hideKey() {
+  keyRevealed = false;
+  document.getElementById("keyRevealedState").classList.add("hidden");
+  document.getElementById("keyHiddenState").classList.remove("hidden");
+}
+
+function copyKey() {
+  if (!payoutKey || payoutKey === "KEY-NOT-SET") return;
+  
+  navigator.clipboard.writeText(payoutKey).then(() => {
+    showToast("Payout key copied!");
+  }).catch(() => {
+    const ta = document.createElement("textarea");
+    ta.value = payoutKey;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    showToast("Payout key copied!");
+  });
+}
+
+// ========== UPDATE ALL UI ==========
+function updateUI() {
+  detectFlow();
+
+  const pageTitle = document.getElementById("pageTitle");
+  const flowBadge = document.getElementById("flowBadge");
+  const flowText = document.getElementById("flowText");
+  const successMessage = document.getElementById("successMessage");
+  const amountDisplay = document.getElementById("amountDisplay");
+  const detailItem = document.getElementById("detailItem");
+  const detailAmount = document.getElementById("detailAmount");
+  const detailLimitRow = document.getElementById("detailLimitRow");
+  const limitLabel = document.getElementById("limitLabel");
+  const detailLimit = document.getElementById("detailLimit");
+  const detailTxId = document.getElementById("detailTxId");
+  const detailDate = document.getElementById("detailDate");
+  const primaryBtn = document.getElementById("primaryBtn");
+  const secondaryBtn = document.getElementById("secondaryBtn");
+
+  let amount = 0;
+  let txId = "TX-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+  if (flowType === "payout_key" && flowData) {
+    // ========== PAYOUT KEY FLOW ==========
+    amount = flowData.price || 0;
+    pageTitle.textContent = "Payment Successful!";
+    flowBadge.className = "badge-pill payout";
+    flowBadge.innerHTML = '<i class="fa-solid fa-key"></i> <span>Payout Key</span>';
+    successMessage.textContent = "Your payout key is ready! Tap 'View Key' to reveal it.";
+    detailItem.textContent = flowData.plan || "Payout Key";
+    
+    detailLimitRow.classList.remove("hidden");
+    limitLabel.textContent = "Daily Limit";
+    const limit = flowData.dailyLimit || 0;
+    detailLimit.textContent = limit === 999999 ? "Unlimited" : limit + " withdrawals/day";
+    
+    primaryBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Go to Withdraw';
+    secondaryBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Buy Another Key';
+
+  } else if (flowType === "upgrade" && flowData) {
+    // ========== UPGRADE FLOW ==========
+    amount = flowData.amount || 0;
+    pageTitle.textContent = "Upgrade Successful!";
+    flowBadge.className = "badge-pill upgrade";
+    flowBadge.innerHTML = '<i class="fa-solid fa-rocket"></i> <span>Plan Upgrade</span>';
+    successMessage.textContent = "Your plan upgrade is active! Start earning now.";
+    detailItem.textContent = flowData.name || "Plan Upgrade";
+    
+    detailLimitRow.classList.remove("hidden");
+    limitLabel.textContent = "Earning Limit";
+    detailLimit.textContent = formatMoney(flowData.earningLimit || 0) + " max";
+    
+    primaryBtn.innerHTML = '<i class="fa-solid fa-house"></i> Back to Dashboard';
+    secondaryBtn.innerHTML = '<i class="fa-solid fa-rocket"></i> Upgrade Again';
+
+    // Save plan to user data
+    if (userData) {
+      userData.plan = flowData.name;
+      userData.earningLimit = flowData.earningLimit;
+      userData.planDate = new Date().toLocaleString();
+      localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+      
+      // Sync to Firebase
+      if (window._9jaCash && window._9jaCash.db && userData.phone) {
+        window._9jaCash.db.collection("users").doc(userData.phone).update({
+          plan: flowData.name,
+          earningLimit: flowData.earningLimit,
+          planDate: new Date().toLocaleString()
+        }).catch(function(err){});
+      }
+    }
+
+  } else {
+    // ========== UNKNOWN FLOW ==========
+    pageTitle.textContent = "Payment Successful!";
+    flowBadge.className = "badge-pill upgrade";
+    flowBadge.innerHTML = '<i class="fa-solid fa-check"></i> <span>Confirmed</span>';
+    successMessage.textContent = "Your payment has been confirmed successfully.";
+    detailItem.textContent = "Payment";
+    detailLimitRow.classList.add("hidden");
+    primaryBtn.innerHTML = '<i class="fa-solid fa-house"></i> Back to Dashboard';
+    secondaryBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Make Purchase';
+  }
+
+  // Update amounts
+  const formatted = formatMoney(amount);
+  amountDisplay.innerHTML = formatted.includes(".") ? formatted.replace(/\.(\d+)$/, '<span>.$1</span>') : formatted + "<span>.00</span>";
+  detailAmount.textContent = formatted;
+  detailTxId.textContent = txId;
+  detailDate.textContent = new Date().toLocaleString("en-NG", {
+    day: "numeric", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit"
+  });
+}
+
+// ========== BUTTON ACTIONS ==========
+function goPrimary() {
+  if (flowType === "payout_key") {
+    window.location.href = "withdraw.html";
+  } else {
+    window.location.href = "dashboard.html";
+  }
+}
+
+function goSecondary() {
+  if (flowType === "payout_key") {
+    window.location.href = "buy.html";
+  } else if (flowType === "upgrade") {
+    window.location.href = "upgrade.html";
+  } else {
+    window.location.href = "buy.html";
+  }
+}
+
+// ========== HELPERS ==========
+function formatMoney(num) {
+  if (!num) return "₦0";
+  if (num >= 1000000) return "₦" + (num / 1000000).toFixed(2) + "M";
+  return "₦" + num.toLocaleString("en-NG");
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2500);
+}
+
+// ========== INIT ==========
+async function init() {
+  initTheme();
+  updateUI();
+  
+  if (flowType === "payout_key") {
+    await loadAdminPayoutKey();
+  }
+
+  // Big confetti on load
+  setTimeout(function() {
+    if (typeof confetti !== "undefined") {
+      confetti({
+        particleCount: 200,
+        spread: 100,
+        origin: { y: 0.6 },
+        colors: ["#6366f1", "#8b5cf6", "#10b981", "#34d399", "#ec4899"]
+      });
+    }
+  }, 300);
+}
+
+window.addEventListener("DOMContentLoaded", init);
+</script>
+
+</body>
+</html>

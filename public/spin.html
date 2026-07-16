@@ -1,0 +1,2514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>9jaCash — Mega Wheel of Fun</title>
+  
+  <!-- FontAwesome & Google Fonts (AAA Typography) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@700;900&family=Montserrat:wght@400;600;800;900&family=Orbitron:wght@700;900&family=Playfair+Display:ital,wght@1,900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-gold: #FFD54F;
+      --dark-gold: #C89B3C;
+      --emerald-green: #00C781;
+      --deep-purple: #3A1557;
+      --dark-burgundy: #25000E;
+      --warm-orange: #FF9800;
+      
+      --gold-glow: rgba(255, 213, 79, 0.4);
+      --card-bg: rgba(37, 0, 14, 0.92);
+      --neon-red: #ff3b30;
+      --neon-green: #34c759;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--dark-burgundy);
+      background-image: 
+        radial-gradient(circle, rgba(58, 21, 87, 0.5) 1px, transparent 0),
+        linear-gradient(135deg, var(--dark-burgundy) 0%, #120007 100%);
+      color: #f3f4f6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient Casino Background Glow & Particles */
+    .casino-ambient-glow {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: -1;
+      background: 
+        radial-gradient(circle at 10% 20%, rgba(58, 21, 87, 0.4) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(200, 155, 60, 0.15) 0%, transparent 40%);
+    }
+
+    /* Luxury Header */
+    header {
+      width: 100%;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(37, 0, 14, 0.95);
+      border-bottom: 3px solid var(--primary-gold);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 213, 79, 0.15);
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary-gold);
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 13px;
+      background: rgba(255, 213, 79, 0.08);
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--primary-gold);
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .back-btn:hover {
+      color: #ffffff;
+      background: var(--primary-gold);
+      box-shadow: 0 0 15px var(--gold-glow);
+    }
+
+    .logo-text {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, #fff2a3, var(--primary-gold), var(--dark-gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    }
+
+    /* Audio Settings Control Group */
+    .audio-control-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-left: 20px;
+    }
+
+    .audio-toggle-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--primary-gold);
+      color: var(--primary-gold);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 10px rgba(255, 213, 79, 0.1);
+    }
+
+    .audio-toggle-btn:hover {
+      background: var(--primary-gold);
+      color: var(--dark-burgundy);
+      box-shadow: 0 0 15px var(--gold-glow);
+    }
+
+    .audio-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 80px;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      border: 1px solid rgba(255, 213, 79, 0.3);
+      cursor: pointer;
+    }
+
+    .audio-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--primary-gold);
+      border: 1px solid #ffffff;
+      box-shadow: 0 0 8px var(--gold-glow);
+    }
+
+    .user-balance {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, rgba(0, 199, 129, 0.15) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(0, 199, 129, 0.15) 100%);
+      background-size: 200% auto;
+      border: 1.5px solid var(--emerald-green);
+      padding: 8px 18px;
+      border-radius: 16px;
+      box-shadow: 0 0 15px rgba(0, 199, 129, 0.2), 0 0 25px rgba(255, 213, 79, 0.05);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.1s ease-out;
+      animation: walletBreathe 4s ease-in-out infinite alternate, walletShine 5s linear infinite;
+    }
+
+    @keyframes walletBreathe {
+      0% { transform: scale(1); box-shadow: 0 0 15px rgba(0, 199, 129, 0.2); }
+      100% { transform: scale(1.03); box-shadow: 0 0 25px rgba(0, 199, 129, 0.4); }
+    }
+
+    @keyframes walletShine {
+      0% { background-position: 0% center; }
+      100% { background-position: 200% center; }
+    }
+
+    .wallet-pop {
+      animation: walletPopAnim 0.15s ease-out;
+    }
+
+    @keyframes walletPopAnim {
+      0% { transform: scale(1.03); }
+      50% { transform: scale(1.25) rotate(-2deg); border-color: var(--primary-gold); }
+      100% { transform: scale(1.03); }
+    }
+
+    .user-balance i {
+      color: var(--emerald-green);
+      font-size: 16px;
+    }
+
+    .user-balance span {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      color: #ffffff;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Full screen transparent effects overlay */
+    #effectsCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* Floating +₦X,XXX text animation */
+    .wallet-floating-text {
+      position: absolute;
+      color: var(--primary-gold);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 18px;
+      pointer-events: none;
+      text-shadow: 0 0 12px var(--primary-gold);
+      z-index: 1000;
+      animation: floatUpFade 1.2s ease-out forwards;
+    }
+
+    @keyframes floatUpFade {
+      0% { transform: translateY(0) scale(0.6); opacity: 0; }
+      20% { transform: translateY(-15px) scale(1.1); opacity: 1; }
+      100% { transform: translateY(-60px) scale(0.85); opacity: 0; }
+    }
+
+    /* Main Container */
+    .container {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 16px 80px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* AAA Casino Card Wrapper */
+    .game-card {
+      width: 100%;
+      background: var(--card-bg);
+      backdrop-filter: blur(25px);
+      border: 4px solid var(--primary-gold);
+      border-radius: 40px;
+      padding: 40px;
+      box-shadow: 
+        0 30px 80px rgba(0, 0, 0, 0.9), 
+        inset 0 0 50px rgba(58, 21, 87, 0.3),
+        0 0 40px rgba(255, 213, 79, 0.1);
+      position: relative;
+    }
+
+    /* Curved gold title banner */
+    .mega-title-wrap {
+      width: 100%;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .mega-title {
+      font-family: 'Cinzel', serif;
+      font-size: 54px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(to bottom, #fffbbf 0%, var(--primary-gold) 45%, var(--dark-gold) 75%, #ffe600 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 25px rgba(255, 213, 79, 0.3));
+    }
+
+    /* Game Layout columns */
+    .game-layout {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 30px;
+      width: 100%;
+    }
+
+    /* Left Mascot Column */
+    .mascot-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      position: relative;
+      min-width: 250px;
+    }
+
+    .mascot-img-wrapper {
+      position: relative;
+      width: 100%;
+      height: 520px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .mascot-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      mix-blend-mode: screen; 
+      filter: drop-shadow(0 0 15px rgba(255, 213, 79, 0.25));
+      transform-origin: bottom center;
+      animation: idleBreathe 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes idleBreathe {
+      0% { transform: scale(1) translateY(0); }
+      100% { transform: scale(1.03) translateY(-6px); }
+    }
+
+    /* Host Speech Bubble */
+    .croupier-speech-bubble {
+      margin-top: 16px;
+      background: linear-gradient(135deg, #fff6d6 0%, #ffe3a8 100%);
+      color: var(--dark-burgundy);
+      border: 3px solid var(--primary-gold);
+      padding: 14px 20px;
+      border-radius: 20px;
+      font-weight: 800;
+      font-size: 14px;
+      position: relative;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+      line-height: 1.4;
+      z-index: 5;
+    }
+
+    .croupier-speech-bubble::before {
+      content: '';
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 0 12px 15px 12px;
+      border-style: solid;
+      border-color: transparent transparent var(--primary-gold) transparent;
+    }
+
+    /* Center Wheel Column */
+    .wheel-column {
+      flex: 1.6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Premium Wheel Ring Frame (Floating Appearance) */
+    .wheel-outer-ring {
+      position: relative;
+      width: 486px;
+      height: 486px;
+      max-width: 92vw;
+      max-height: 92vw;
+      aspect-ratio: 1 / 1;
+      margin-bottom: 24px;
+      background: radial-gradient(circle, #ffe7aa 0%, var(--dark-gold) 45%, #251200 100%);
+      border-radius: 50%;
+      border: 8px solid var(--primary-gold);
+      padding: 8px;
+      box-shadow: 
+        0 15px 50px rgba(0, 0, 0, 0.8),
+        0 0 60px rgba(255, 213, 79, 0.4), 
+        inset 0 0 40px rgba(0, 0, 0, 0.95);
+      cursor: crosshair;
+      transform-style: preserve-3d;
+      animation: floatWheel 4s ease-in-out infinite alternate;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @keyframes floatWheel {
+      0% { transform: translateY(0px) rotateX(0deg); }
+      100% { transform: translateY(-10px) rotateX(2deg); }
+    }
+
+    /* Emerald Crystal Pointer Casing */
+    .pointer {
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 32px;
+      height: 52px;
+      background: linear-gradient(180deg, var(--emerald-green) 0%, #00774a 100%);
+      clip-path: polygon(50% 100%, 0% 20%, 15% 0%, 85% 0%, 100% 20%);
+      border: 2.5px solid var(--primary-gold);
+      filter: drop-shadow(0 0 15px var(--emerald-green));
+      z-index: 10;
+      box-shadow: inset 0 0 10px rgba(255,255,255,0.6);
+    }
+
+    .pointer-glow {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 42px;
+      height: 42px;
+      background: var(--emerald-green);
+      border-radius: 50%;
+      filter: blur(14px);
+      z-index: 9;
+      opacity: 0.85;
+    }
+
+    canvas#wheelCanvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: block;
+      background: transparent;
+    }
+
+    /* Right column: Arrow and Bets */
+    .bets-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      min-width: 260px;
+    }
+
+    /* LED Scoreboard Panel */
+    .scoreboard {
+      background: #020108;
+      border: 3px solid var(--primary-gold);
+      padding: 14px 20px;
+      border-radius: 16px;
+      width: 100%;
+      box-shadow: inset 0 0 15px rgba(255, 213, 79, 0.4), 0 0 20px rgba(255, 213, 79, 0.15);
+      text-align: center;
+    }
+
+    .scoreboard-glow {
+      font-family: 'Orbitron', monospace;
+      font-size: 18px;
+      color: var(--primary-gold);
+      text-shadow: 0 0 10px var(--primary-gold);
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* Green winnings arrow pointing left to wheel */
+    .green-win-arrow {
+      background: linear-gradient(135deg, var(--emerald-green), #009e66);
+      color: #ffffff;
+      padding: 16px;
+      border-radius: 16px;
+      font-weight: 900;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 25px rgba(0, 199, 129, 0.35);
+      width: 100%;
+      text-align: center;
+      justify-content: center;
+      position: relative;
+      border: 2px solid #55efab;
+      animation: nudgeArrow 1.5s infinite alternate;
+    }
+
+    @keyframes nudgeArrow {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-8px); }
+    }
+
+    .green-win-arrow::before {
+      content: '';
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-width: 12px 12px 12px 0;
+      border-style: solid;
+      border-color: transparent #55efab transparent transparent;
+    }
+
+    /* Controls Panel */
+    .controls-panel {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .input-label {
+      text-align: left;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff4b8;
+      display: flex;
+      justify-content: space-between;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stake-input-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .stake-input-wrapper span {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--primary-gold);
+      font-weight: 900;
+      font-size: 20px;
+    }
+
+    .stake-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      border: 2.5px solid var(--primary-gold);
+      padding: 16px 16px 16px 38px;
+      border-radius: 16px;
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 900;
+      outline: none;
+      transition: all 0.3s ease;
+      text-align: center;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .stake-input:focus {
+      border-color: #ffffff;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+
+    /* 3D Casino Chips Selection */
+    .chips-container {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 213, 79, 0.25);
+    }
+
+    .chip {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 900;
+      color: #ffffff;
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 4px dashed rgba(255, 255, 255, 0.5);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    .chip::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      right: 3px;
+      bottom: 3px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      pointer-events: none;
+    }
+
+    .chip-100 { background: #4b5563; }
+    .chip-500 { background: #ef4444; }
+    .chip-1k { background: #3b82f6; }
+    .chip-5k { background: #10b981; }
+    .chip-10k { background: #8b5cf6; }
+    .chip-max { background: var(--primary-gold); border-color: #ffffff; color: var(--dark-burgundy); }
+
+    .chip:hover {
+      transform: scale(1.18) translateY(-3px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.8);
+    }
+
+    .chip.active {
+      transform: scale(1.22) translateY(-6px);
+      border-style: solid;
+      box-shadow: 0 0 15px var(--gold-glow), 0 8px 20px rgba(0,0,0,0.8);
+    }
+
+    /* Bottom Casino Tier List Footer */
+    .tier-footer {
+      width: 100%;
+      background: rgba(15, 2, 7, 0.96);
+      border-top: 3px solid var(--primary-gold);
+      padding: 16px 20px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      z-index: 90;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      overflow-x: auto;
+      box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.8);
+    }
+
+    .tier-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #9ca3af;
+      white-space: nowrap;
+    }
+
+    .tier-badge.active {
+      color: #ffffff;
+      border-color: var(--primary-gold);
+      background: linear-gradient(135deg, rgba(255, 213, 79, 0.2), transparent);
+      box-shadow: 0 0 10px rgba(255, 213, 79, 0.2);
+    }
+
+    /* Luxury Win Modal */
+    .win-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(9, 2, 5, 0.95);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .win-modal.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .win-content {
+      background: radial-gradient(circle at center, var(--deep-purple) 0%, var(--dark-burgundy) 100%);
+      border: 4px solid var(--primary-gold);
+      border-radius: 32px;
+      padding: 40px 30px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      transform: scale(0.7);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 15px 50px rgba(255, 213, 79, 0.35);
+    }
+
+    .win-modal.show .win-content {
+      transform: scale(1);
+    }
+
+    .win-icon {
+      font-size: 72px;
+      margin-bottom: 20px;
+      animation: bounceIcon 0.8s infinite alternate cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes bounceIcon {
+      0% { transform: translateY(0) scale(1); }
+      100% { transform: translateY(-15px) scale(1.1); }
+    }
+
+    .win-title {
+      font-family: 'Cinzel', serif;
+      font-size: 30px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ffffff, var(--primary-gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .win-payout {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--emerald-green);
+      margin: 15px 0;
+      text-shadow: 0 0 20px rgba(0, 199, 129, 0.45);
+    }
+
+    .win-btn {
+      background: linear-gradient(135deg, var(--primary-gold), var(--dark-gold));
+      color: var(--dark-burgundy);
+      border: none;
+      padding: 16px 28px;
+      border-radius: 16px;
+      font-weight: 900;
+      font-size: 15px;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(255, 213, 79, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Screen shake and flash effects */
+    .shake {
+      animation: shakeScreen 0.5s ease-in-out;
+    }
+
+    @keyframes shakeScreen {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      10%, 30%, 50%, 70%, 90% { transform: translate(-4px, 4px) rotate(-1deg); }
+      20%, 40%, 60%, 80% { transform: translate(4px, -4px) rotate(1deg); }
+    }
+
+    .explosion-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 999;
+      transition: opacity 0.15s ease-out;
+    }
+
+    .explosion-active {
+      opacity: 0.85;
+    }
+
+    /* Mobile Responsive styling */
+    @media (max-width: 900px) {
+      .game-layout {
+        flex-direction: column;
+        gap: 24px;
+        align-items: center;
+      }
+      .mascot-column {
+        max-width: 220px;
+        width: 100%;
+      }
+      .mascot-img-wrapper {
+        height: 250px;
+      }
+      .croupier-speech-bubble {
+        margin-top: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      .mega-title {
+        font-size: 30px;
+      }
+      .bets-column {
+        width: 100%;
+        max-width: 380px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header {
+        padding: 10px 14px;
+      }
+      .logo-text {
+        display: none; /* Hide logo on small screens to give space for HUD controls */
+      }
+      .audio-slider {
+        display: none; /* Hide volume slider on mobile; toggle button is sufficient */
+      }
+      .audio-control-group {
+        margin-left: 8px;
+        gap: 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 12px 6px 90px 6px;
+      }
+      .game-card {
+        padding: 20px 14px;
+        border-radius: 24px;
+        border-width: 2.5px;
+      }
+      .mega-title {
+        font-size: 26px;
+      }
+      .mascot-column {
+        flex-direction: row;
+        gap: 12px;
+        max-width: 100%;
+      }
+      .mascot-img-wrapper {
+        width: 64px;
+        height: 64px;
+        min-width: 64px;
+        border-radius: 50%;
+        border: 2px solid var(--primary-gold);
+        overflow: hidden;
+        background: rgba(255, 213, 79, 0.1);
+        box-shadow: 0 0 10px var(--gold-glow);
+      }
+      .mascot-img {
+        width: 100%;
+        height: 125%;
+        object-fit: cover;
+        transform-origin: center top;
+        animation: none !important;
+      }
+      .croupier-speech-bubble {
+        margin-top: 0;
+        padding: 10px 12px;
+        font-size: 12px;
+        border-radius: 12px;
+        border-width: 1.5px;
+        flex: 1;
+        text-align: left;
+      }
+      .croupier-speech-bubble::before {
+        /* Speech pointer points to the left circular avatar */
+        top: 50%;
+        left: -8px;
+        transform: translateY(-50%) rotate(-90deg);
+        border-width: 0 8px 10px 8px;
+        border-color: transparent transparent var(--primary-gold) transparent;
+      }
+      .wheel-outer-ring {
+        border-width: 5px;
+      }
+      .pointer {
+        top: -16px;
+        width: 24px;
+        height: 38px;
+        border-width: 1.5px;
+      }
+      .pointer-glow {
+        top: -12px;
+        width: 32px;
+        height: 32px;
+      }
+      .chips-container {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+      }
+      .chip {
+        width: 46px;
+        height: 46px;
+        font-size: 11px;
+        border-width: 3px;
+      }
+      .win-content {
+        padding: 24px 16px;
+        border-radius: 24px;
+      }
+      .win-title {
+        font-size: 24px;
+      }
+      .win-payout {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Global AAA Effects Overlay Canvas -->
+  <canvas id="effectsCanvas"></canvas>
+
+  <!-- Ambient Casino Glow particles -->
+  <div class="casino-ambient-glow"></div>
+
+  <!-- Header Nav with Audio Controls -->
+  <header>
+    <div style="display: flex; align-items: center;">
+      <a href="dashboard.html" class="back-btn">
+        <i class="fa-solid fa-arrow-left"></i> Dashboard
+      </a>
+      <!-- Immersive Sound controls panel -->
+      <div class="audio-control-group">
+        <button class="audio-toggle-btn" id="audioToggleBtn" onclick="toggleMusicState()" title="Toggle Background Music">
+          <i class="fa-solid fa-music"></i>
+        </button>
+        <input type="range" id="audioVolSlider" class="audio-slider" min="0" max="100" value="70" oninput="changeMusicVolume(this.value)">
+      </div>
+    </div>
+    
+    <span class="logo-text">9jaCash</span>
+    
+    <div class="user-balance">
+      <i class="fa-solid fa-wallet"></i>
+      <span id="headerBalance">₦0.00</span>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="container" id="gameScreen">
+    <div class="game-card">
+      
+      <!-- Gold curved title banner -->
+      <div class="mega-title-wrap">
+        <h1 class="mega-title">Mega Wheel of Fun</h1>
+      </div>
+
+      <!-- Three-column Responsive Layout -->
+      <div class="game-layout">
+        
+        <!-- Left mascot column -->
+        <div class="mascot-column">
+          <div class="mascot-img-wrapper">
+            <img src="casino_host_girl.png" alt="Casino Host" class="mascot-img" id="mascotHost">
+          </div>
+          <div class="croupier-speech-bubble" id="croupierSpeech">
+            Welcome to the Mega Wheel! Select your chip and click the center green button to spin!
+          </div>
+        </div>
+
+        <!-- Center wheel column -->
+        <div class="wheel-column">
+          <!-- Spin Wheel Outer Ring & Bulbs -->
+          <div class="wheel-outer-ring">
+            <div class="pointer-glow"></div>
+            <div class="pointer"></div>
+            <canvas id="wheelCanvas" width="460" height="460"></canvas>
+          </div>
+        </div>
+
+        <!-- Right bets column -->
+        <div class="bets-column">
+          <!-- LED Scoreboard Panel -->
+          <div class="scoreboard" id="scoreboard">
+            <span class="scoreboard-glow" id="statusMessage">PLACE YOUR BET</span>
+          </div>
+
+          <!-- Big green win pointer banner -->
+          <div class="green-win-arrow">
+            <i class="fa-solid fa-trophy"></i>
+            <span>WIN UP TO ₦100,000!</span>
+          </div>
+
+          <!-- Controls Panel -->
+          <div class="controls-panel">
+            <div class="input-label">
+              <span>Your Stake</span>
+              <span style="color: #fff4b8;" id="balanceInfo">Min: ₦100</span>
+            </div>
+            <div class="stake-input-wrapper">
+              <span>₦</span>
+              <input type="number" id="stakeAmountInput" class="stake-input" value="500" min="100">
+            </div>
+
+            <!-- 3D Betting Chips Selection -->
+            <div class="chips-container">
+              <div class="chip chip-100" data-val="100">100</div>
+              <div class="chip chip-500 active" data-val="500">500</div>
+              <div class="chip chip-1k" data-val="1000">1K</div>
+              <div class="chip chip-5k" data-val="5000">5K</div>
+              <div class="chip chip-10k" data-val="10000">10K</div>
+              <div class="chip chip-max" id="maxBtn">MAX</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Casino Tier List Footer -->
+  <div class="tier-footer">
+    <div class="tier-badge active"><i class="fa-solid fa-crown" style="color: #cd7f32;"></i> BRONZE x1</div>
+    <div class="tier-badge"><i class="fa-solid fa-crown" style="color: #c0c0c0;"></i> SILVER x1.25</div>
+    <div class="tier-badge"><i class="fa-solid fa-crown" style="color: #ffd700;"></i> GOLD x1.5</div>
+    <div class="tier-badge"><i class="fa-solid fa-crown" style="color: #e5e4e2;"></i> PLATINUM x2</div>
+    <div class="tier-badge"><i class="fa-solid fa-gem" style="color: #b9f2ff;"></i> DIAMOND x3</div>
+    <div class="tier-badge"><i class="fa-solid fa-gem" style="color: #e3a857;"></i> ROYAL x5</div>
+  </div>
+
+  <!-- Explosion Flash Effect -->
+  <div class="explosion-overlay" id="explosionOverlay"></div>
+
+  <!-- Win Notification Modal -->
+  <div class="win-modal" id="winModal">
+    <div class="win-content">
+      <div class="win-icon" id="modalIcon">🎉</div>
+      <h2 class="win-title" id="modalTitle">Awesome Win!</h2>
+      <div class="win-payout" id="modalPayout">₦0</div>
+      <p id="modalDesc" style="color: #9ca3af; font-size: 14px; margin-bottom: 24px;"></p>
+      <button class="win-btn" onclick="closeWinModal()">Collect Winnings</button>
+    </div>
+  </div>
+
+  <script>
+    // ========== STATE & DATA ==========
+    let userData = null;
+    try {
+      userData = JSON.parse(localStorage.getItem('9jaCashUser')) || {};
+    } catch (e) {
+      userData = {};
+    }
+
+    const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+    let currentBalance = parseFloat(userData.balance) || parseFloat(localStorage.getItem('walletBalance')) || 0;
+    // Align both keys immediately
+    localStorage.setItem('walletBalance', currentBalance.toString());
+
+    // 18 AAA Styled Casino segments (Gradients, metadata and luxury titles instead of plain emojis)
+    const segments = [
+      { text: "BOMB", color: "#1a0008", textGrad: ["#ff3b30", "#8e0000"], multiplier: 0, title: "BOOM", icon: "💥", face: "☠️" },
+      { text: "0.2x", color: "#25000E", textGrad: ["#ffffff", "#94a3b8"], multiplier: 0.2, title: "MINI", icon: "⭐", face: "😢" },
+      { text: "0.5x", color: "#2d0a1b", textGrad: ["#ffffff", "#94a3b8"], multiplier: 0.5, title: "MINI", icon: "⭐", face: "☹️" },
+      { text: "0.8x", color: "#361226", textGrad: ["#ffffff", "#94a3b8"], multiplier: 0.8, title: "MINI", icon: "⭐", face: "😟" },
+      { text: "1x", color: "#270838", textGrad: ["#cd7f32", "#fff2a3"], multiplier: 1, title: "BRONZE", icon: "🪙", face: "🙂" },
+      { text: "1.2x", color: "#340e4a", textGrad: ["#cd7f32", "#fff2a3"], multiplier: 1.2, title: "BRONZE", icon: "🪙", face: "😉" },
+      { text: "1.5x", color: "#3e1257", textGrad: ["#cd7f32", "#fff2a3"], multiplier: 1.5, title: "BRONZE", icon: "🪙", face: "😀" },
+      { text: "2x", color: "#16002c", textGrad: ["#c0c0c0", "#ffffff"], multiplier: 2, title: "SILVER", icon: "💵", face: "😎" },
+      { text: "2.5x", color: "#21013d", textGrad: ["#c0c0c0", "#ffffff"], multiplier: 2.5, title: "SILVER", icon: "💵", face: "🌟" },
+      { text: "3x", color: "#2a024c", textGrad: ["#c0c0c0", "#ffffff"], multiplier: 3, title: "SILVER", icon: "💵", face: "🤑" },
+      { text: "3.5x", color: "#001a11", textGrad: ["#ffd700", "#fff"], multiplier: 3.5, title: "GOLD", icon: "💰", face: "💸" },
+      { text: "4x", color: "#00281b", textGrad: ["#ffd700", "#fff"], multiplier: 4, title: "GOLD", icon: "💰", face: "🤩" },
+      { text: "5x", color: "#003624", textGrad: ["#ffd700", "#fff"], multiplier: 5, title: "GOLD", icon: "💰", face: "💎" },
+      { text: "6x", color: "#4f0d2c", textGrad: ["#b9f2ff", "#fff"], multiplier: 6, title: "DIAMOND", icon: "💎", face: "🎖️" },
+      { text: "8x", color: "#661239", textGrad: ["#b9f2ff", "#fff"], multiplier: 8, title: "DIAMOND", icon: "💎", face: "👑" },
+      { text: "10x", color: "#7c1746", textGrad: ["#e5e4e2", "#fff"], multiplier: 10, title: "PLATINUM", icon: "👑", face: "🦄" },
+      { text: "20x", color: "#270838", textGrad: ["#e3a857", "#fff"], multiplier: 20, title: "ROYAL", icon: "👑", face: "🌀" },
+      { text: "100x", color: "#470c1e", textGrad: ["#FFD54F", "#fffbbf"], multiplier: 100, title: "JACKPOT", icon: "🎰", face: "🎰" }
+    ];
+
+    const canvas = document.getElementById("wheelCanvas");
+    const ctx = canvas.getContext("2d");
+    const stakeInput = document.getElementById("stakeAmountInput");
+    const headerBalance = document.getElementById("headerBalance");
+    const statusMessage = document.getElementById("statusMessage");
+
+    let currentAngle = 0;
+    let isSpinning = false;
+    let ledOffset = 0;
+
+    // Load persisted settings
+    let isMusicOn = localStorage.getItem('casinoMusicEnabled') !== 'false';
+    let musicVol = parseInt(localStorage.getItem('casinoMusicVolume')) || 70;
+    
+    document.getElementById("audioVolSlider").value = musicVol;
+    updateAudioBtnIcon();
+    
+    // Initialize Wallet Display
+    updateBalanceDisplay();
+
+    // Led blinking outer light rotation loop
+    setInterval(() => {
+      ledOffset++;
+      if (!isSpinning) {
+        drawWheel();
+      }
+    }, 180);
+
+    // ========== CASINO AUDIO (PROCEDURAL WEB AUDIO API SYNTHESIS) ==========
+    let audioCtx = null;
+    let musicMasterGain = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Setup Master Gain for music to support soft volume slides
+        musicMasterGain = audioCtx.createGain();
+        musicMasterGain.connect(audioCtx.destination);
+        setMasterMusicVolumeLevel();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function setMasterMusicVolumeLevel() {
+      if (musicMasterGain && audioCtx) {
+        const parsedGain = isMusicOn ? (musicVol / 100) : 0;
+        musicMasterGain.gain.setValueAtTime(parsedGain * 0.08, audioCtx.currentTime); 
+      }
+    }
+
+    // High quality mechanical/woodblock peg tick (AAA feedback)
+    function playTickSound() {
+      initAudio();
+      if (!audioCtx) return;
+
+      try {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1100, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.04);
+
+        const currentVol = isMusicOn ? (musicVol / 100) : 1;
+        gainNode.gain.setValueAtTime(0.22 * currentVol, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.04);
+      } catch (e) {}
+    }
+
+    // Spinning whir hum generated using lowpass filtered sawtooth (Heavy wheel startup)
+    let humOsc = null;
+    let humFilter = null;
+    let humGain = null;
+
+    function startHumSound() {
+      initAudio();
+      if (!audioCtx) return;
+
+      try {
+        // Soft whoosh lock release click sound first
+        playLockReleaseClick();
+
+        humOsc = audioCtx.createOscillator();
+        humFilter = audioCtx.createBiquadFilter();
+        humGain = audioCtx.createGain();
+
+        humOsc.type = 'sawtooth';
+        humOsc.frequency.setValueAtTime(160, audioCtx.currentTime);
+
+        humFilter.type = 'lowpass';
+        humFilter.frequency.setValueAtTime(90, audioCtx.currentTime);
+
+        humOsc.connect(humFilter);
+        humFilter.connect(humGain);
+        humGain.connect(audioCtx.destination);
+
+        const currentVol = isMusicOn ? (musicVol / 100) : 1;
+        humGain.gain.setValueAtTime(0.24 * currentVol, audioCtx.currentTime);
+        humOsc.start();
+      } catch (e) {}
+    }
+
+    function playLockReleaseClick() {
+      try {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      } catch (e) {}
+    }
+
+    function updateHumPitch(speedRatio) {
+      if (humOsc && humGain && audioCtx) {
+        try {
+          const currentVol = isMusicOn ? (musicVol / 100) : 1;
+          humOsc.frequency.setValueAtTime(45 + (speedRatio * 115), audioCtx.currentTime);
+          humGain.gain.setValueAtTime((0.02 + (speedRatio * 0.22)) * currentVol, audioCtx.currentTime);
+        } catch (e) {}
+      }
+    }
+
+    function stopHumSound() {
+      if (humOsc) {
+        try {
+          humOsc.stop();
+          humOsc.disconnect();
+          humOsc = null;
+        } catch (e) {}
+      }
+    }
+
+    // Sequenced C-major win fanfare chimes with delayed applause crowd cheering
+    function playWinSound() {
+      initAudio();
+      if (!audioCtx) return;
+
+      try {
+        // Temporarily lower background music during big win celebrations
+        slideMusicVolume(0.15);
+
+        const now = audioCtx.currentTime;
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C4 to C6
+        const currentVol = isMusicOn ? (musicVol / 100) : 1;
+
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          osc.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + (idx * 0.08));
+
+          gainNode.gain.setValueAtTime(0.25 * currentVol, now + (idx * 0.08));
+          gainNode.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.08) + 0.35);
+
+          osc.start(now + (idx * 0.08));
+          osc.stop(now + (idx * 0.08) + 0.4);
+        });
+
+        // Crowd Cheering synthesis (noise filter + gain envelope)
+        setTimeout(() => {
+          playCrowdCheer();
+          slideMusicVolume(1.0); // Restore background music
+        }, 1200);
+      } catch (e) {}
+    }
+
+    function playCrowdCheer() {
+      if (!audioCtx) return;
+      try {
+        const bufferSize = audioCtx.sampleRate * 2.0;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+        filter.Q.setValueAtTime(1.5, audioCtx.currentTime);
+
+        const gainNode = audioCtx.createGain();
+        const currentVol = isMusicOn ? (musicVol / 100) : 1;
+        gainNode.gain.setValueAtTime(0.22 * currentVol, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.8);
+
+        noise.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        noise.start();
+      } catch(e) {}
+    }
+
+    // Tension heartbeat building ➔ sub-bass explosion rumble
+    function playExplosionSound() {
+      initAudio();
+      if (!audioCtx) return;
+
+      try {
+        // Immediately stop music
+        slideMusicVolume(0.0);
+
+        const now = audioCtx.currentTime;
+        const currentVol = isMusicOn ? (musicVol / 100) : 1;
+
+        // Tension heartbeat ticking before boom
+        for (let i = 0; i < 3; i++) {
+          const tickTime = now + (i * 0.35);
+          const tensionOsc = audioCtx.createOscillator();
+          const tensionGain = audioCtx.createGain();
+          tensionOsc.connect(tensionGain);
+          tensionGain.connect(audioCtx.destination);
+          
+          tensionOsc.type = 'sine';
+          tensionOsc.frequency.setValueAtTime(60, tickTime);
+          
+          tensionGain.gain.setValueAtTime(0.55 * currentVol, tickTime);
+          tensionGain.gain.exponentialRampToValueAtTime(0.001, tickTime + 0.12);
+          
+          tensionOsc.start(tickTime);
+          tensionOsc.stop(tickTime + 0.15);
+        }
+
+        // Boom explosion after tension heartbeats
+        const boomTime = now + 1.0;
+        setTimeout(() => {
+          try {
+            const bufferSize = audioCtx.sampleRate * 1.5;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+              data[i] = Math.random() * 2 - 1;
+            }
+
+            const noiseSource = audioCtx.createBufferSource();
+            noiseSource.buffer = buffer;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(180, audioCtx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 1.2);
+
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.55 * currentVol, audioCtx.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+
+            noiseSource.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+
+            noiseSource.start();
+
+            const subOsc = audioCtx.createOscillator();
+            const subGain = audioCtx.createGain();
+            subOsc.connect(subGain);
+            subGain.connect(audioCtx.destination);
+
+            subOsc.type = 'sine';
+            subOsc.frequency.setValueAtTime(75, audioCtx.currentTime);
+            subOsc.frequency.linearRampToValueAtTime(20, audioCtx.currentTime + 1.0);
+
+            subGain.gain.setValueAtTime(0.65 * currentVol, audioCtx.currentTime);
+            subGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.0);
+
+            subOsc.start();
+            subOsc.stop(audioCtx.currentTime + 1.0);
+          } catch(err) {}
+
+          // Restore background music loop
+          setTimeout(() => {
+            slideMusicVolume(1.0);
+          }, 1500);
+        }, 1000);
+      } catch (e) {}
+    }
+
+    // Soft UI Click on buttons & chip selectors
+    function playCoinSound() {
+      initAudio();
+      if (!audioCtx) return;
+
+      try {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(750, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(350, audioCtx.currentTime + 0.04);
+
+        const currentVol = isMusicOn ? (musicVol / 100) : 1;
+        gainNode.gain.setValueAtTime(0.18 * currentVol, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.04);
+      } catch (e) {}
+    }
+
+    // Premium money collection coin cling (randomized pitch)
+    function playCoinCling() {
+      initAudio();
+      if (!audioCtx) return;
+      try {
+        const now = audioCtx.currentTime;
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        osc1.connect(gainNode);
+        osc2.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        
+        // Randomize pitch slightly (B5 to E6 region) to make layered coins sound realistic
+        const baseFreq = 2000 + (Math.random() - 0.5) * 600;
+        
+        osc1.frequency.setValueAtTime(baseFreq, now);
+        osc2.frequency.setValueAtTime(baseFreq * 1.5, now);
+        
+        const currentVol = isMusicOn ? (musicVol / 100) : 1;
+        gainNode.gain.setValueAtTime(0.12 * currentVol, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 0.15);
+        osc2.stop(now + 0.15);
+      } catch (e) {}
+    }
+
+    // Short bandpass-filtered noise friction to simulate counting paper bills
+    function playCashCounting() {
+      initAudio();
+      if (!audioCtx) return;
+      try {
+        const now = audioCtx.currentTime;
+        const bufferSize = audioCtx.sampleRate * 0.12; 
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(450, now);
+        filter.Q.setValueAtTime(1.2, now);
+        
+        const gainNode = audioCtx.createGain();
+        const currentVol = isMusicOn ? (musicVol / 100) : 1;
+        gainNode.gain.setValueAtTime(0.08 * currentVol, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        
+        noise.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        noise.start(now);
+      } catch (e) {}
+    }
+
+    // Rich register chime "cha-ching!"
+    function playChaching() {
+      initAudio();
+      if (!audioCtx) return;
+      try {
+        const now = audioCtx.currentTime;
+        const freqs = [1046.50, 1318.51, 1567.98, 2093.00]; // C6, E6, G6, C7 chimes arpeggio
+        const currentVol = isMusicOn ? (musicVol / 100) : 1;
+        
+        freqs.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          osc.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + (idx * 0.04));
+          
+          gainNode.gain.setValueAtTime(0.18 * currentVol, now + (idx * 0.04));
+          gainNode.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.04) + 0.22);
+          
+          osc.start(now + (idx * 0.04));
+          osc.stop(now + (idx * 0.04) + 0.25);
+        });
+      } catch (e) {}
+    }
+
+    // Continuous elegant background music loop (Vegas casino atmosphere)
+    let musicInterval = null;
+    let musicIndex = 0;
+
+    function startBackgroundMusic() {
+      initAudio();
+      if (!audioCtx || musicInterval) return;
+
+      // Soft C-pentatonic smooth jazz chords sequence
+      const melody = [
+        392.00, 440.00, 523.25, 587.33, 659.25, 587.33, 523.25, 440.00,
+        329.63, 392.00, 440.00, 523.25, 587.33, 523.25, 440.00, 392.00
+      ];
+
+      const bass = [
+        130.81, 130.81, 130.81, 130.81, 
+        110.00, 110.00, 110.00, 110.00, 
+        87.31,  87.31,  87.31,  87.31,  
+        98.00,  98.00,  98.00,  98.00   
+      ];
+
+      musicInterval = setInterval(() => {
+        if (!audioCtx || !isMusicOn) return;
+        try {
+          const now = audioCtx.currentTime;
+
+          // 1. Bass groove Layer (routed through master gain node)
+          const bassOsc = audioCtx.createOscillator();
+          const bassGain = audioCtx.createGain();
+          bassOsc.connect(bassGain);
+          bassGain.connect(musicMasterGain);
+          
+          bassOsc.type = 'triangle';
+          bassOsc.frequency.setValueAtTime(bass[musicIndex % bass.length], now);
+          
+          bassGain.gain.setValueAtTime(0.22, now);
+          bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          
+          bassOsc.start(now);
+          bassOsc.stop(now + 0.38);
+
+          // 2. Chime Melody Layer
+          if (musicIndex % 2 === 0) {
+            const melOsc = audioCtx.createOscillator();
+            const melFilter = audioCtx.createBiquadFilter();
+            const melGain = audioCtx.createGain();
+            
+            melOsc.connect(melFilter);
+            melFilter.connect(melGain);
+            melGain.connect(musicMasterGain);
+            
+            melOsc.type = 'sine';
+            melOsc.frequency.setValueAtTime(melody[musicIndex % melody.length], now);
+            
+            melFilter.type = 'bandpass';
+            melFilter.frequency.setValueAtTime(800, now);
+            
+            melGain.gain.setValueAtTime(0.18, now);
+            melGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+            
+            melOsc.start(now);
+            melOsc.stop(now + 0.28);
+          }
+
+          // 3. Warm chord pads
+          if (musicIndex % 8 === 0) {
+            const chordPads = [
+              [130.81, 164.81, 196.00], 
+              [110.00, 130.81, 164.81], 
+              [87.31, 110.00, 130.81],  
+              [98.00, 123.47, 146.83]   
+            ];
+            
+            const currentChord = chordPads[Math.floor(musicIndex / 8) % chordPads.length];
+            
+            currentChord.forEach(freq => {
+              const chordOsc = audioCtx.createOscillator();
+              const chordGain = audioCtx.createGain();
+              const chordFilter = audioCtx.createBiquadFilter();
+              
+              chordOsc.connect(chordFilter);
+              chordFilter.connect(chordGain);
+              chordGain.connect(musicMasterGain);
+              
+              chordOsc.type = 'triangle';
+              chordOsc.frequency.setValueAtTime(freq * 2, now); 
+              
+              chordFilter.type = 'lowpass';
+              chordFilter.frequency.setValueAtTime(280, now);
+              
+              chordGain.gain.setValueAtTime(0.14, now);
+              chordGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+              
+              chordOsc.start(now);
+              chordOsc.stop(now + 2.0);
+            });
+          }
+
+          musicIndex = (musicIndex + 1) % 16;
+        } catch (e) {}
+      }, 250); 
+    }
+
+    function toggleMusicState() {
+      isMusicOn = !isMusicOn;
+      localStorage.setItem('casinoMusicEnabled', isMusicOn.toString());
+      updateAudioBtnIcon();
+      
+      initAudio();
+      setMasterMusicVolumeLevel();
+      if (isMusicOn && !musicInterval) {
+        startBackgroundMusic();
+      }
+    }
+
+    function changeMusicVolume(val) {
+      musicVol = val;
+      localStorage.setItem('casinoMusicVolume', musicVol.toString());
+      initAudio();
+      setMasterMusicVolumeLevel();
+    }
+
+    function slideMusicVolume(ratio) {
+      if (musicMasterGain && audioCtx) {
+        const targetGain = isMusicOn ? (musicVol / 100) * ratio : 0;
+        musicMasterGain.gain.linearRampToValueAtTime(targetGain * 0.08, audioCtx.currentTime + 0.3);
+      }
+    }
+
+    function updateAudioBtnIcon() {
+      const btn = document.getElementById("audioToggleBtn");
+      if (isMusicOn) {
+        btn.innerHTML = `<i class="fa-solid fa-volume-high"></i>`;
+      } else {
+        btn.innerHTML = `<i class="fa-solid fa-volume-xmark"></i>`;
+      }
+    }
+
+    // Helper to unlock context across multiple trigger points (body, chips, canvas)
+    let isAudioUnlocked = false;
+    function ensureAudioStarted() {
+      if (!isAudioUnlocked) {
+        initAudio();
+        startBackgroundMusic();
+        isAudioUnlocked = true;
+      }
+    }
+
+    // Attempt to start audio immediately upon DOM content load
+    window.addEventListener('DOMContentLoaded', () => {
+      ensureAudioStarted();
+      initParticles();
+    });
+
+    // Welcome sound trigger on first page click (backup gesture unlock)
+    document.body.addEventListener('click', function() {
+      ensureAudioStarted();
+    }, { once: true });
+
+
+    // ========== AAA PARTICLE & WIN CELEBRATION ENGINE ==========
+    let canvasParticles = [];
+    let backgroundParticles = [];
+    const maxParticles = 60;
+
+    function initParticles() {
+      // Initialize ambient gold dust particles in the background
+      backgroundParticles = [];
+      for (let i = 0; i < 30; i++) {
+        backgroundParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: 1 + Math.random() * 2,
+          speedY: -0.2 - Math.random() * 0.4,
+          speedX: -0.2 + Math.random() * 0.4,
+          opacity: 0.2 + Math.random() * 0.6
+        });
+      }
+    }
+
+    function triggerWinParticles(type = 'gold') {
+      canvasParticles = [];
+      const numParticles = type === 'jackpot' ? 120 : 60;
+      
+      for (let i = 0; i < numParticles; i++) {
+        canvasParticles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          radius: 3 + Math.random() * 6,
+          color: type === 'jackpot' 
+            ? ['#FFD54F', '#FF9800', '#ffffff', '#00C781'][Math.floor(Math.random() * 4)] 
+            : ['#FFD54F', '#C89B3C', '#ffffff'][Math.floor(Math.random() * 3)],
+          vx: -5 + Math.random() * 10,
+          vy: -6 - Math.random() * 8,
+          gravity: 0.35,
+          alpha: 1.0,
+          decay: 0.01 + Math.random() * 0.015,
+          isCoin: Math.random() > 0.4
+        });
+      }
+    }
+
+    function drawParticles(ctx) {
+      // 1. Draw ambient gold background dust
+      backgroundParticles.forEach(p => {
+        p.y += p.speedY;
+        p.x += p.speedX;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.x < 0 || p.x > canvas.width) p.x = Math.random() * canvas.width;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 213, 79, ${p.opacity})`;
+        ctx.shadowColor = '#FFD54F';
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // 2. Draw win celebration coins / confetti
+      canvasParticles.forEach((p, index) => {
+        p.vy += p.gravity;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          canvasParticles.splice(index, 1);
+          return;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        
+        if (p.isCoin) {
+          // Draw shiny gold casino coins
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = '#FFD54F';
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          
+          // Outer coin rim
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        } else {
+          // Confetti squares
+          ctx.rect(p.x, p.y, p.radius * 1.5, p.radius);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+        }
+        
+        ctx.restore();
+      });
+    }
+
+
+    // ========== DRAW CASINO WHEEL & METALLIC RIM ==========
+    function drawWheel() {
+      const numSegments = segments.length;
+      const arc = (2 * Math.PI) / numSegments;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = canvas.width / 2 - 25;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw background particles & light rays behind the wheel
+      drawParticles(ctx);
+
+      // Draw Outer Rim casino bulbs (Ruby Red and Gold Alternating bulbs)
+      const numLEDs = 24;
+      for (let i = 0; i < numLEDs; i++) {
+        const ledAngle = (i * 2 * Math.PI) / numLEDs;
+        const x = centerX + (radius + 12) * Math.cos(ledAngle);
+        const y = centerY + (radius + 12) * Math.sin(ledAngle);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        
+        // Chasing alternating shimmer sequence
+        const isGold = (i + ledOffset) % 2 === 0;
+        if (isGold) {
+          ctx.fillStyle = "#FFD54F"; // Gold
+          ctx.shadowColor = "#FFD54F";
+          ctx.shadowBlur = isSpinning ? 18 : 8;
+        } else {
+          ctx.fillStyle = "#ff3b30"; // Ruby Red
+          ctx.shadowColor = "#ff3b30";
+          ctx.shadowBlur = isSpinning ? 18 : 8;
+        }
+        ctx.fill();
+      }
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(currentAngle);
+
+      // 1. Draw 3D gold beveled backplate shadow
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = "#120207";
+      ctx.shadowColor = "rgba(0,0,0,0.85)";
+      ctx.shadowBlur = 30;
+      ctx.fill();
+
+      // 2. Draw Wheel slices
+      for (let i = 0; i < numSegments; i++) {
+        const angle = i * arc;
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, radius - 8, angle, angle + arc);
+        ctx.lineTo(0, 0);
+
+        // Segment luxury metallic gradient
+        const segGrad = ctx.createRadialGradient(0, 0, 50, 0, 0, radius - 10);
+        segGrad.addColorStop(0, segments[i].color);
+        segGrad.addColorStop(1, "#120005");
+        ctx.fillStyle = segGrad;
+        ctx.fill();
+
+        // Slice Gold Divider lines
+        ctx.strokeStyle = "rgba(255, 213, 79, 0.4)";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // 3. Render Luxury Segment Text, Multipliers and Icons
+        ctx.save();
+        ctx.rotate(angle + arc / 2);
+        
+        // Multiplier name with Gold/Metallic gradients
+        const textGrad = ctx.createLinearGradient(radius - 120, 0, radius - 30, 0);
+        textGrad.addColorStop(0, segments[i].textGrad[0]);
+        textGrad.addColorStop(1, segments[i].textGrad[1]);
+        ctx.fillStyle = textGrad;
+        
+        // Large multiplier typography
+        ctx.font = "900 24px 'Bebas Neue'";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = "rgba(0,0,0,0.85)";
+        ctx.shadowBlur = 6;
+        ctx.fillText(segments[i].text, radius - 32, 0);
+
+        // Subtitle luxury category name (e.g. MINI, GOLD, JACKPOT)
+        ctx.font = "900 8.5px 'Orbitron'";
+        ctx.fillStyle = "rgba(255, 213, 79, 0.9)";
+        ctx.fillText(segments[i].title, radius - 32, 14);
+
+        // Luxury Category Vector-style Icon & Face representation
+        ctx.font = "15px 'Outfit'";
+        ctx.fillText(segments[i].icon, radius - 105, 0);
+        
+        ctx.restore();
+      }
+
+      // Draw outer gold inner divider rim
+      ctx.beginPath();
+      ctx.arc(0, 0, radius - 8, 0, 2 * Math.PI);
+      ctx.strokeStyle = "var(--primary-gold)";
+      ctx.lineWidth = 5;
+      ctx.stroke();
+
+      // Central Gold studs
+      const numStuds = 18;
+      for (let i = 0; i < numStuds; i++) {
+        const studAngle = (i * 2 * Math.PI) / numStuds;
+        const x = (radius - 12) * Math.cos(studAngle);
+        const y = (radius - 12) * Math.sin(studAngle);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
+        ctx.fillStyle = "#FFD54F"; 
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      // ========== DRAW GOLDEN SPIN CENTER BUTTON ==========
+      ctx.save();
+      ctx.translate(centerX, centerY);
+
+      // Outer gold beveled ring border of center button
+      ctx.beginPath();
+      ctx.arc(0, 0, 56, 0, 2 * Math.PI);
+      ctx.fillStyle = "var(--primary-gold)"; 
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+      
+      // Glass bevel inner shadow effect
+      const centralButtonBevel = ctx.createRadialGradient(0, 0, 44, 0, 0, 56);
+      centralButtonBevel.addColorStop(0, "rgba(0,0,0,0.6)");
+      centralButtonBevel.addColorStop(1, "rgba(255, 213, 79, 0.4)");
+      ctx.beginPath();
+      ctx.arc(0, 0, 56, 0, 2 * Math.PI);
+      ctx.fillStyle = centralButtonBevel;
+      ctx.fill();
+
+      // Shiny Emerald Button Face core
+      ctx.beginPath();
+      ctx.arc(0, 0, 46, 0, 2 * Math.PI);
+      ctx.fillStyle = isSpinning ? "#00774a" : "var(--emerald-green)"; 
+      ctx.fill();
+
+      // Glassmorphism shine reflection gradient
+      const buttonGlassGloss = ctx.createLinearGradient(0, -40, 0, 40);
+      buttonGlassGloss.addColorStop(0, "rgba(255, 255, 255, 0.65)");
+      buttonGlassGloss.addColorStop(0.4, "rgba(255, 255, 255, 0.05)");
+      buttonGlassGloss.addColorStop(1, "rgba(0, 0, 0, 0.4)");
+      ctx.beginPath();
+      ctx.arc(0, 0, 46, 0, 2 * Math.PI);
+      ctx.fillStyle = buttonGlassGloss;
+      ctx.fill();
+
+      // "SPIN" Gold outlined premium typography
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 24px 'Orbitron'";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+      ctx.shadowBlur = 6;
+      ctx.fillText("SPIN", 0, 0);
+
+      ctx.restore();
+    }
+
+
+    // ========== CHIP SELECT EVENT BINDINGS ==========
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', function() {
+        ensureAudioStarted();
+
+        if (isSpinning) return;
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+
+        // Play authentic casino chip click sound
+        playCoinSound();
+
+        const betVal = this.id === 'maxBtn' ? Math.floor(currentBalance) : this.dataset.val;
+        stakeInput.value = betVal;
+
+        document.getElementById("croupierSpeech").textContent = `Wager of ${betVal} Naira! Best of luck!`;
+        speak(`Wager set to ${betVal} Naira!`);
+      });
+    });
+
+    // Wallet display setter
+    function updateBalanceDisplay() {
+      headerBalance.textContent = "₦" + currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // ========== GLOBAL EFFECTS CANVAS ENGINE (FLY-TO-WALLET COIN STREAM) ==========
+    const fxCanvas = document.getElementById("effectsCanvas");
+    const fxCtx = fxCanvas.getContext("2d");
+
+    function resizeFxCanvas() {
+      fxCanvas.width = window.innerWidth;
+      fxCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeFxCanvas);
+    resizeFxCanvas();
+
+    let fxParticles = [];
+
+    // Sparkle generator for wallet hits
+    function spawnWalletSparkles(x, y) {
+      for (let i = 0; i < 15; i++) {
+        fxParticles.push({
+          type: 'sparkle',
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          radius: 2 + Math.random() * 3,
+          color: ['#FFD54F', '#ffffff', '#00C781'][Math.floor(Math.random() * 3)],
+          alpha: 1.0,
+          decay: 0.02 + Math.random() * 0.03
+        });
+      }
+    }
+
+    // Floating text +₦X,XXX near the wallet
+    function triggerFloatingText(x, y, text) {
+      const floatDiv = document.createElement("div");
+      floatDiv.className = "wallet-floating-text";
+      floatDiv.style.left = `${x - 40}px`;
+      floatDiv.style.top = `${y - 10}px`;
+      floatDiv.textContent = text;
+      document.body.appendChild(floatDiv);
+      setTimeout(() => {
+        floatDiv.remove();
+      }, 1200);
+    }
+
+    // Quadratic Bezier interpolation
+    function getBezierPoint(p0, p1, p2, t) {
+      const x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * p1.x + t * t * p2.x;
+      const y = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * p1.y + t * t * p2.y;
+      return { x, y };
+    }
+
+    // Money Collection Animation (18 coins/notes fly into the wallet)
+    function startMoneyCollectionAnimation(payoutAmount, targetNewBalance) {
+      // Find coordinates of wheel center (Start)
+      const wheelOuter = document.querySelector('.wheel-outer-ring');
+      if (!wheelOuter) return;
+      const startRect = wheelOuter.getBoundingClientRect();
+      const p0 = {
+        x: startRect.left + startRect.width / 2,
+        y: startRect.top + startRect.height / 2
+      };
+
+      // Find coordinates of wallet element in header (End)
+      const walletEl = document.querySelector('.user-balance');
+      if (!walletEl) return;
+      const endRect = walletEl.getBoundingClientRect();
+      const p2 = {
+        x: endRect.left + endRect.width / 2,
+        y: endRect.top + endRect.height / 2
+      };
+
+      const startBalance = currentBalance;
+      const incrementPerParticle = payoutAmount / 18;
+
+      const isBigWin = payoutAmount >= (parseFloat(stakeInput.value) * 5);
+
+      // Play paper bill count whooshes layered underneath for large wins
+      if (isBigWin) {
+        for (let i = 0; i < 6; i++) {
+          setTimeout(playCashCounting, i * 220);
+        }
+      }
+
+      // Spawn exactly 18 coins/notes along Bezier paths
+      for (let i = 0; i < 18; i++) {
+        // Offset Bezier control points to curve left/right
+        const p1 = {
+          x: p0.x + (Math.random() - 0.5) * 450,
+          y: Math.min(p0.y, p2.y) - 100 - Math.random() * 150
+        };
+
+        const isLast = (i === 17);
+        const spawnDelay = i * 65; // Staggered stream delay
+
+        setTimeout(() => {
+          fxParticles.push({
+            type: Math.random() > 0.45 ? 'coin' : 'cash',
+            p0: p0,
+            p1: p1,
+            p2: p2,
+            t: 0,
+            speed: 0.014 + Math.random() * 0.008,
+            angle: Math.random() * Math.PI * 2,
+            spinSpeed: -0.15 + Math.random() * 0.3,
+            radius: 7 + Math.random() * 5,
+            color: ['#FFD54F', '#C89B3C', '#ffffff'][Math.floor(Math.random() * 3)],
+            incrementVal: incrementPerParticle,
+            isLast: isLast,
+            targetNewBalance: targetNewBalance
+          });
+        }, spawnDelay);
+      }
+    }
+
+    // Animation render loop for effectsCanvas
+    function renderFxCanvasLoop() {
+      fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+
+      fxParticles.forEach((p, index) => {
+        if (p.type === 'sparkle') {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= p.decay;
+          if (p.alpha <= 0) {
+            fxParticles.splice(index, 1);
+            return;
+          }
+          fxCtx.save();
+          fxCtx.globalAlpha = p.alpha;
+          fxCtx.beginPath();
+          fxCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          fxCtx.fillStyle = p.color;
+          fxCtx.shadowColor = '#FFD54F';
+          fxCtx.shadowBlur = 8;
+          fxCtx.fill();
+          fxCtx.restore();
+          return;
+        }
+
+        p.t += p.speed;
+        p.angle += p.spinSpeed;
+
+        if (p.t >= 1.0) {
+          // HIT TARGET WALLET!
+          const walletEl = document.querySelector('.user-balance');
+          if (walletEl) {
+            // Trigger wallet pop animation
+            walletEl.classList.remove('wallet-pop');
+            walletEl.offsetHeight; // Reflow
+            walletEl.classList.add('wallet-pop');
+
+            // Emit sparkle burst
+            spawnWalletSparkles(p.p2.x, p.p2.y);
+
+            // Play coin cling sound with randomized pitches
+            playCoinCling();
+
+            // Real-time balance count up
+            currentBalance += p.incrementVal;
+            updateBalanceDisplay();
+
+            if (p.isLast) {
+              // Final Coin landing celebrations
+              playChaching();
+              triggerFloatingText(p.p2.x, p.p2.y, `+₦${Math.round(currentBalance - p.targetNewBalance + p.incrementVal * 18).toLocaleString()}`);
+              
+              // Force correct balance on end
+              currentBalance = p.targetNewBalance;
+              updateBalanceDisplay();
+              localStorage.setItem('walletBalance', currentBalance.toString());
+              if (userData) {
+                userData.balance = currentBalance;
+                localStorage.setItem('9jaCashUser', JSON.stringify(userData));
+              }
+            }
+          }
+
+          fxParticles.splice(index, 1);
+          return;
+        }
+
+        const pos = getBezierPoint(p.p0, p.p1, p.p2, p.t);
+
+        fxCtx.save();
+        fxCtx.translate(pos.x, pos.y);
+        fxCtx.rotate(p.angle);
+
+        if (p.type === 'coin') {
+          // Draw metallic gold coin
+          fxCtx.beginPath();
+          fxCtx.arc(0, 0, p.radius, 0, Math.PI * 2);
+          fxCtx.fillStyle = '#FFD54F';
+          fxCtx.shadowColor = '#FFD54F';
+          fxCtx.shadowBlur = 10;
+          fxCtx.fill();
+          // Inner rim
+          fxCtx.strokeStyle = '#ffffff';
+          fxCtx.lineWidth = 1;
+          fxCtx.stroke();
+        } else {
+          // Draw cash notes
+          fxCtx.beginPath();
+          fxCtx.rect(-p.radius, -p.radius * 0.6, p.radius * 2, p.radius * 1.2);
+          fxCtx.fillStyle = '#00C781';
+          fxCtx.shadowColor = '#00C781';
+          fxCtx.shadowBlur = 8;
+          fxCtx.fill();
+          // Cash details
+          fxCtx.strokeStyle = '#ffffff';
+          fxCtx.lineWidth = 1;
+          fxCtx.stroke();
+        }
+
+        fxCtx.restore();
+      });
+
+      requestAnimationFrame(renderFxCanvasLoop);
+    }
+    requestAnimationFrame(renderFxCanvasLoop);
+
+    // Smooth Wallet count animation (Cubic ease out count up)
+    function animateWalletCount(targetBalanceValue) {
+      const startBalance = currentBalance;
+      const duration = 1200; // Count over 1.2 seconds
+      const startTime = performance.now();
+
+      function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        const countEase = 1 - Math.pow(1 - progress, 3);
+        currentBalance = startBalance + (targetBalanceValue - startBalance) * countEase;
+        updateBalanceDisplay();
+
+        if (Math.random() > 0.45) {
+          playCoinSound();
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          currentBalance = targetBalanceValue;
+          updateBalanceDisplay();
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    // Smooth Wallet count down animation (For losses / stakes)
+    function animateWalletCountDown(targetBalanceValue) {
+      const startBalance = currentBalance;
+      const duration = 1000;
+      const startTime = performance.now();
+
+      function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        const countEase = 1 - Math.pow(1 - progress, 3);
+        currentBalance = startBalance - (startBalance - targetBalanceValue) * countEase;
+        updateBalanceDisplay();
+
+        if (Math.random() > 0.5) {
+          playCashCounting();
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          currentBalance = targetBalanceValue;
+          updateBalanceDisplay();
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    // Wallet manual tap feedback pop animation
+    const walletEl = document.querySelector('.user-balance');
+    if (walletEl) {
+      walletEl.addEventListener('click', function() {
+        playCoinSound();
+        walletEl.classList.remove('wallet-pop');
+        walletEl.offsetHeight; // Reflow
+        walletEl.classList.add('wallet-pop');
+      });
+    }
+
+
+    // ========== SPIN GAME TRIGGER FUNCTION ==========
+    function triggerSpinGame() {
+      const stakeAmount = parseFloat(stakeInput.value);
+
+      if (isNaN(stakeAmount) || stakeAmount < 100) {
+        alert("Minimum stake amount is ₦100.");
+        return;
+      }
+      if (stakeAmount > currentBalance) {
+        alert("Insufficient balance to place this stake.");
+        return;
+      }
+
+      isSpinning = true;
+      document.querySelectorAll('.chip').forEach(c => c.style.pointerEvents = 'none');
+
+      statusMessage.textContent = "SPINNING...";
+      statusMessage.style.color = "var(--primary-gold)";
+      statusMessage.style.textShadow = "0 0 10px var(--primary-gold)";
+
+      document.getElementById("croupierSpeech").textContent = "Spinning! Good luck, big wins ahead!";
+      speak("Spinning the wheel!");
+
+      // Subtract stake immediately via smooth counter down
+      animateWalletCountDown(currentBalance - stakeAmount);
+
+      // Trigger spin API
+      fetch(API_URL + "/api/user/stake-spin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: userData.phone, stakeAmount })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          executeCasinoSpin(data.segmentIndex, data.multiplier, data.payoutAmount, data.newBalance);
+        } else {
+          animateWalletCount(currentBalance + stakeAmount);
+          alert(data.error || "An error occurred. Try again.");
+          resetSpinButton();
+        }
+      })
+      .catch(err => {
+        animateWalletCount(currentBalance + stakeAmount);
+        alert("Service offline. Check network connection.");
+        resetSpinButton();
+      });
+    }
+
+    function executeCasinoSpin(targetIndex, multiplier, payoutAmount, finalBalance) {
+      startHumSound();
+
+      const numSegments = segments.length;
+      const arc = (2 * Math.PI) / numSegments;
+      
+      const targetAngle = (3.5 * Math.PI) - (targetIndex * arc) - (arc / 2);
+      
+      const startAngle = currentAngle;
+      const minSpins = 6; 
+      const totalRotation = startAngle + (minSpins * 2 * Math.PI) + (targetAngle - (startAngle % (2 * Math.PI)));
+      
+      const duration = 5000; // Heavy, luxury spin time
+      const startTime = performance.now();
+      
+      let lastTickAngle = startAngle;
+
+      function update(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Quintic Ease-Out curve for high-fidelity deceleration (stops smoothly, no snaps!)
+        const easeOut = 1 - Math.pow(1 - progress, 5);
+        
+        currentAngle = startAngle + (totalRotation - startAngle) * easeOut;
+
+        // Sound tick trigger on segment transitions (synchronizes perfectly)
+        if (Math.abs(currentAngle - lastTickAngle) >= arc) {
+          playTickSound();
+          lastTickAngle = currentAngle;
+        }
+
+        // Adjust whir hum speed ratio
+        updateHumPitch(1 - progress);
+
+        drawWheel();
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          stopHumSound();
+          handleCasinoSpinResult(multiplier, payoutAmount, finalBalance);
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    // Speech synthesis helper
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel(); 
+          const utterance = new SpeechSynthesisUtterance(text);
+          const voices = window.speechSynthesis.getVoices();
+          const engVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Zira')));
+          if (engVoice) utterance.voice = engVoice;
+          utterance.rate = 1.25; 
+          utterance.pitch = 1.15; 
+          window.speechSynthesis.speak(utterance);
+        } catch (e) {}
+      }
+    }
+
+
+    // ========== SPIN RESULT CELEBRATION ENGINE ==========
+    function handleCasinoSpinResult(multiplier, payoutAmount, finalBalance) {
+      const hostSpeech = document.getElementById("croupierSpeech");
+      const hostImg = document.getElementById("mascotHost");
+
+      if (userData) {
+        userData.balance = finalBalance;
+        localStorage.setItem('9jaCashUser', JSON.stringify(userData));
+      }
+      localStorage.setItem('walletBalance', finalBalance.toString());
+
+      hostImg.style.animation = 'none';
+      hostImg.offsetHeight; // Reflow
+
+      if (multiplier === 0) {
+        // 1. Play dramatic bomb sequence
+        playExplosionSound();
+        
+        const screen = document.getElementById("gameScreen");
+        const overlay = document.getElementById("explosionOverlay");
+
+        screen.classList.add("shake");
+        overlay.classList.add("explosion-active");
+
+        statusMessage.textContent = "BOMB BLOWOUT! 💣";
+        statusMessage.style.color = "var(--neon-red)";
+        statusMessage.style.textShadow = "0 0 10px var(--neon-red)";
+
+        hostSpeech.textContent = "Oh no! The bomb exploded! Better luck on your next spin!";
+        speak("Oh no! Bomb blast! You lost your stake!");
+
+        hostImg.style.transform = 'scale(0.92)';
+
+        setTimeout(() => {
+          screen.classList.remove("shake");
+          overlay.classList.remove("explosion-active");
+          showResultModal(0, 0, "💣 BOMB BLAST!", "BOOM! You hit the bomb segment and lost your stake! Better luck on your next spin.");
+        }, 1200);
+
+      } else {
+        // 2. Play win fanfare and trigger dynamic confetti/coin rain particles
+        playWinSound();
+        if ('vibrate' in navigator) {
+          navigator.vibrate(multiplier >= 8 ? [200, 50, 200, 50, 400] : [100, 50, 100]);
+        }
+
+        // Trigger Canvas-based particle explosion!
+        triggerWinParticles(multiplier >= 8 ? 'jackpot' : 'gold');
+
+        statusMessage.textContent = `${multiplier}x MULTIPLIER! 🎉`;
+        statusMessage.style.color = "var(--neon-green)";
+        statusMessage.style.textShadow = "0 0 15px var(--neon-green)";
+
+        hostImg.style.animation = 'idleBreathe 0.5s ease-in-out infinite alternate';
+
+        let title = "Win Payout!";
+        let desc = `Nice! You hit a ${multiplier}x multiplier and won ₦${payoutAmount.toLocaleString()}.`;
+        
+        if (multiplier >= 8) {
+          title = "👑 CASINO JACKPOT!";
+          desc = `Incredible! You hit the rare ${multiplier}x jackpot multiplier!`;
+          hostSpeech.textContent = `INCREDIBLE JACKPOT! You won ₦${payoutAmount.toLocaleString()}!`;
+          speak("Casino Jackpot! You won!");
+        } else if (multiplier === 1) {
+          title = "Stake Returned";
+          desc = "You landed on 1x. Your full stake has been returned.";
+          hostSpeech.textContent = "Your stake has been returned safely. Spin again!";
+          speak("Stake returned!");
+        } else {
+          hostSpeech.textContent = `Awesome win! You landed on the ${multiplier}x slice!`;
+          speak("Winner! Congratulations!");
+        }
+
+        // Trigger arcing coin-to-wallet animations and count balance up in real time as coins land
+        startMoneyCollectionAnimation(payoutAmount, finalBalance);
+
+        // Display collect winnings modal
+        showResultModal(multiplier, payoutAmount, title, desc);
+      }
+    }
+
+    function showResultModal(multiplier, winnings, title, desc) {
+      const modal = document.getElementById("winModal");
+      const modalTitle = document.getElementById("modalTitle");
+      const modalPayout = document.getElementById("modalPayout");
+      const modalDesc = document.getElementById("modalDesc");
+      const modalIcon = document.getElementById("modalIcon");
+
+      modalTitle.textContent = title;
+      modalDesc.textContent = desc;
+
+      if (multiplier === 0) {
+        modalIcon.textContent = "💥";
+        modalPayout.textContent = "BOOM!";
+        modalPayout.style.color = "var(--neon-red)";
+      } else {
+        modalIcon.textContent = multiplier >= 8 ? "👑" : "🎉";
+        modalPayout.textContent = "₦" + winnings.toLocaleString();
+        modalPayout.style.color = "var(--neon-green)";
+      }
+
+      modal.classList.add("show");
+    }
+
+    function closeWinModal() {
+      document.getElementById("winModal").classList.remove("show");
+      playCoinSound();
+      resetSpinButton();
+      
+      const hostSpeech = document.getElementById("croupierSpeech");
+      const hostImg = document.getElementById("mascotHost");
+      
+      hostImg.style.animation = 'idleBreathe 3s ease-in-out infinite alternate';
+      hostSpeech.textContent = "Place your next bet on the chips!";
+      speak("Place your next bet!");
+    }
+
+    function resetSpinButton() {
+      isSpinning = false;
+      document.querySelectorAll('.chip').forEach(c => c.style.pointerEvents = 'auto');
+      
+      statusMessage.textContent = "PLACE YOUR BET";
+      statusMessage.style.color = "var(--primary-gold)";
+      statusMessage.style.textShadow = "0 0 10px var(--primary-gold)";
+      drawWheel();
+    }
+
+    // ========== DETECT CENTER SPIN BUTTON CLICKS & MOBILE TAPS ==========
+    function handleCanvasSpinTrigger(event) {
+      // Unlock AudioContext and start background music loop on first tap
+      ensureAudioStarted();
+
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+
+      // Handle touch coordinates for mobile devices
+      if (event.touches && event.touches.length > 0) {
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+      } else {
+        clientX = event.clientX;
+        clientY = event.clientY;
+      }
+
+      // Convert client coordinates back to internal canvas coordinates (0 to 460)
+      const x = (clientX - rect.left) * (canvas.width / rect.width);
+      const y = (clientY - rect.top) * (canvas.height / rect.height);
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      // Calculate distance to center green core button
+      const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+      
+      // Center gold/green button has a radius of 56px inside the canvas coords
+      if (distance <= 56) {
+        event.preventDefault();
+        if (!isSpinning) {
+          triggerSpinGame();
+        }
+      }
+    }
+
+    canvas.addEventListener('click', handleCanvasSpinTrigger);
+    canvas.addEventListener('touchstart', handleCanvasSpinTrigger, { passive: false });
+  </script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Withdrawal Successful - 9jaCash</title>
+
+
+
+
+<script src="firebase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;transition:all 0.3s ease;}
+
+body.dark-mode{background:#0f172a;color:#f8fafc;}
+body.dark-mode .soft-bg{background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.15),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(16,185,129,0.1),transparent 50%),#0f172a;}
+body.dark-mode .success-card{background:#1e293b;border-color:#334155;box-shadow:0 8px 40px rgba(0,0,0,0.4);}
+body.dark-mode .success-card::after{background:linear-gradient(90deg,transparent,#10b981,transparent);}
+body.dark-mode .detail-card{background:#0f172a;border-color:#334155;}
+body.dark-mode .detail-label{color:#94a3b8;}
+body.dark-mode .detail-value{color:#f8fafc;}
+body.dark-mode .success-ring{background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));border-color:rgba(16,185,129,0.3);box-shadow:0 0 60px rgba(16,185,129,0.2);}
+body.dark-mode .success-ring i{color:#10b981;}
+body.dark-mode .title{color:#f8fafc;}
+body.dark-mode .subtitle{color:#94a3b8;}
+body.dark-mode .amount-text{color:#10b981;text-shadow:0 0 20px rgba(16,185,129,0.3);}
+body.dark-mode .status-badge{background:rgba(16,185,129,0.15);color:#34d399;border-color:rgba(16,185,129,0.3);}
+body.dark-mode .btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 20px rgba(99,102,241,0.3);}
+body.dark-mode .btn-primary:hover{box-shadow:0 6px 24px rgba(99,102,241,0.4);}
+body.dark-mode .btn-secondary{background:#1e293b;color:#94a3b8;border-color:#334155;}
+body.dark-mode .btn-secondary:hover{border-color:#6366f1;color:#818cf8;}
+body.dark-mode .timer-box{background:#0f172a;border-color:#334155;}
+body.dark-mode .timer-label{color:#94a3b8;}
+body.dark-mode .timer-value{color:#f8fafc;}
+body.dark-mode .footer-text{color:#64748b;}
+body.dark-mode .toast{background:#1e293b;border-color:#334155;}
+body.dark-mode .theme-toggle{background:#1e293b;border-color:#334155;color:#94a3b8;}
+body.dark-mode .theme-toggle:hover{background:#334155;color:#818cf8;}
+body.dark-mode .swal2-popup{background:#1e293b !important;border:1px solid #334155 !important;}
+body.dark-mode .swal2-title{color:#f8fafc !important;}
+body.dark-mode .swal2-html-container{color:#94a3b8 !important;}
+
+.soft-bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.08),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(16,185,129,0.06),transparent 50%),#f8fafc;transition:all 0.3s ease;}
+
+.app{width:100%;max-width:420px;text-align:center;position:relative;z-index:1;}
+
+.theme-toggle{position:fixed;top:20px;right:20px;width:44px;height:44px;border-radius:14px;background:#fff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:16px;cursor:pointer;transition:all 0.3s;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.theme-toggle:hover{background:#f1f5f9;color:#6366f1;}
+
+.loader-overlay{position:fixed;inset:0;background:rgba(248,250,252,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity 0.5s,visibility 0.5s;}
+.loader-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+.loader-ring{width:60px;height:60px;border:4px solid rgba(99,102,241,0.1);border-top:4px solid #6366f1;border-radius:50%;animation:spin 1s linear infinite;}
+.loader-text{color:#1e293b;font-size:20px;font-weight:800;margin-top:24px;letter-spacing:-0.3px;}
+.loader-sub{color:#94a3b8;font-size:14px;margin-top:8px;font-weight:500;}
+
+.success-ring{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;position:relative;animation:ringPulse 2s ease-in-out infinite;}
+.success-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:3px solid transparent;border-top-color:rgba(16,185,129,0.4);animation:spin 3s linear infinite;}
+.success-ring::after{content:'';position:absolute;inset:-12px;border-radius:50%;border:2px solid transparent;border-bottom-color:rgba(16,185,129,0.2);animation:spin 4s linear infinite reverse;}
+.success-ring i{font-size:40px;}
+
+@keyframes ringPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+
+.success-card{background:#fff;border-radius:28px;padding:32px 24px;border:1px solid #f1f5f9;box-shadow:0 8px 40px rgba(0,0,0,0.08);margin-bottom:20px;text-align:center;transition:all 0.3s ease;position:relative;overflow:hidden;}
+.success-card::after{content:'';position:absolute;top:0;left:24px;right:24px;height:2px;background:linear-gradient(90deg,transparent,#10b981,transparent);}
+
+.title{font-size:26px;font-weight:900;letter-spacing:-0.5px;margin-bottom:8px;transition:color 0.3s;}
+.subtitle{font-size:14px;color:#64748b;line-height:1.6;margin-bottom:24px;font-weight:500;transition:color 0.3s;}
+
+.amount-text{font-size:42px;font-weight:900;color:#10b981;letter-spacing:-2px;margin-bottom:8px;line-height:1;transition:color 0.3s;}
+.amount-text span{font-size:24px;color:#6366f1;}
+
+.status-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:50px;background:#ecfdf5;border:1px solid #10b981;color:#10b981;font-size:13px;font-weight:700;margin-bottom:28px;transition:all 0.3s ease;}
+.status-badge i{font-size:12px;}
+
+.detail-card{background:#f8fafc;border:1px solid #f1f5f9;border-radius:16px;padding:16px;margin-bottom:10px;transition:all 0.3s ease;display:flex;align-items:center;justify-content:space-between;}
+.detail-card:last-child{margin-bottom:0;}
+.detail-label{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;}
+.detail-value{font-size:14px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:8px;transition:color 0.3s;}
+.detail-value.green{color:#10b981;}
+.detail-value.mono{font-family:'Courier New',monospace;font-size:13px;}
+.detail-value i{font-size:12px;}
+
+.timer-box{background:#f8fafc;border:1px solid #f1f5f9;border-radius:16px;padding:20px;margin-bottom:20px;transition:all 0.3s ease;}
+.timer-label{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.timer-value{font-size:28px;font-weight:900;color:#1e293b;letter-spacing:2px;transition:color 0.3s;}
+.timer-value span{color:#6366f1;}
+
+.actions{display:flex;flex-direction:column;gap:12px;margin-top:24px;}
+.btn{width:100%;padding:18px;border-radius:18px;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;}
+.btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:0.5s;}
+.btn:hover::before{left:100%;}
+.btn:active{transform:scale(0.97);}
+
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;10b981,transparent);}
+
+.title{font-size:26px;font-weight:900;letter-spacing:-0.5px;margin-bottom:8px;transition:color 0.3s;}
+.subtitle{font-size:14px;color:#64748b;line-height:1.6;margin-bottom:24px;font-weight:500;transition:color 0.3s;}
+
+.amount-text{font-size:42px;font-weight:900;color:#10b981;letter-spacing:-2px;margin-bottom:8px;line-height:1;transition:color 0.3s;}
+.amount-text span{font-size:24px;color:#6366f1;}
+
+.status-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:50px;background:#ecfdf5;border:1px solid #10b981;color:#10b981;font-size:13px;font-weight:700;margin-bottom:28px;transition:all 0.3s ease;}
+.status-badge i{font-size:12px;}
+
+.detail-card{background:#f8fafc;border:1px solid #f1f5f9;border-radius:16px;padding:16px;margin-bottom:10px;transition:all 0.3s ease;display:flex;align-items:center;justify-content:space-between;}
+.detail-card:last-child{margin-bottom:0;}
+.detail-label{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;}
+.detail-value{font-size:14px;font-weight:800;color:#1e293b;display:flex;align-items:center;gap:8px;transition:color 0.3s;}
+.detail-value.green{color:#10b981;}
+.detail-value.mono{font-family:'Courier New',monospace;font-size:13px;}
+.detail-value i{font-size:12px;}
+
+.timer-box{background:#f8fafc;border:1px solid #f1f5f9;border-radius:16px;padding:20px;margin-bottom:20px;transition:all 0.3s ease;}
+.timer-label{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.timer-value{font-size:28px;font-weight:900;color:#1e293b;letter-spacing:2px;transition:color 0.3s;}
+.timer-value span{color:#6366f1;}
+
+.actions{display:flex;flex-direction:column;gap:12px;margin-top:24px;}
+.btn{width:100%;padding:18px;border-radius:18px;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;}
+.btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:0.5s;}
+.btn:hover::before{left:100%;}
+.btn:active{transform:scale(0.97);}
+
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 20px rgba(99,102,241,0.2);}
+.btn-primary:hover{box-shadow:0 6px 24px rgba(99,102,241,0.3);}
+
+.btn-secondary{background:#fff;color:#64748b;border:1.5px solid #e2e8f0;}
+.btn-secondary:hover{border-color:#6366f1;color:#818cf8;}
+
+.footer{margin-top:28px;font-size:12px;color:#94a3b8;font-weight:500;transition:color 0.3s;}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1e293b;color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.15);border:1px solid #334155;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast i{color:#10b981;}
+
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes countUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.slide-up{animation:slideUp 0.6s cubic-bezier(0.34,1.56,0.64,1) both;}
+.d1{animation-delay:0.1s;}
+.d2{animation-delay:0.18s;}
+.d3{animation-delay:0.26s;}
+.d4{animation-delay:0.34s;}
+.d5{animation-delay:0.42s;}
+.d6{animation-delay:0.5s;}
+.fade-in{animation:fadeIn 0.8s ease both;}
+.count-up{animation:countUp 0.5s ease both;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div class="soft-bg"></div>
+
+<button class="theme-toggle" onclick="toggleTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
+
+<div class="loader-overlay" id="loader">
+  <div class="loader-ring"></div>
+  <div class="loader-text">Processing Withdrawal...</div>
+  <div class="loader-sub">Securing your transaction</div>
+</div>
+
+<div class="app hidden" id="successContent">
+  <div class="success-card slide-up">
+    <div class="success-ring">
+      <i class="fa-solid fa-check"></i>
+    </div>
+    <div class="title">Withdrawal Successful!</div>
+    <div class="subtitle">Your funds are on the way to your bank account</div>
+    <div class="amount-text count-up" id="amountDisplay">₦0<span>.00</span></div>
+    <div class="status-badge">
+      <i class="fa-solid fa-circle-check"></i>
+      <span id="statusText">Pending • Processing</span>
+    </div>
+  </div>
+
+  <div class="timer-box slide-up d3">
+    <div class="timer-label">Estimated Arrival</div>
+    <div class="timer-value" id="timerDisplay">00<span>h</span> 03<span>m</span> 00<span>s</span></div>
+  </div>
+
+  <div class="success-card slide-up d4" style="padding:20px 24px;">
+    <div class="detail-card">
+      <div class="detail-label">Amount</div>
+      <div class="detail-value green" id="detailAmount">₦0</div>
+    </div>
+    <div class="detail-card">
+      <div class="detail-label">Bank</div>
+      <div class="detail-value" id="detailBank"><i class="fa-solid fa-building-columns"></i> —</div>
+    </div>
+    <div class="detail-card">
+      <div class="detail-label">Account</div>
+      <div class="detail-value mono" id="detailAccount">—</div>
+    </div>
+    <div class="detail-card">
+      <div class="detail-label">Account Name</div>
+      <div class="detail-value" id="detailName">—</div>
+    </div>
+    <div class="detail-card">
+      <div class="detail-label">Transaction ID</div>
+      <div class="detail-value mono" id="detailTxId">TX-XXXXXXXX</div>
+    </div>
+    <div class="detail-card">
+      <div class="detail-label">Date</div>
+      <div class="detail-value" id="detailDate">—</div>
+    </div>
+  </div>
+
+  <div class="actions slide-up d5">
+    <button class="btn btn-primary" onclick="goDashboard()">
+      <i class="fa-solid fa-house"></i> Back to Dashboard
+    </button>
+    <button class="btn btn-secondary" onclick="shareReceipt()">
+      <i class="fa-solid fa-share-nodes"></i> Share Receipt
+    </button>
+  </div>
+
+  <div class="footer slide-up d6">
+    9jaCash <span id="year"></span> • Secured Withdrawals
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+
+<script>
+let userData = null;
+try {
+  userData = JSON.parse(localStorage.getItem("9jaCashUser"));
+} catch(e) {
+  userData = null;
+}
+
+let txData = null;
+try {
+  txData = JSON.parse(localStorage.getItem("lastWithdrawal"));
+} catch(e) {
+  txData = null;
+}
+
+let adminSettings = null;
+
+// ========== THEME ==========
+function initTheme() {
+  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  if (isDark) {
+    document.body.classList.add("dark-mode");
+    document.getElementById("themeIcon").className = "fa-solid fa-sun";
+  } else {
+    document.getElementById("themeIcon").className = "fa-solid fa-moon";
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem("9jaCashDark", isDark);
+  document.getElementById("themeIcon").className = isDark ? "fa-solid fa-sun" : "fa-solid fa-moon";
+}
+
+// ========== FORMAT MONEY ==========
+function formatMoney(num) {
+  if (!num && num !== 0) return "₦0";
+  let n = parseFloat(num);
+  if (isNaN(n)) return "₦0";
+  if (n >= 1000000) return "₦" + (n / 1000000).toFixed(2) + "M";
+  return "₦" + n.toLocaleString("en-NG");
+}
+
+// ========== GET TRANSACTION DATA ==========
+function getTxData() {
+  let tx = txData;
+  if (tx && tx.amount) return tx;
+
+  try {
+    let history = JSON.parse(localStorage.getItem("transactionHistory")) || [];
+    if (history.length > 0 && history[0].type === "Withdrawal") return history[0];
+  } catch(e) {}
+
+  try {
+    let wd = JSON.parse(localStorage.getItem("withdrawData"));
+    if (wd && wd.amount) return wd;
+  } catch(e) {}
+
+  return null;
+}
+
+// ========== SEND WITHDRAWAL SUCCESS NOTIFICATION (FIXED) ==========
+function sendWithdrawalNotification(amount, bank, accountName) {
+  // Check if notifications are supported and permitted
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+  
+  const formattedAmount = typeof amount === 'string' ? amount : formatMoney(amount);
+  
+  try {
+    const notification = new Notification("9jaCash - Withdrawal Successful", {
+      body: "Withdrawal of " + formattedAmount + " has been successfully debited and is being credited to your (" + bank + ") account",
+      icon: "9jaCash.png",
+      badge: "9jaCash.png",
+      tag: "9jaCash-withdrawal-success",
+      requireInteraction: true,
+      data: {
+        type: 'withdrawal_success',
+        amount: formattedAmount,
+        url: window.location.href
+      }
+    });
+    
+    notification.onclick = function() {
+      window.focus();
+      notification.close();
+    };
+  } catch(err) {
+    console.log("Notification error:", err);
+  }
+}
+
+// ========== UPDATE UI ==========
+function updateUI() {
+  const data = getTxData();
+
+  if (!data) {
+    showToast("No withdrawal data found!");
+    setTimeout(function() {
+      window.location.href = "dashboard.html";
+    }, 2000);
+    return;
+  }
+
+  let rawAmount = 0;
+  if (typeof data.amount === 'string') {
+    rawAmount = parseFloat(data.amount.replace(/[^\d.]/g, "")) || 0;
+  } else {
+    rawAmount = parseFloat(data.amount) || 0;
+  }
+
+  const formatted = formatMoney(rawAmount);
+
+  const amountDisplay = document.getElementById("amountDisplay");
+  if (formatted.includes(".")) {
+    const parts = formatted.split(".");
+    amountDisplay.innerHTML = parts[0] + '<span>.' + parts[1] + '</span>';
+  } else {
+    amountDisplay.innerHTML = formatted + '<span>.00</span>';
+  }
+
+  document.getElementById("detailAmount").textContent = formatted;
+  document.getElementById("detailBank").innerHTML = '<i class="fa-solid fa-building-columns"></i> ' + (data.bank || "—");
+  document.getElementById("detailAccount").textContent = data.account || data.accNumber || "—";
+  document.getElementById("detailName").textContent = data.name || data.accName || "—";
+  document.getElementById("detailTxId").textContent = data.txId || 'TX-' + Date.now().toString(36).toUpperCase().slice(-8);
+  document.getElementById("detailDate").textContent = data.date || new Date().toLocaleString('en-NG', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  const status = data.status || "Pending";
+  document.getElementById("statusText").textContent = status === "Pending" ? "Pending • Processing" : status + " • Completed";
+
+  // SEND NOTIFICATION
+  sendWithdrawalNotification(rawAmount, data.bank, data.name || data.accName);
+
+  startCountdown();
+}
+
+// ========== COUNTDOWN TIMER ==========
+function startCountdown() {
+  let totalSeconds = 3 * 60;
+  const el = document.getElementById("timerDisplay");
+
+  const timer = setInterval(function() {
+    if (totalSeconds <= 0) {
+      clearInterval(timer);
+      el.innerHTML = '0<span>h</span> 00<span>m</span> 00<span>s</span>';
+      document.getElementById("statusText").textContent = "Completed • Credited";
+      return;
+    }
+    totalSeconds--;
+
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+
+    el.innerHTML = h + '<span>h</span> ' + m.toString().padStart(2, '0') + '<span>m</span> ' + s.toString().padStart(2, '0') + '<span>s</span>';
+  }, 1000);
+}
+
+// ========== NAVIGATION ==========
+function goDashboard() {
+  window.location.href = "dashboard.html";
+}
+
+function shareReceipt() {
+  const data = getTxData();
+  if (!data) return;
+
+  const text = "9jaCash Withdrawal Receipt\n" +
+    "Amount: " + (data.amount || "—") + "\n" +
+    "Bank: " + (data.bank || "—") + "\n" +
+    "Account: " + (data.account || data.accNumber || "—") + "\n" +
+    "Name: " + (data.name || data.accName || "—") + "\n" +
+    "Status: " + (data.status || "Pending") + "\n" +
+    "Date: " + (data.date || "—");
+
+  if (navigator.share) {
+    navigator.share({
+      title: '9jaCash Withdrawal',
+      text: text
+    });
+  } else {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast("Receipt copied to clipboard!");
+    });
+  }
+}
+
+// ========== TOAST ==========
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() {
+    t.classList.remove("show");
+  }, 2500);
+}
+
+// ========== LOAD ADMIN SETTINGS ==========
+async function loadAdminSettings() {
+  if (window._9jaCash && window._9jaCash.db) {
+    try {
+      const doc = await window._9jaCash.db.collection("settings").doc("redirects").get();
+      if (doc.exists) adminSettings = doc.data();
+    } catch(err) {
+      console.error("Error:", err);
+    }
+  }
+
+  if (!adminSettings) {
+    adminSettings = {
+      successRedirect: "dashboard.html",
+      successDelay: 2000
+    };
+  }
+}
+
+// ========== INIT ==========
+async function init() {
+  initTheme();
+  await loadAdminSettings();
+
+  updateUI();
+
+  const delay = parseInt(adminSettings.successDelay) || 2000;
+
+  setTimeout(function() {
+    const loader = document.getElementById("loader");
+    const content = document.getElementById("successContent");
+
+    if (loader) loader.classList.add("hidden");
+    if (content) content.classList.remove("hidden");
+
+    if (typeof confetti !== "undefined") {
+      confetti({
+        particleCount: 200,
+        spread: 100,
+        origin: { y: 0.5 },
+        colors: ['#6366f1', '#8b5cf6', '#10b981', '#34d399', '#f59e0b']
+      });
+    }
+  }, delay);
+}
+
+window.addEventListener("DOMContentLoaded", init);
+</script>
+
+</body>
+</html>

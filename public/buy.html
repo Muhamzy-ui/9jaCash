@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Purchase Payout Key - 9jaCash</title>
+
+
+
+
+<script src="firebase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;transition:all 0.3s ease;}
+
+body.dark-mode{background:#0f172a;color:#f8fafc;}
+body.dark-mode .soft-bg{background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.15),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(236,72,153,0.1),transparent 50%),#0f172a;}
+body.dark-mode .card,
+body.dark-mode .price-card{background:#1e293b;border-color:#334155;}
+body.dark-mode .price-label,
+body.dark-mode .price-desc,
+body.dark-mode .hint-text{color:#94a3b8;}
+body.dark-mode .title,
+body.dark-mode .price-value,
+body.dark-mode .card-title,
+body.dark-mode .input-field{color:#f8fafc;}
+body.dark-mode .input-field{background:#0f172a;border-color:#334155;}
+body.dark-mode .input-field::placeholder{color:#64748b;}
+body.dark-mode .back-btn{background:#1e293b;border-color:#334155;color:#94a3b8;}
+body.dark-mode .back-btn:hover{background:#334155;color:#818cf8;}
+body.dark-mode .toast{background:#1e293b;border-color:#334155;}
+body.dark-mode .swal2-popup{background:#1e293b !important;color:#f8fafc !important;}
+body.dark-mode .swal2-title{color:#f8fafc !important;}
+body.dark-mode .swal2-html-container{color:#94a3b8 !important;}
+body.dark-mode .price-card.popular{border-color:rgba(99,102,241,0.4);box-shadow:0 10px 40px rgba(99,102,241,0.15);}
+body.dark-mode .popular-badge{background:linear-gradient(135deg,#818cf8,#a78bfa);}
+body.dark-mode .divider{background:#334155;}
+body.dark-mode .note-text{color:#64748b;}
+body.dark-mode .note-box{background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.2);}
+body.dark-mode .withdrawal-badge{background:rgba(16,185,129,0.15);color:#34d399;}
+
+#verifiedNameDisplay,
+#verifiedBankDisplay,
+#verifiedAccDisplay {
+  color: #1e293b !important;
+}
+body.dark-mode #verifiedNameDisplay,
+body.dark-mode #verifiedBankDisplay,
+body.dark-mode #verifiedAccDisplay {
+  color: #ffffff !important;
+}
+
+.soft-bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.08),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(236,72,153,0.06),transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(16,185,129,0.04),transparent 50%),#f8fafc;transition:all 0.3s ease;}
+
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 20px 40px;}
+
+.topbar{padding:24px 0 20px;display:flex;align-items:center;gap:12px;}
+.back-btn{width:44px;height:44px;border-radius:14px;background:#fff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:16px;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.back-btn:hover{background:#f1f5f9;color:#6366f1;}
+.back-btn:active{transform:scale(0.92);}
+.header-title{font-size:18px;font-weight:800;color:#1e293b;transition:color 0.3s;}
+
+.hero{text-align:center;margin-bottom:28px;padding-top:8px;}
+.hero-icon{width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 30px rgba(99,102,241,0.3);}
+.hero-icon i{color:#fff;font-size:28px;}
+.hero-title{font-size:26px;font-weight:900;color:#1e293b;line-height:1.2;margin-bottom:8px;transition:color 0.3s;}
+.hero-title span{background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:14px;color:#64748b;line-height:1.6;max-width:320px;margin:0 auto;transition:color 0.3s;}
+
+.card{background:#fff;border-radius:24px;padding:24px;border:1px solid #e2e8f0;box-shadow:0 4px 24px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.04);margin-bottom:16px;transition:all 0.3s ease;}
+
+.price-card{cursor:pointer;position:relative;transition:all 0.3s ease;border:2px solid transparent;}
+.price-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.1);}
+.price-card:active{transform:scale(0.98);}
+.price-card.selected{border-color:#6366f1;box-shadow:0 4px 20px rgba(99,102,241,0.2);}
+.price-card.popular{border:2px solid rgba(99,102,241,0.3);box-shadow:0 10px 40px rgba(99,102,241,0.12);}
+
+.popular-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:10px;font-weight:800;padding:4px 14px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;box-shadow:0 4px 12px rgba(99,102,241,0.3);z-index:2;}
+
+.withdrawal-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#10b981;background:#ecfdf5;padding:4px 10px;border-radius:20px;margin-top:8px;}
+body.dark-mode .withdrawal-badge{background:rgba(16,185,129,0.15);}
+
+.price-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.price-name{font-size:16px;font-weight:800;color:#1e293b;transition:color 0.3s;}
+.price-value{font-size:24px;font-weight:900;color:#6366f1;transition:color 0.3s;}
+.price-value span{font-size:13px;font-weight:500;color:#94a3b8;}
+.price-desc{font-size:12px;color:#64748b;font-weight:500;transition:color 0.3s;}
+
+.check-icon{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;opacity:0;transition:all 0.3s;position:absolute;top:16px;right:16px;}
+.price-card.selected .check-icon{opacity:1;}
+
+.divider{display:flex;align-items:center;gap:16px;margin:24px 0;color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#e2e8f0;transition:background 0.3s;}
+
+.card-title{font-size:16px;font-weight:800;color:#1e293b;margin-bottom:20px;display:flex;align-items:center;gap:10px;transition:color 0.3s;}
+.card-title i{color:#6366f1;font-size:18px;}
+
+.input-group{margin-bottom:20px;}
+.input-label{display:block;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;transition:color 0.3s;}
+.input-field{width:100%;padding:16px 18px;border-radius:16px;background:#f8fafc;border:2px solid #e2e8f0;color:#1e293b;font-size:15px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.3s;outline:none;}
+.input-field:focus{border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,0.1);}
+.input-field::placeholder{color:#94a3b8;font-weight:500;}
+.input-field:disabled{background:#f1f5f9;color:#94a3b8;border-color:#e2e8f0;cursor:not-allowed;}
+
+select.input-field{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px;}
+
+.char-count{text-align:right;font-size:11px;color:#94a3b8;margin-top:4px;font-weight:500;}
+
+.note-box{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px;transition:all 0.3s;}
+.note-box i{color:#6366f1;font-size:16px;margin-top:2px;flex-shrink:0;}
+.note-text{font-size:13px;color:#64748b;line-height:1.5;font-weight:500;transition:color 0.3s;}
+.note-text strong{color:#1e293b;font-weight:700;transition:color 0.3s;}
+
+.submit-btn{width:100%;padding:18px;border-radius:18px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(99,102,241,0.3);position:relative;overflow:hidden;}
+.submit-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:0.5s;}
+.submit-btn:hover::before{left:100%;}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,0.4);}
+.submit-btn:active{transform:scale(0.97);}
+.submit-btn:disabled{background:#e2e8f0;color:#94a3b8;box-shadow:none;cursor:not-allowed;}
+.submit-btn:disabled::before{display:none;}
+
+.loader-overlay{position:fixed;inset:0;background:rgba(248,250,252,0.95);display:none;align-items:center;justify-content:center;z-index:1000;flex-direction:column;backdrop-filter:blur(15px);}
+body.dark-mode .loader-overlay{background:rgba(15,23,42,0.95);}
+.loader-overlay.active{display:flex;}
+.loader-ring{width:56px;height:56px;border:4px solid rgba(99,102,241,0.1);border-top:4px solid #6366f1;border-radius:50%;animation:spin 1s linear infinite;}
+.loader-text{color:#1e293b;font-size:20px;font-weight:800;margin-top:24px;letter-spacing:-0.3px;}
+.loader-sub{color:#94a3b8;font-size:14px;margin-top:8px;font-weight:500;}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1e293b;color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.15);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast i{color:#10b981;}
+
+@keyframes slideDown{from{opacity:0;transform:translateY(-15px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.anim{animation:slideUp 0.6s ease both;}
+.d1{animation-delay:0.1s;}
+.d2{animation-delay:0.2s;}
+.d3{animation-delay:0.3s;}
+.d4{animation-delay:0.4s;}
+.d5{animation-delay:0.5s;}
+.d6{animation-delay:0.6s;}
+</style>
+</head>
+<body>
+
+<div class="soft-bg"></div>
+
+<div class="app">
+
+<div class="topbar anim d1">
+  <button class="back-btn" onclick="window.location.href='withdraw.html'">
+    <i class="fa-solid fa-arrow-left"></i>
+  </button>
+  <div class="header-title">Purchase Payout Key</div>
+</div>
+
+<div class="hero anim d1">
+  <div class="hero-icon"><i class="fa-solid fa-key"></i></div>
+  <div class="hero-title">Get Your <span>Payout Key</span></div>
+  <div class="hero-sub">Choose a plan and enter your bank details to receive your payout key after payment.</div>
+</div>
+
+<!-- Basic Key - 3 withdrawals daily -->
+<div class="card price-card anim d2" onclick="selectPlan(this, 8550, 'Basic Key', 3)" data-plan="Basic Key" data-price="8550" data-limit="3">
+  <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+  <div class="price-header">
+    <div class="price-name">Basic Key</div>
+    <div class="price-value">₦8,550</div>
+  </div>
+  <div class="price-desc">Valid for 30 days</div>
+  <div class="withdrawal-badge"><i class="fa-solid fa-rotate"></i> 3 withdrawals daily</div>
+</div>
+
+<!-- Standard Key - 5 withdrawals daily -->
+<div class="card price-card popular anim d3" onclick="selectPlan(this, 15500, 'Standard Key', 5)" data-plan="Standard Key" data-price="15500" data-limit="5">
+  <div class="popular-badge">Popular</div>
+  <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+  <div class="price-header">
+    <div class="price-name">Standard Key</div>
+    <div class="price-value">₦15,500</div>
+  </div>
+  <div class="price-desc">Valid for 60 days</div>
+  <div class="withdrawal-badge"><i class="fa-solid fa-rotate"></i> 5 withdrawals daily</div>
+</div>
+
+<!-- Premium Key - 15 withdrawals daily -->
+<div class="card price-card anim d4" onclick="selectPlan(this, 35000, 'Premium Key', 15)" data-plan="Premium Key" data-price="35000" data-limit="15">
+  <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+  <div class="price-header">
+    <div class="price-name">Premium Key</div>
+    <div class="price-value">₦35,000</div>
+  </div>
+  <div class="price-desc">Valid for 90 days</div>
+  <div class="withdrawal-badge"><i class="fa-solid fa-rotate"></i> 15 withdrawals daily</div>
+</div>
+
+<!-- Unlimited Key - unlimited withdrawals -->
+<div class="card price-card anim d5" onclick="selectPlan(this, 75000, 'Unlimited Key', 999999)" data-plan="Unlimited Key" data-price="75000" data-limit="999999">
+  <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+  <div class="price-header">
+    <div class="price-name">Unlimited Key</div>
+    <div class="price-value">₦75,000</div>
+  </div>
+  <div class="price-desc">Lifetime access</div>
+  <div class="withdrawal-badge"><i class="fa-solid fa-infinity"></i> Unlimited withdrawals</div>
+</div>
+
+<div class="divider anim d3">Payment Details</div>
+
+<div class="card anim d4">
+  <div class="card-title"><i class="fa-solid fa-building-columns"></i>Bank Account Details</div>
+
+  <div class="note-box">
+    <i class="fa-solid fa-circle-info"></i>
+    <div class="note-text">Enter the <strong>bank account</strong> you want to use for this payment. This is where your payout key will be linked after purchase.</div>
+  </div>
+
+  <form id="buyForm">
+
+    <div class="input-group">
+      <label class="input-label">Account Number</label>
+      <input type="tel" id="accNumber" maxlength="10" placeholder="Enter 10-digit number" class="input-field" required>
+      <div class="char-count" id="acctCount">0/10</div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Select Bank</label>
+      <select id="bankName" class="input-field" required>
+        <option value="" disabled selected>Choose your bank</option>
+      </select>
+    </div>
+
+    <!-- OPay-style Green Verification Card (shown after successful lookup) -->
+    <div id="verifiedCard" class="hidden mt-4 p-5 rounded-2xl border bg-[rgba(16,185,129,0.06)] border-[rgba(16,185,129,0.25)] text-left">
+      <div class="flex items-center gap-2 text-[#34d399] font-bold text-[13px] mb-3">
+        <i class="fa-solid fa-square-check text-base"></i>
+        <span>Verified Account Name</span>
+      </div>
+      <div id="verifiedNameDisplay" class="text-white text-base font-extrabold mb-2 leading-tight"></div>
+      <div class="text-[#94a3b8] text-xs space-y-1 font-medium">
+        <div>Bank: <span id="verifiedBankDisplay" class="font-bold text-white uppercase"></span></div>
+        <div>Account Number: <span id="verifiedAccDisplay" class="font-bold text-white"></span></div>
+      </div>
+    </div>
+
+    <!-- Hidden inputs for plan info and verified name -->
+    <input type="hidden" id="verifiedNameInput">
+    <input type="hidden" id="selectedPlan">
+    <input type="hidden" id="selectedPrice">
+    <input type="hidden" id="selectedLimit">
+
+    <button type="submit" class="submit-btn" id="submitBtn">
+      <i class="fa-solid fa-credit-card"></i> Proceed to Payment
+    </button>
+
+  </form>
+</div>
+
+</div>
+
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+
+<div class="loader-overlay" id="loaderOverlay">
+  <div class="loader-ring"></div>
+  <div class="loader-text">Preparing Payment...</div>
+  <div class="loader-sub">Please wait • Do not close this page</div>
+</div>
+
+<script>
+let userData = null;
+try {
+  userData = JSON.parse(localStorage.getItem("9jaCashUser"));
+} catch(e) { userData = null; }
+if (!userData) { window.location.href = "start.html"; }
+
+let selectedPlan = null;
+let selectedPrice = 0;
+let selectedLimit = 0;
+
+function initDarkMode() {
+  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  if (isDark) document.body.classList.add("dark-mode");
+}
+
+function selectPlan(el, price, planName, dailyLimit) {
+  document.querySelectorAll(".price-card").forEach(function(c) { c.classList.remove("selected"); });
+  el.classList.add("selected");
+  selectedPlan = planName;
+  selectedPrice = price;
+  selectedLimit = dailyLimit;
+  document.getElementById("selectedPlan").value = planName;
+  document.getElementById("selectedPrice").value = price;
+  document.getElementById("selectedLimit").value = dailyLimit;
+  showToast(planName + " selected - ₦" + price.toLocaleString() + " - " + (dailyLimit === 999999 ? "Unlimited" : dailyLimit + " daily") + " withdrawals");
+}
+
+// Bank prefix auto-detection using Paystack 3-digit bank codes
+const BANK_PREFIXES = {
+    // GTBank (058)
+    '011': '058', '012': '058', '013': '058', '014': '058', '015': '058',
+    '016': '058', '017': '058', '021': '058', '022': '058', '023': '058',
+    '024': '058', '025': '058', '026': '058', '027': '058', '028': '058',
+    // Zenith Bank (057)
+    '101': '057', '102': '057', '103': '057', '104': '057', '105': '057',
+    '106': '057', '107': '057', '108': '057', '109': '057', '110': '057',
+    '223': '057', '505': '057', '509': '057',
+    // UBA - United Bank for Africa (033)
+    '200': '033', '203': '033', '204': '033', '205': '033', '206': '033',
+    '207': '033', '208': '033', '209': '033', '210': '033', '211': '033',
+    '212': '033', '213': '033', '214': '033', '215': '033', '216': '033',
+    '217': '033', '218': '033', '219': '033', '304': '033', '306': '033',
+    '307': '033', '308': '033', '033': '033',
+    // Access Bank (044)
+    '001': '044', '002': '044', '003': '044', '004': '044', '005': '044',
+    '006': '044', '007': '044', '008': '044', '009': '044', '010': '044',
+    '044': '044', '305': '044', '310': '044', '311': '044',
+    // First Bank of Nigeria (011)
+    '201': '011', '202': '011', '302': '011', '303': '011', '309': '011',
+    '320': '011', '321': '011', '322': '011', '323': '011',
+    // Stanbic IBTC (221)
+    '000': '221', '039': '221', '040': '221', '041': '221', '042': '221',
+    // Union Bank (032)
+    '032': '032', '051': '032', '052': '032', '053': '032', '054': '032',
+    // Wema Bank / ALAT (035)
+    '035': '035', '061': '035', '062': '035', '063': '035', '064': '035',
+    // FCMB (214)
+    '220': '214', '221': '214', '222': '214', '224': '214', '225': '214',
+    // Fidelity Bank (070)
+    '401': '070', '402': '070', '403': '070', '404': '070', '405': '070',
+    '406': '070', '407': '070', '408': '070', '409': '070', '410': '070',
+    '412': '070', '413': '070', '414': '070', '415': '070',
+    // Sterling Bank (232)
+    '900': '232', '902': '232',
+    // Polaris Bank (076)
+    '076': '076', '500': '076', '501': '076', '502': '076', '503': '076',
+    // Ecobank (050)
+    '050': '050', '301': '050',
+    // Kuda Bank (090267)
+    '600': '090267', '601': '090267', '602': '090267', '603': '090267',
+    // Moniepoint / TeamApt (50515)
+    '604': '50515', '605': '50515', '606': '50515', '607': '50515',
+    // OPay (999992) - phone-based 10-digit accounts
+    '701': '999992', '702': '999992', '703': '999992', '704': '999992',
+    '705': '999992', '706': '999992', '708': '999992', '707': '999992',
+    '802': '999992', '803': '999992', '804': '999992', '805': '999992',
+    '806': '999992', '807': '999992', '808': '999992', '809': '999992',
+    '810': '999992', '811': '999992', '812': '999992', '813': '999992',
+    '814': '999992', '815': '999992', '816': '999992', '817': '999992',
+    '818': '999992', '819': '999992', '909': '999992',
+    '901': '999992', '902': '999992', '903': '999992', '904': '999992',
+    '905': '999992', '906': '999992', '907': '999992', '908': '999992',
+    '911': '999992', '912': '999992', '913': '999992', '915': '999992',
+    '916': '999992', '917': '999992', '918': '999992', '919': '999992',
+    // PalmPay (999991)
+    '955': '999991', '825': '999991', '826': '999991', '827': '999991',
+    // VFD Microfinance (090110)
+    '100': '090110', '150': '090110',
+};
+
+const select = document.getElementById("bankName");
+let verifyTimeout = null;
+
+// Hardcoded fallback bank list — always available even if server is offline
+const FALLBACK_BANKS = [
+  { code: '044', name: 'Access Bank' },
+  { code: '063', name: 'Access Bank (Diamond)' },
+  { code: '035A', name: 'ALAT by Wema' },
+  { code: '401', name: 'ASO Savings and Loans' },
+  { code: '50931', name: 'Bowen Microfinance Bank' },
+  { code: '023', name: 'Citibank Nigeria' },
+  { code: '559', name: 'Coronation Merchant Bank' },
+  { code: '050', name: 'EcoBank Nigeria' },
+  { code: '562', name: 'Ekondo Microfinance Bank' },
+  { code: '214', name: 'First City Monument Bank (FCMB)' },
+  { code: '011', name: 'First Bank of Nigeria' },
+  { code: '070', name: 'Fidelity Bank' },
+  { code: '058', name: 'Guaranty Trust Bank (GTBank)' },
+  { code: '030', name: 'Heritage Bank' },
+  { code: '301', name: 'Jaiz Bank' },
+  { code: '082', name: 'Keystone Bank' },
+  { code: '090267', name: 'Kuda Bank' },
+  { code: '50515', name: 'Moniepoint MFB' },
+  { code: '999992', name: 'OPay' },
+  { code: '999991', name: 'PalmPay' },
+  { code: '076', name: 'Polaris Bank' },
+  { code: '101', name: 'ProvidusBank' },
+  { code: '221', name: 'Stanbic IBTC Bank' },
+  { code: '068', name: 'Standard Chartered Bank' },
+  { code: '232', name: 'Sterling Bank' },
+  { code: '100', name: 'SunTrust Bank' },
+  { code: '302', name: 'TAJ Bank' },
+  { code: '102', name: 'Titan Trust Bank' },
+  { code: '032', name: 'Union Bank of Nigeria' },
+  { code: '033', name: 'United Bank for Africa (UBA)' },
+  { code: '215', name: 'Unity Bank' },
+  { code: '090110', name: 'VFD Microfinance Bank' },
+  { code: '035', name: 'Wema Bank' },
+  { code: '057', name: 'Zenith Bank' },
+];
+
+function populateBankSelect(banks) {
+  select.innerHTML = '<option value="" disabled selected>Choose your bank</option>';
+  banks.sort(function(a,b){ return a.name.localeCompare(b.name); });
+  banks.forEach(function(b) {
+    const opt = document.createElement("option");
+    opt.value = b.code;
+    opt.textContent = b.name;
+    select.appendChild(opt);
+  });
+}
+
+// Load fallback immediately so banks are always available
+populateBankSelect(FALLBACK_BANKS);
+
+async function fetchBanks() {
+  try {
+    const res = await fetch("/api/banks");
+    if (!res.ok) throw new Error('Server error');
+    const data = await res.json();
+    const banks = data.banks || [];
+    if (banks.length > 0) {
+      // Replace fallback with live list
+      populateBankSelect(banks);
+      console.log('✅ Live bank list loaded: ' + banks.length + ' banks');
+    }
+  } catch (err) {
+    console.warn("Using fallback bank list (server offline or API error):", err.message);
+    // Fallback is already loaded — nothing else needed
+  }
+}
+fetchBanks();
+
+// Auto-detect and verification triggers
+document.getElementById("accNumber").addEventListener("input", function(e) {
+  let val = e.target.value.replace(/\D/g, "");
+  if (val.length > 10) val = val.slice(0, 10);
+  e.target.value = val;
+  document.getElementById("acctCount").textContent = val.length + "/10";
+
+  // Auto-detect bank prefix (only if the user hasn't selected a bank manually yet)
+  if (val.length >= 3) {
+    const prefix = val.substring(0, 3);
+    const matchedBankCode = BANK_PREFIXES[prefix];
+    if (matchedBankCode && !select.dataset.userSelected) {
+      select.value = matchedBankCode;
+    }
+  } else {
+    // Reset manual selection flag if input is cleared
+    if (val.length === 0) {
+      delete select.dataset.userSelected;
+      select.value = "";
+    }
+  }
+
+  // Auto verify when exactly 10 digits
+  if (val.length === 10) {
+    clearTimeout(verifyTimeout);
+    verifyTimeout = setTimeout(triggerVerification, 300);
+  }
+});
+
+select.addEventListener("change", function() {
+  select.dataset.userSelected = "true"; // Track that user chose this bank
+  const val = document.getElementById("accNumber").value;
+  if (val.length === 10) {
+    triggerVerification();
+  }
+});
+
+async function triggerVerification() {
+  const acct = document.getElementById("accNumber").value.trim();
+  const bankCode = select.value;
+  const verifiedCard = document.getElementById("verifiedCard");
+  const verifiedNameDisplay = document.getElementById("verifiedNameDisplay");
+  const verifiedBankDisplay = document.getElementById("verifiedBankDisplay");
+  const verifiedAccDisplay = document.getElementById("verifiedAccDisplay");
+  const verifiedNameInput = document.getElementById("verifiedNameInput");
+
+  if (acct.length !== 10 || !bankCode) return;
+
+  // Reset state
+  verifiedCard.classList.add("hidden");
+  verifiedNameInput.value = "";
+
+  // Show loading inside the card
+  verifiedCard.style.borderColor = "rgba(99,102,241,0.3)";
+  verifiedCard.style.background = "rgba(99,102,241,0.05)";
+  verifiedCard.classList.remove("hidden");
+  verifiedNameDisplay.textContent = "Verifying...";
+  verifiedBankDisplay.textContent = "";
+  verifiedAccDisplay.textContent = "";
+
+  try {
+    const res = await fetch("/api/verify-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ account_number: acct, bank_code: bankCode })
+    });
+    const data = await res.json();
+
+    if (data.status && data.account_name) {
+      // ✅ SUCCESS — show the green OPay card
+      verifiedCard.style.borderColor = "rgba(16,185,129,0.25)";
+      verifiedCard.style.background = "rgba(16,185,129,0.06)";
+      verifiedCard.querySelector(".flex span").textContent = "Verified Account Name";
+      verifiedCard.querySelector(".flex i").className = "fa-solid fa-square-check text-base";
+      verifiedCard.querySelector(".flex").className = "flex items-center gap-2 text-[#34d399] font-bold text-[13px] mb-3";
+      verifiedNameDisplay.textContent = data.account_name;
+      verifiedBankDisplay.textContent = select.options[select.selectedIndex].text;
+      verifiedAccDisplay.textContent = acct;
+      verifiedNameInput.value = data.account_name;
+    } else {
+      // ❌ FAIL — show red error inside card
+      verifiedCard.style.borderColor = "rgba(239,68,68,0.25)";
+      verifiedCard.style.background = "rgba(239,68,68,0.05)";
+      verifiedCard.querySelector(".flex span").textContent = "Verification Failed";
+      verifiedCard.querySelector(".flex i").className = "fa-solid fa-circle-xmark text-base";
+      verifiedCard.querySelector(".flex").className = "flex items-center gap-2 text-[#f87171] font-bold text-[13px] mb-3";
+      verifiedNameDisplay.textContent = data.error || "Could not verify. Please select the correct bank.";
+      verifiedBankDisplay.textContent = "";
+      verifiedAccDisplay.textContent = "";
+      verifiedNameInput.value = "";
+    }
+  } catch (err) {
+    console.error(err);
+    verifiedCard.style.borderColor = "rgba(239,68,68,0.25)";
+    verifiedCard.style.background = "rgba(239,68,68,0.05)";
+    verifiedCard.querySelector(".flex span").textContent = "Server Offline";
+    verifiedCard.querySelector(".flex i").className = "fa-solid fa-circle-xmark text-base";
+    verifiedCard.querySelector(".flex").className = "flex items-center gap-2 text-[#f87171] font-bold text-[13px] mb-3";
+    verifiedNameDisplay.textContent = "Verification service is temporarily offline.";
+    verifiedBankDisplay.textContent = "";
+    verifiedAccDisplay.textContent = "";
+    verifiedNameInput.value = "";
+  }
+}
+
+const form = document.getElementById("buyForm");
+form.addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const accNumber = document.getElementById("accNumber").value.trim();
+  const bankName = document.getElementById("bankName").value;
+  const verifiedName = document.getElementById("verifiedNameInput").value.trim();
+
+  if (!selectedPlan || selectedPrice === 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Select a Plan",
+      text: "Please choose a payout key plan first.",
+      confirmButtonColor: "#6366f1",
+      background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff",
+      color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
+    });
+    return;
+  }
+
+  if (!accNumber || !bankName || !verifiedName) {
+    Swal.fire({
+      icon: "warning",
+      title: "Missing Fields",
+      text: "Please fill in all bank account details.",
+      confirmButtonColor: "#6366f1",
+      background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff",
+      color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
+    });
+    return;
+  }
+
+  if (accNumber.length !== 10 || !/^\d{10}$/.test(accNumber)) {
+    Swal.fire({
+      icon: "error",
+      title: "Invalid Account",
+      text: "Account number must be exactly 10 digits.",
+      confirmButtonColor: "#6366f1",
+      background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff",
+      color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
+    });
+    return;
+  }
+
+  // Clear any old upgrade plan data so payment.html shows payout key, not upgrade
+  localStorage.removeItem("selectedPlan");
+
+  const bankSelectEl = document.getElementById("bankName");
+  const bankNameText = bankSelectEl.options[bankSelectEl.selectedIndex].text;
+
+  const paymentData = {
+    plan: selectedPlan,
+    price: selectedPrice,
+    dailyLimit: selectedLimit,
+    accNumber: accNumber,
+    accName: verifiedName,
+    bankName: bankNameText,
+    date: new Date().toLocaleString(),
+    status: "pending",
+    type: "payout_key_purchase"
+  };
+  localStorage.setItem("9jaCashPaymentData", JSON.stringify(paymentData));
+
+
+  document.getElementById("loaderOverlay").classList.add("active");
+  setTimeout(function() {
+    window.location.href = "payment.html";
+  }, 1500);
+});
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2500);
+}
+
+window.addEventListener("DOMContentLoaded", function() {
+  initDarkMode();
+});
+</script>
+
+</body>
+</html>

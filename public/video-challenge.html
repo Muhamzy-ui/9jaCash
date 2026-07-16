@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>9jaCash — ₦500k Video Challenge</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+:root{
+  --bg:#0b0f19;
+  --surface:#131a2e;
+  --surface-card:#1c2642;
+  --border:#2c3b63;
+  --primary:#8b5cf6;
+  --primary-glow:rgba(139,92,246,0.2);
+  --success:#10b981;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --text:#f1f5f9;
+  --text-muted:#94a3b8;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* Animated background */
+.bg-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.bg-wrap::before{content:'';position:absolute;top:-20%;left:-20%;width:800px;height:800px;background:radial-gradient(circle,rgba(139,92,246,0.06),transparent 70%);animation:float1 25s ease-in-out infinite;}
+.bg-wrap::after{content:'';position:absolute;bottom:-10%;right:-10%;width:600px;height:600px;background:radial-gradient(circle,rgba(16,185,129,0.04),transparent 70%);animation:float2 20s ease-in-out infinite;}
+@keyframes float1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-30px,50px) scale(1.05);}}
+@keyframes float2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(40px,-30px) scale(1.1);}}
+@keyframes slideUp{from{opacity:0;transform:translateY(25px);}to{opacity:1;transform:translateY(0);}}
+
+.app{position:relative;z-index:1;max-width:540px;margin:0 auto;padding:32px 20px 80px;}
+.hidden{display:none !important;}
+
+/* Header */
+.topbar{display:flex;align-items:center;margin-bottom:32px;gap:16px;}
+.back-btn{width:44px;height:44px;border-radius:14px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px;cursor:pointer;transition:all 0.3s;text-decoration:none;}
+.back-btn:hover{border-color:var(--primary);color:var(--primary);}
+.page-title{font-size:20px;font-weight:800;color:var(--text);}
+.page-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+
+/* Cards */
+.hero-card{background:linear-gradient(135deg,rgba(139,92,246,0.15) 0%,rgba(168,85,247,0.1) 100%);border:1px solid rgba(139,92,246,0.3);border-radius:24px;padding:32px 24px;text-align:center;margin-bottom:24px;position:relative;overflow:hidden;animation:slideUp 0.6s ease both;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:50px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:18px;box-shadow:0 4px 14px var(--primary-glow);}
+.hero-title{font-size:26px;font-weight:900;line-height:1.2;margin-bottom:8px;}
+.hero-title span{background:linear-gradient(135deg,#a78bfa,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-desc{font-size:13px;color:var(--text-muted);line-height:1.6;max-width:380px;margin:0 auto;}
+
+/* Detail Card */
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:24px;margin-bottom:20px;animation:slideUp 0.6s ease both;animation-delay:0.1s;}
+.card-sec-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.card-sec-title i{color:var(--primary);}
+
+.steps{display:flex;flex-direction:column;gap:18px;}
+.step-item{display:flex;gap:14px;align-items:flex-start;}
+.step-number{width:28px;height:28px;border-radius:50%;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;margin-top:2px;}
+.step-content{flex:1;}
+.step-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.step-desc{font-size:12px;color:var(--text-muted);line-height:1.5;}
+
+/* Form */
+.submit-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:24px;margin-bottom:20px;animation:slideUp 0.6s ease both;animation-delay:0.2s;}
+.form-group{margin-bottom:20px;}
+.inp-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block;}
+.field-input{width:100%;padding:14px 16px;border-radius:14px;background:var(--bg);border:2px solid var(--border);color:var(--text);font-size:13px;font-weight:600;outline:none;transition:all 0.3s;}
+.field-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-glow);}
+.field-input::placeholder{color:var(--text-muted);font-weight:500;}
+
+.submit-btn{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;font-size:14px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px var(--primary-glow);}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px var(--primary-glow);}
+.submit-btn:active{transform:scale(0.97);}
+.submit-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+
+/* Status Box */
+.status-box{border-radius:18px;padding:18px;display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;animation:slideUp 0.4s ease both;}
+.status-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0;}
+.status-info{flex:1;}
+.status-title{font-size:14px;font-weight:800;margin-bottom:3px;}
+.status-desc{font-size:12px;line-height:1.5;}
+
+.status-pending{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);color:#f59e0b;}
+.status-pending .status-icon{background:linear-gradient(135deg,#f59e0b,#d97706);}
+.status-pending .status-desc{color:#d97706;}
+
+.status-approved{background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);color:#10b981;}
+.status-approved .status-icon{background:linear-gradient(135deg,#10b981,#059669);}
+.status-approved .status-desc{color:#059669;}
+
+.status-rejected{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);color:#ef4444;}
+.status-rejected .status-icon{background:linear-gradient(135deg,#ef4444,#dc2626);}
+.status-rejected .status-desc{color:#f87171;}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--surface-card);color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:99999;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.3);border:1px solid var(--border);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast i{color:var(--success);}
+</style>
+</head>
+<body>
+
+<div class="bg-wrap"></div>
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="topbar">
+    <a href="dashboard.html" class="back-btn" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+    <div>
+      <div class="page-title">Video Challenge</div>
+      <div class="page-sub">Show the world how 9jaCash changed your life</div>
+    </div>
+  </div>
+
+  <!-- Hero Card -->
+  <div class="hero-card">
+    <div class="hero-badge"><i class="fa-solid fa-trophy animate-bounce"></i> ₦500,000 Prize Pool</div>
+    <h2 class="hero-title">Testimonial <span>Challenge</span></h2>
+    <p class="hero-desc">Share a quick video talking about 9jaCash, explain how real it is, show your earnings, and win your share of the grand prize pool!</p>
+  </div>
+
+  <!-- Status Area (Dynamic) -->
+  <div id="statusContainer" class="hidden"></div>
+
+  <!-- Details Card -->
+  <div class="info-card">
+    <h3 class="card-sec-title"><i class="fa-solid fa-circle-info"></i> How to Participate</h3>
+    <div class="steps">
+      <div class="step-item">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <div class="step-title">Record Your Testimony</div>
+          <div class="step-desc">Create a video talking about your experience with 9jaCash. Speak clearly, mention how real the platform is, and show your dashboard or payment proof.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <div class="step-title">Select Video File</div>
+          <div class="step-desc">Pick the recorded video from your phone gallery. Ensure the file size is under 50MB and recorded in a clear format.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <div class="step-title">Upload &amp; Submit</div>
+          <div class="step-desc">Click submit to upload the video directly to our secure servers for review by our network admins.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <div class="step-title">Claim Your Prize</div>
+          <div class="step-desc">Approved video creators win an **instant bonus of up to ₦5,000** credited straight to their balance, plus eligibility for the grand ₦500k prize pool!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submission Card -->
+  <div class="submit-card" id="submitFormCard">
+    <h3 class="card-sec-title"><i class="fa-solid fa-paper-plane"></i> Submit Entry</h3>
+    <form id="submissionForm">
+      <div class="form-group">
+        <label class="inp-label">Select Video File</label>
+        <input type="file" id="videoFile" class="field-input" accept="video/*" required style="padding-top:12px;" />
+        <p class="text-[10px] text-slate-400 mt-2">Format: MP4, MOV, WebM (Max 50MB)</p>
+      </div>
+      <button type="submit" id="submitBtn" class="submit-btn">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video
+      </button>
+    </form>
+  </div>
+
+</div>
+
+<script>
+let userData = null;
+try { userData = JSON.parse(localStorage.getItem("9jaCashUser")); } catch(e) { userData = null; }
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function checkSubmissionStatus() {
+  if (!userData || !userData.phone) return;
+  fetch(API_URL + '/api/user/video-submission?phone=' + userData.phone)
+    .then(r => r.json())
+    .then(data => {
+      if (data.status && data.submission) {
+        const sub = data.submission;
+        renderStatus(sub.status, sub.video_url);
+      }
+    })
+    .catch(err => console.error('Status check error:', err));
+}
+
+function renderStatus(status, url) {
+  const container = document.getElementById('statusContainer');
+  const formCard = document.getElementById('submitFormCard');
+  container.className = "";
+  container.innerHTML = "";
+
+  let classVal = "";
+  let icon = "";
+  let title = "";
+  let desc = "";
+
+  const fullVideoUrl = url.startsWith('http') ? url : (API_URL + url);
+
+  if (status === 'Pending') {
+    classVal = "status-box status-pending";
+    icon = '<i class="fa-solid fa-clock-rotate-left"></i>';
+    title = "Submission Pending Review";
+    desc = `You uploaded your testimony. Our team is currently reviewing it. The cash reward will be credited once approved.<br/>
+            <video src="${fullVideoUrl}" controls class="w-full mt-3 rounded-lg border border-[#f59e0b]/30" style="max-height: 180px; display:block;"></video>`;
+    formCard.classList.add('hidden');
+  } else if (status === 'Approved') {
+    classVal = "status-box status-approved";
+    icon = '<i class="fa-solid fa-circle-check"></i>';
+    title = "Submission Approved! 🎉";
+    desc = `Congratulations! Your video was approved. The bonus reward was successfully credited to your balance.<br/>
+            <video src="${fullVideoUrl}" controls class="w-full mt-3 rounded-lg border border-[#10b981]/30" style="max-height: 180px; display:block;"></video>`;
+    formCard.classList.add('hidden');
+  } else if (status === 'Rejected') {
+    classVal = "status-box status-rejected";
+    icon = '<i class="fa-solid fa-circle-xmark"></i>';
+    title = "Submission Declined";
+    desc = `Your video submission was declined. Please verify your video meets all guidelines (shows face or dashboard and speaks clearly about 9jaCash) and upload a new video.`;
+    formCard.classList.remove('hidden'); // Allow resubmission
+  }
+
+  container.innerHTML = `
+    <div class="${classVal}">
+      <div class="status-icon">${icon}</div>
+      <div class="status-info">
+        <div class="status-title">${title}</div>
+        <div class="status-desc">${desc}</div>
+      </div>
+    </div>
+  `;
+}
+
+document.getElementById('submissionForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const fileInput = document.getElementById('videoFile');
+  const file = fileInput.files[0];
+  const btn = document.getElementById('submitBtn');
+
+  if (!file) {
+    Swal.fire({ icon: 'error', title: 'No File Selected', text: 'Please select a video testimony file to upload.', confirmButtonColor: '#8b5cf6' });
+    return;
+  }
+
+  if (file.size > 50 * 1024 * 1024) {
+    Swal.fire({ icon: 'error', title: 'File Too Large', text: 'Video file size must be less than 50MB.', confirmButtonColor: '#8b5cf6' });
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video...';
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const base64Data = evt.target.result;
+    
+    fetch(API_URL + '/api/user/submit-video', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: userData.phone, videoData: base64Data })
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
+      if (data.status) {
+        showToast('Video uploaded successfully!');
+        renderStatus('Pending', data.videoUrl);
+      } else {
+        Swal.fire({ icon: 'error', title: 'Upload Failed', text: data.error || 'Unable to upload video.', confirmButtonColor: '#8b5cf6' });
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue. Try again later.', confirmButtonColor: '#8b5cf6' });
+    });
+  };
+  reader.onerror = function() {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
+    Swal.fire({ icon: 'error', title: 'File Read Error', text: 'Failed to read video file.', confirmButtonColor: '#8b5cf6' });
+  };
+  reader.readAsDataURL(file);
+});
+
+window.addEventListener('DOMContentLoaded', function() {
+  if (!userData) { window.location.href = "login.html"; return; }
+  checkSubmissionStatus();
+});
+</script>
+</body>
+</html>

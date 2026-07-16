@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Upgrade Plan - 9jaCash</title>
+
+
+
+
+<script src="firebase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;transition:all 0.3s ease;}
+
+body.dark-mode{background:#0f172a;color:#f8fafc;}
+body.dark-mode .soft-bg{background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.15),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(236,72,153,0.1),transparent 50%),#0f172a;}
+body.dark-mode .plan-card,
+body.dark-mode .summary-card{background:#1e293b;border-color:#334155;}
+body.dark-mode .plan-name,
+body.dark-mode .plan-price,
+body.dark-mode .plan-limit,
+body.dark-mode .sec-title,
+body.dark-mode .compare-val{color:#f8fafc;}
+body.dark-mode .plan-desc,
+body.dark-mode .feature-text,
+body.dark-mode .compare-label,
+body.dark-mode .footer-text{color:#94a3b8;}
+body.dark-mode .bottom-nav{background:#1e293b;border-color:#334155;}
+body.dark-mode .nav-item{color:#64748b;}
+body.dark-mode .nav-item.active{color:#818cf8;}
+body.dark-mode .nav-mid{border-color:#0f172a;}
+body.dark-mode .back-btn{background:#1e293b;border-color:#334155;color:#94a3b8;}
+body.dark-mode .popular-badge{background:linear-gradient(135deg,#818cf8,#a78bfa);}
+body.dark-mode .feature-icon{background:rgba(99,102,241,0.15);color:#818cf8;}
+body.dark-mode .plan-card.popular{border-color:rgba(99,102,241,0.4);box-shadow:0 10px 40px rgba(99,102,241,0.15);}
+body.dark-mode .plan-btn:disabled{background:#334155;color:#64748b;}
+body.dark-mode .toast{background:#1e293b;border-color:#334155;}
+body.dark-mode .hero-sub{color:#94a3b8;}
+body.dark-mode .hero-title span{background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+body.dark-mode .savings-tag{background:rgba(16,185,129,0.15);color:#34d399;}
+body.dark-mode .old-price{color:#64748b;}
+body.dark-mode .check-row{border-color:#334155;}
+body.dark-mode .check-row:nth-child(even){background:rgba(99,102,241,0.05);}
+body.dark-mode .check-label{color:#94a3b8;}
+body.dark-mode .check-yes{color:#34d399;}
+body.dark-mode .check-no{color:#f87171;}
+body.dark-mode .compare-table{background:#1e293b;border-color:#334155;}
+
+.soft-bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.08),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(236,72,153,0.06),transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(16,185,129,0.04),transparent 50%),#f8fafc;transition:all 0.3s ease;}
+
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 20px 100px;}
+
+.topbar{padding:24px 0 16px;display:flex;align-items:center;gap:12px;}
+.back-btn{width:44px;height:44px;border-radius:14px;background:#fff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:16px;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.back-btn:hover{background:#f1f5f9;color:#6366f1;}
+.back-btn:active{transform:scale(0.92);}
+.header-title{font-size:18px;font-weight:800;color:#1e293b;transition:color 0.3s;flex:1;text-align:center;}
+.theme-toggle{width:44px;height:44px;border-radius:14px;background:#fff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:16px;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.theme-toggle:hover{background:#f1f5f9;color:#6366f1;}
+body.dark-mode .theme-toggle{background:#1e293b;border-color:#334155;color:#94a3b8;}
+body.dark-mode .back-btn{background:#1e293b;border-color:#334155;color:#94a3b8;}
+body.dark-mode .header-title{color:#f8fafc;}
+
+.hero-text{text-align:center;margin-bottom:28px;padding-top:8px;}
+.hero-title{font-size:28px;font-weight:900;color:#1e293b;line-height:1.2;margin-bottom:10px;transition:color 0.3s;}
+.hero-title span{background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:14px;color:#64748b;line-height:1.6;max-width:320px;margin:0 auto;transition:color 0.3s;}
+
+.plan-card{background:#fff;border-radius:24px;overflow:hidden;border:1px solid #e2e8f0;margin-bottom:16px;position:relative;transition:all 0.3s ease;box-shadow:0 4px 24px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.04);}
+.plan-card:active{transform:scale(0.98);}
+.plan-card.popular{border:2px solid rgba(99,102,241,0.3);box-shadow:0 10px 40px rgba(99,102,241,0.12);}
+
+.popular-badge{position:absolute;top:14px;right:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:10px;font-weight:800;padding:5px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;z-index:2;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+
+.plan-header{padding:24px 20px 20px;position:relative;}
+.plan-header::before{content:'';position:absolute;inset:0;opacity:0.03;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");}
+
+.plan-header-basic{background:linear-gradient(135deg,#3b82f6,#2563eb);}
+.plan-header-silver{background:linear-gradient(135deg,#6b7280,#4b5563);}
+.plan-header-gold{background:linear-gradient(135deg,#f59e0b,#d97706);}
+.plan-header-diamond{background:linear-gradient(135deg,#8b5cf6,#7c3aed);}
+
+.plan-header-content{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;}
+.plan-name{font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;}
+.plan-desc{font-size:13px;color:rgba(255,255,255,0.8);font-weight:500;}
+.plan-header-icon{width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;backdrop-filter:blur(8px);}
+
+.plan-price-wrap{display:flex;align-items:baseline;gap:8px;margin-top:12px;position:relative;z-index:1;}
+.plan-price{font-size:32px;font-weight:900;color:#fff;}
+.plan-price span{font-size:13px;font-weight:500;opacity:0.8;}
+.old-price{font-size:16px;font-weight:600;color:rgba(255,255,255,0.5);text-decoration:line-through;}
+.savings-tag{font-size:11px;font-weight:700;color:#10b981;background:rgba(255,255,255,0.9);padding:3px 10px;border-radius:20px;}
+
+.plan-body{padding:20px;}
+.plan-limit{font-size:16px;font-weight:700;color:#1e293b;margin-bottom:16px;transition:color 0.3s;}
+.plan-limit span{color:#6366f1;font-weight:800;}
+.plan-features{list-style:none;padding:0;margin:0;}
+.plan-features li{display:flex;align-items:center;gap:12px;font-size:13px;color:#64748b;margin-bottom:12px;transition:color 0.3s;}
+.feature-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+.feature-icon.green{background:#ecfdf5;color:#10b981;}
+.feature-icon.purple{background:#eef2ff;color:#6366f1;}
+.feature-icon.orange{background:#fff7ed;color:#f59e0b;}
+.feature-text{flex:1;}
+.feature-text strong{color:#1e293b;font-weight:700;transition:color 0.3s;}
+
+.plan-btn{width:100%;padding:16px;border-radius:18px;font-size:15px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.1);}
+.plan-btn:active{transform:scale(0.97);}
+.plan-btn:disabled{background:#e2e8f0;color:#94a3b8;box-shadow:none;cursor:not-allowed;}
+.btn-basic{background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 8px 25px rgba(59,130,246,0.3);}
+.btn-silver{background:linear-gradient(135deg,#6b7280,#4b5563);box-shadow:0 8px 25px rgba(107,114,128,0.3);}
+.btn-gold{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 8px 25px rgba(245,158,11,0.3);}
+.btn-diamond{background:linear-gradient(135deg,#8b5cf6,#7c3aed);box-shadow:0 8px 25px rgba(139,92,246,0.3);}
+
+.summary-card{background:#fff;border-radius:24px;padding:24px 20px;border:1px solid #e2e8f0;margin-bottom:20px;box-shadow:0 4px 24px rgba(0,0,0,0.06);transition:all 0.3s ease;}
+.summary-title{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:16px;display:flex;align-items:center;gap:8px;transition:color 0.3s;}
+.summary-title i{color:#f59e0b;font-size:14px;}
+
+.compare-table{width:100%;border-collapse:collapse;}
+.compare-table th{text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;padding:8px 4px;border-bottom:1px solid #f1f5f9;transition:color 0.3s;}
+.compare-table td{padding:10px 4px;font-size:13px;font-weight:600;border-bottom:1px solid #f1f5f9;transition:color 0.3s;}
+.compare-table tr:last-child td{border-bottom:none;}
+.compare-label{color:#64748b;font-weight:600;}
+.compare-val{color:#1e293b;font-weight:700;}
+.compare-val.highlight{color:#6366f1;}
+.compare-val.yes{color:#10b981;}
+.compare-val.no{color:#ef4444;}
+
+.footer{text-align:center;margin-top:32px;padding-bottom:20px;}
+.footer-text{font-size:12px;color:#94a3b8;transition:color 0.3s;}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1e293b;color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.15);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast i{color:#10b981;}
+
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #f1f5f9;padding:10px 20px 24px;display:flex;justify-content:space-around;align-items:center;z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,0.04);transition:all 0.3s ease;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:#94a3b8;text-decoration:none;font-size:10px;font-weight:600;transition:all 0.3s;border:none;background:none;cursor:pointer;}
+.nav-item i{font-size:20px;}
+.nav-item.active{color:#6366f1;}
+.nav-mid{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-top:-20px;box-shadow:0 4px 16px rgba(99,102,241,0.3);border:4px solid #f8fafc;transition:all 0.3s;}
+.nav-mid:active{transform:scale(0.95);}
+body.dark-mode .nav-mid{border-color:#0f172a;}
+
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.anim{animation:slideUp 0.6s ease both;}
+.d1{animation-delay:0.1s;}
+.d2{animation-delay:0.2s;}
+.d3{animation-delay:0.3s;}
+.d4{animation-delay:0.4s;}
+.d5{animation-delay:0.5s;}
+.d6{animation-delay:0.6s;}
+.d7{animation-delay:0.7s;}
+</style>
+</head>
+<body>
+
+<div class="soft-bg"></div>
+
+<div class="app">
+
+<div class="topbar anim d1">
+  <button class="back-btn" onclick="window.location.href='dashboard.html'">
+    <i class="fa-solid fa-arrow-left"></i>
+  </button>
+  <div class="header-title">Upgrade Plan</div>
+  <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle theme">
+    <i id="themeIcon" class="fa-solid fa-sun"></i>
+  </button>
+</div>
+
+<div class="hero-text anim d1">
+  <div class="hero-title">Unlock Your <span>Earning Power</span> ⚡</div>
+  <div class="hero-sub">Choose a plan that matches your goals. Higher plans = faster mining, bigger limits, and instant withdrawals.</div>
+</div>
+
+<div class="plan-card anim d2" id="cardBasic">
+  <div class="plan-header plan-header-basic">
+    <div class="plan-header-content">
+      <div>
+        <div class="plan-name">Basic Plan</div>
+        <div class="plan-desc">Perfect for beginners</div>
+      </div>
+      <div class="plan-header-icon"><i class="fa-solid fa-leaf"></i></div>
+    </div>
+    <div class="plan-price-wrap">
+      <div class="plan-price">₦23,000 <span>one-time</span></div>
+    </div>
+  </div>
+  <div class="plan-body">
+    <div class="plan-limit">Earn up to <span>₦50,000</span></div>
+    <ul class="plan-features">
+      <li><div class="feature-icon green"><i class="fa-solid fa-check"></i></div><div class="feature-text">Standard <strong>mining speed</strong></div></li>
+      <li><div class="feature-icon purple"><i class="fa-solid fa-check"></i></div><div class="feature-text">Daily rewards up to <strong>₦24,000</strong></div></li>
+      <li><div class="feature-icon orange"><i class="fa-solid fa-check"></i></div><div class="feature-text">Withdraw <strong>anytime</strong></div></li>
+    </ul>
+    <button class="plan-btn btn-basic" onclick="upgradePlan(23000, 50000, 'Basic Plan')" id="btnBasic">
+      Upgrade to Basic <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+</div>
+
+<div class="plan-card popular anim d3" id="cardSilver">
+  <div class="popular-badge"><i class="fa-solid fa-fire" style="font-size:9px;margin-right:3px;"></i>Most Popular</div>
+  <div class="plan-header plan-header-silver">
+    <div class="plan-header-content">
+      <div>
+        <div class="plan-name">Silver Plan</div>
+        <div class="plan-desc">Best value for money</div>
+      </div>
+      <div class="plan-header-icon"><i class="fa-solid fa-gem"></i></div>
+    </div>
+    <div class="plan-price-wrap">
+      <div class="plan-price">₦35,000 <span>one-time</span></div>
+    </div>
+  </div>
+  <div class="plan-body">
+    <div class="plan-limit">Earn up to <span>₦80,000</span></div>
+    <ul class="plan-features">
+      <li><div class="feature-icon green"><i class="fa-solid fa-check"></i></div><div class="feature-text"><strong>2× faster</strong> mining speed</div></li>
+      <li><div class="feature-icon purple"><i class="fa-solid fa-check"></i></div><div class="feature-text">Higher daily <strong>mining cap</strong></div></li>
+      <li><div class="feature-icon orange"><i class="fa-solid fa-check"></i></div><div class="feature-text"><strong>Priority</strong> withdrawals</div></li>
+    </ul>
+    <button class="plan-btn btn-silver" onclick="upgradePlan(35000, 80000, 'Silver Plan')" id="btnSilver">
+      Upgrade to Silver <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+</div>
+
+<div class="plan-card anim d4" id="cardGold">
+  <div class="plan-header plan-header-gold">
+    <div class="plan-header-content">
+      <div>
+        <div class="plan-name">Gold Plan</div>
+        <div class="plan-desc">For serious miners</div>
+      </div>
+      <div class="plan-header-icon"><i class="fa-solid fa-crown"></i></div>
+    </div>
+    <div class="plan-price-wrap">
+      <div class="plan-price">₦75,000 <span>one-time</span></div>
+    </div>
+  </div>
+  <div class="plan-body">
+    <div class="plan-limit">Earn up to <span>₦172,000</span></div>
+    <ul class="plan-features">
+      <li><div class="feature-icon green"><i class="fa-solid fa-check"></i></div><div class="feature-text"><strong>3× ultra-fast</strong> mining</div></li>
+      <li><div class="feature-icon purple"><i class="fa-solid fa-check"></i></div><div class="feature-text">High-profit <strong>algorithm</strong></div></li>
+      <li><div class="feature-icon orange"><i class="fa-solid fa-check"></i></div><div class="feature-text"><strong>Instant</strong> withdrawals</div></li>
+    </ul>
+    <button class="plan-btn btn-gold" onclick="upgradePlan(75000, 172000, 'Gold Plan')" id="btnGold">
+      Upgrade to Gold <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+</div>
+
+<div class="plan-card anim d5" id="cardDiamond">
+  <div class="plan-header plan-header-diamond">
+    <div class="plan-header-content">
+      <div>
+        <div class="plan-name">Diamond Plan</div>
+        <div class="plan-desc">Maximum power</div>
+      </div>
+      <div class="plan-header-icon"><i class="fa-solid fa-gem"></i></div>
+    </div>
+    <div class="plan-price-wrap">
+      <div class="plan-price">₦180,000 <span>one-time</span></div>
+    </div>
+  </div>
+  <div class="plan-body">
+    <div class="plan-limit">Earn up to <span>₦320,000</span></div>
+    <ul class="plan-features">
+      <li><div class="feature-icon green"><i class="fa-solid fa-check"></i></div><div class="feature-text"><strong>5× maximum</strong> mining speed</div></li>
+      <li><div class="feature-icon purple"><i class="fa-solid fa-check"></i></div><div class="feature-text"><strong>Unlimited</strong> daily potential</div></li>
+      <li><div class="feature-icon orange"><i class="fa-solid fa-check"></i></div><div class="feature-text"><strong>Lifetime</strong> priority access</div></li>
+    </ul>
+    <button class="plan-btn btn-diamond" onclick="upgradePlan(180000, 320000, 'Diamond Plan')" id="btnDiamond">
+      Upgrade to Diamond <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+</div>
+
+<div class="summary-card anim d6">
+  <div class="summary-title"><i class="fa-solid fa-scale-balanced"></i> Plan Comparison</div>
+  <table class="compare-table">
+    <tr>
+      <th>Feature</th>
+      <th style="text-align:center;">Basic</th>
+      <th style="text-align:center;">Silver</th>
+      <th style="text-align:center;">Gold</th>
+      <th style="text-align:center;">Diamond</th>
+    </tr>
+    <tr>
+      <td class="compare-label">Mining Speed</td>
+      <td class="compare-val" style="text-align:center;">1×</td>
+      <td class="compare-val highlight" style="text-align:center;">2×</td>
+      <td class="compare-val highlight" style="text-align:center;">3×</td>
+      <td class="compare-val highlight" style="text-align:center;">5×</td>
+    </tr>
+    <tr>
+      <td class="compare-label">Daily Cap</td>
+      <td class="compare-val" style="text-align:center;">₦24K</td>
+      <td class="compare-val" style="text-align:center;">₦50K</td>
+      <td class="compare-val" style="text-align:center;">₦100K</td>
+      <td class="compare-val" style="text-align:center;">Unlimited</td>
+    </tr>
+    <tr>
+      <td class="compare-label">Priority</td>
+      <td class="compare-val no" style="text-align:center;"><i class="fa-solid fa-xmark"></i></td>
+      <td class="compare-val yes" style="text-align:center;"><i class="fa-solid fa-check"></i></td>
+      <td class="compare-val yes" style="text-align:center;"><i class="fa-solid fa-check"></i></td>
+      <td class="compare-val yes" style="text-align:center;"><i class="fa-solid fa-check"></i></td>
+    </tr>
+    <tr>
+      <td class="compare-label">Instant WD</td>
+      <td class="compare-val no" style="text-align:center;"><i class="fa-solid fa-xmark"></i></td>
+      <td class="compare-val no" style="text-align:center;"><i class="fa-solid fa-xmark"></i></td>
+      <td class="compare-val yes" style="text-align:center;"><i class="fa-solid fa-check"></i></td>
+      <td class="compare-val yes" style="text-align:center;"><i class="fa-solid fa-check"></i></td>
+    </tr>
+  </table>
+</div>
+
+<div class="footer anim d7">
+  <div class="footer-text">© 9jaCash 2026 • All rights reserved</div>
+</div>
+
+</div>
+
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+
+<div class="bottom-nav">
+  <button class="nav-item" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-house"></i>Home</button>
+  <button class="nav-item active" onclick="window.location.href='upgrade.html'"><i class="fa-solid fa-rocket"></i>Upgrade</button>
+  <button class="nav-mid" onclick="window.location.href='dashboard.html?mine=true'"><i class="fa-solid fa-hammer"></i></button>
+  <button class="nav-item" onclick="window.location.href='tasks.html'"><i class="fa-solid fa-list-check"></i>Tasks</button>
+  <button class="nav-item" onclick="window.location.href='profile.html'"><i class="fa-solid fa-user"></i>Profile</button>
+</div>
+
+<script>
+let userData = null;
+try {
+  userData = JSON.parse(localStorage.getItem("9jaCashUser"));
+} catch(e) { userData = null; }
+
+if (!userData) {
+  window.location.href = "start.html";
+}
+
+function initDarkMode() {
+  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  if (isDark) {
+    document.body.classList.add("dark-mode");
+    document.getElementById("themeIcon").className = "fa-solid fa-moon";
+  } else {
+    document.getElementById("themeIcon").className = "fa-solid fa-sun";
+  }
+}
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem("9jaCashDark", isDark);
+  document.getElementById("themeIcon").className = isDark ? "fa-solid fa-moon" : "fa-solid fa-sun";
+}
+
+window.addEventListener("DOMContentLoaded", function() {
+  initDarkMode();
+  checkCurrentPlan();
+});
+
+function checkCurrentPlan() {
+  const currentPlan = userData.planName || userData.plan || "Free";
+  const planOrder = ["Free", "Basic Plan", "Silver Plan", "Gold Plan", "Diamond Plan"];
+  const currentIndex = planOrder.indexOf(currentPlan);
+
+  const plans = [
+    {name: "Basic Plan", btn: "btnBasic", card: "cardBasic"},
+    {name: "Silver Plan", btn: "btnSilver", card: "cardSilver"},
+    {name: "Gold Plan", btn: "btnGold", card: "cardGold"},
+    {name: "Diamond Plan", btn: "btnDiamond", card: "cardDiamond"}
+  ];
+
+  plans.forEach(function(p) {
+    const planIndex = planOrder.indexOf(p.name);
+    const btn = document.getElementById(p.btn);
+    const card = document.getElementById(p.card);
+
+    if (planIndex <= currentIndex && currentIndex > 0) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Active Plan';
+      card.style.opacity = "0.7";
+    }
+  });
+}
+
+function upgradePlan(amount, earningLimit, planName) {
+  const currentPlan = userData.planName || userData.plan || "Free";
+  const planOrder = ["Free", "Basic Plan", "Silver Plan", "Gold Plan", "Diamond Plan"];
+  const currentIndex = planOrder.indexOf(currentPlan);
+  const newIndex = planOrder.indexOf(planName);
+
+  if (newIndex <= currentIndex && currentIndex > 0) {
+    showToast("You already have this plan or higher!");
+    return;
+  }
+
+  Swal.fire({
+    title: `Upgrade to ${planName}`,
+    html: `
+      <div style="text-align:left;margin-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #e2e8f0;">
+          <span style="color:#64748b;font-size:13px;">Plan Cost</span>
+          <span style="font-weight:800;color:#1e293b;font-size:16px;">₦${amount.toLocaleString()}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #e2e8f0;">
+          <span style="color:#64748b;font-size:13px;">Earning Limit</span>
+          <span style="font-weight:800;color:#6366f1;font-size:16px;">₦${earningLimit.toLocaleString()}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
+          <span style="color:#64748b;font-size:13px;">Type</span>
+          <span style="font-weight:700;color:#10b981;font-size:13px;">One-time Payment</span>
+        </div>
+        <p style="color:#64748b;font-size:12px;margin-top:12px;text-align:center;">Instant activation after successful payment</p>
+      </div>
+    `,
+    icon: "info",
+    showCancelButton: true,
+    confirmButtonText: "Proceed to Payment",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#6366f1",
+    cancelButtonColor: "#6b7280",
+    reverseButtons: true,
+    background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff",
+    color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const plan = {
+        name: planName,
+        amount: amount,
+        earningLimit: earningLimit,
+        date: new Date().toLocaleString(),
+        status: "pending"
+      };
+            // Clear any old payout key data so payment.html shows upgrade, not payout key
+      localStorage.removeItem("9jaCashPaymentData");
+      localStorage.removeItem("9jaCashPaymentData");
+
+      localStorage.setItem("selectedPlan", JSON.stringify(plan));
+      window.location.href = "payment.html";
+    }
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2500);
+}
+</script>
+
+</body>
+</html>

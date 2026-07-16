@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>9jaCash — Junior Admin · Payments</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+:root{
+  --bg:#0b0f19;--surface:#131a2e;--surface-card:#1c2642;--border:#2c3b63;
+  --primary:#8b5cf6;--primary-glow:rgba(139,92,246,0.15);
+  --success:#10b981;--danger:#ef4444;--warning:#f59e0b;
+  --text:#f1f5f9;--text-muted:#94a3b8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.bg-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.bg-wrap::before{content:'';position:absolute;top:-20%;left:-20%;width:800px;height:800px;background:radial-gradient(circle,rgba(139,92,246,0.06),transparent 70%);animation:float1 25s ease-in-out infinite;}
+.bg-wrap::after{content:'';position:absolute;bottom:-10%;right:-10%;width:600px;height:600px;background:radial-gradient(circle,rgba(16,185,129,0.04),transparent 70%);animation:float2 20s ease-in-out infinite;}
+@keyframes float1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-30px,50px) scale(1.05);}}
+@keyframes float2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(40px,-30px) scale(1.1);}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.app{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:32px 20px 80px;}
+.hidden{display:none !important;}
+
+/* Topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.back-btn{width:44px;height:44px;border-radius:14px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px;cursor:pointer;transition:all 0.3s;text-decoration:none;}
+.back-btn:hover{border-color:var(--primary);color:var(--primary);}
+.page-title{font-size:22px;font-weight:800;color:var(--text);}
+.page-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+
+/* Cards */
+.section-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;margin-bottom:20px;transition:border-color 0.3s;animation:slideUp 0.5s ease both;}
+.section-card:hover{border-color:rgba(139,92,246,0.3);}
+.card-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.card-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0;}
+.icon-green{background:linear-gradient(135deg,#10b981,#059669);}
+.icon-amber{background:linear-gradient(135deg,#f59e0b,#d97706);}
+.icon-blue{background:linear-gradient(135deg,#3b82f6,#2563eb);}
+.icon-purple{background:linear-gradient(135deg,#8b5cf6,#7c3aed);}
+.icon-teal{background:linear-gradient(135deg,#0ea5e9,#0284c7);}
+.card-title{font-size:16px;font-weight:800;color:var(--text);}
+.card-sub{font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5;}
+
+/* Form */
+.form-grid{display:grid;gap:16px;}
+.form-grid.cols-2{grid-template-columns:1fr 1fr;}
+.form-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+@media(max-width:600px){.form-grid.cols-2,.form-grid.cols-3{grid-template-columns:1fr;}}
+.field-group{display:flex;flex-direction:column;gap:6px;}
+.field-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+.field-input{width:100%;padding:14px 16px;border-radius:12px;background:var(--bg);border:2px solid var(--border);color:var(--text);font-size:14px;font-weight:600;outline:none;transition:all 0.3s;font-family:'Plus Jakarta Sans',sans-serif;}
+.field-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-glow);}
+.field-input::placeholder{color:var(--text-muted);font-weight:500;}
+.help-text{font-size:12px;color:var(--text-muted);line-height:1.4;}
+
+/* Save button */
+.save-btn{display:inline-flex;align-items:center;gap:10px;padding:13px 24px;border-radius:14px;background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;font-size:13px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;margin-top:10px;box-shadow:0 4px 16px var(--primary-glow);}
+.save-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(139,92,246,0.35);}
+.save-btn:active{transform:scale(0.97);}
+.save-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+
+/* Notice */
+.notice{background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:14px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px;margin-bottom:24px;}
+.notice i{color:var(--success);font-size:16px;margin-top:2px;flex-shrink:0;}
+.notice p{font-size:13px;color:#94a3b8;line-height:1.6;}
+.notice b{color:var(--success);}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--surface-card);color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:99999;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.3);border:1px solid var(--border);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* Login */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1;}
+.login-box{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px;position:relative;overflow:hidden;}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),#ec4899);}
+.login-avatar{width:68px;height:68px;border-radius:18px;background:linear-gradient(135deg,var(--primary),#7c3aed);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:26px;color:#fff;box-shadow:0 8px 24px var(--primary-glow);}
+.inp{width:100%;padding:14px 16px;border-radius:12px;background:var(--bg);border:2px solid var(--border);color:var(--text);font-size:14px;font-weight:600;outline:none;transition:all 0.3s;font-family:'Plus Jakarta Sans',sans-serif;}
+.inp:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-glow);}
+.inp::placeholder{color:var(--text-muted);}
+.lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:block;}
+.login-btn{width:100%;padding:15px;border-radius:12px;background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;font-size:14px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.login-btn:hover{box-shadow:0 6px 20px var(--primary-glow);}
+.login-btn:active{transform:scale(0.97);}
+@media(max-width:768px) {
+  .app { padding: 20px 12px; }
+  .section-card { padding: 16px; border-radius: 16px; }
+  .topbar { flex-direction: column; align-items: stretch; }
+  .topbar-left { width: 100%; }
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 600px; }
+}
+@media(max-width:480px) {
+  .login-box {
+    margin: 40px auto 0 !important;
+    padding: 24px 16px !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="bg-wrap"></div>
+<div class="toast" id="toast"><i id="toastIcon" class="fa-solid fa-circle-check" style="color:#10b981;"></i><span id="toastMsg">Done</span></div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-wrap">
+  <div class="login-box">
+    <div class="login-avatar"><i class="fa-solid fa-credit-card"></i></div>
+    <h2 style="font-size:20px;font-weight:900;text-align:center;margin-bottom:4px;">Payment Settings</h2>
+    <p style="font-size:12px;text-align:center;color:#94a3b8;margin-bottom:24px;">Manage your bank accounts &amp; crypto wallet</p>
+    <form id="loginForm">
+      <div style="margin-bottom:16px;">
+        <label class="lbl">Email Address</label>
+        <input type="email" id="loginEmail" class="inp" placeholder="junior@9jacash.com" required />
+      </div>
+      <div>
+        <label class="lbl">Password</label>
+        <input type="password" id="loginPassword" class="inp" placeholder="••••••••" required />
+      </div>
+      <button type="submit" id="loginBtn" class="login-btn">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Access Payment Settings
+      </button>
+    </form>
+    <p style="text-align:center;margin-top:20px;">
+      <a href="junior-admin.html" style="font-size:12px;color:#6366f1;text-decoration:none;font-weight:700;">
+        <i class="fa-solid fa-arrow-left" style="font-size:10px;"></i> Back to Dashboard
+      </a>
+    </p>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="mainContent" class="app hidden">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <a href="junior-admin.html" class="back-btn" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+      <div>
+        <div class="page-title"><i class="fa-solid fa-credit-card" style="color:#8b5cf6;margin-right:8px;font-size:18px;"></i>Payment Settings</div>
+        <div class="page-sub">Configure bank accounts &amp; crypto wallet for your network</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:12px;font-weight:700;color:#8b5cf6;background:rgba(139,92,246,0.1);padding:8px 14px;border-radius:50px;border:1px solid rgba(139,92,246,0.2);">
+        <i class="fa-solid fa-user-gear" style="margin-right:6px;"></i><span id="adminLabel">—</span>
+      </span>
+      <button onclick="doLogout()" style="padding:9px 14px;border-radius:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.3s;">
+        <i class="fa-solid fa-right-from-bracket"></i> Log Out
+      </button>
+    </div>
+  </div>
+
+  <!-- Notice -->
+  <div class="notice">
+    <i class="fa-solid fa-circle-info"></i>
+    <p>The bank details and crypto wallet you configure here are shown to your <b>referred users</b> when they pay for plan upgrades and payout keys. Keep them accurate and up-to-date.</p>
+  </div>
+
+  <!-- ─── SECTION 1: Main Account ─── -->
+  <div class="section-card" style="animation-delay:0.05s;">
+    <div class="card-header">
+      <div class="card-icon icon-green"><i class="fa-solid fa-building-columns"></i></div>
+      <div>
+        <div class="card-title">Main Account</div>
+        <div class="card-sub">Primary bank account for receiving plan upgrade payments from your referred users</div>
+      </div>
+    </div>
+    <div class="form-grid cols-2" style="margin-bottom:16px;">
+      <div class="field-group">
+        <label class="field-label">Account Number</label>
+        <input type="text" id="mainAccNumber" class="field-input" maxlength="10" placeholder="10-digit NUBAN" />
+        <span class="help-text">Must be exactly 10 digits</span>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Bank Name</label>
+        <input type="text" id="mainBankName" class="field-input" placeholder="e.g. GTBank, Zenith, OPay" />
+      </div>
+    </div>
+    <div class="form-grid cols-2" style="margin-bottom:20px;">
+      <div class="field-group">
+        <label class="field-label">Account Holder Name</label>
+        <input type="text" id="mainAccName" class="field-input" placeholder="e.g. John Doe" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Upgrade Amount (₦) <small style="color:#64748b;text-transform:none;letter-spacing:0;">(hint for users)</small></label>
+        <input type="number" id="mainAmount" class="field-input" placeholder="e.g. 23000" />
+      </div>
+    </div>
+    <button class="save-btn" id="saveMainBtn" onclick="saveMainAccount()">
+      <i class="fa-solid fa-floppy-disk"></i> Save Main Account
+    </button>
+  </div>
+
+  <!-- ─── SECTION 2: Transfer Fee Account ─── -->
+  <div class="section-card" style="animation-delay:0.10s;">
+    <div class="card-header">
+      <div class="card-icon icon-amber"><i class="fa-solid fa-bolt"></i></div>
+      <div>
+        <div class="card-title">Transfer Fee Account</div>
+        <div class="card-sub">Secondary account for withdrawal verification fees paid by users before processing payouts</div>
+      </div>
+    </div>
+    <div class="form-grid cols-2" style="margin-bottom:16px;">
+      <div class="field-group">
+        <label class="field-label">Account Number</label>
+        <input type="text" id="feeAccNumber" class="field-input" maxlength="10" placeholder="10-digit NUBAN" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Bank Name</label>
+        <input type="text" id="feeBankName" class="field-input" placeholder="e.g. OPay, Paga, FCMB" />
+      </div>
+    </div>
+    <div class="form-grid cols-2" style="margin-bottom:20px;">
+      <div class="field-group">
+        <label class="field-label">Account Holder Name</label>
+        <input type="text" id="feeAccName" class="field-input" placeholder="e.g. John Doe" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Fee Amount (₦)</label>
+        <input type="number" id="feeAmount" class="field-input" placeholder="e.g. 35200" />
+      </div>
+    </div>
+    <button class="save-btn" id="saveFeeBtn" onclick="saveTransferFee()">
+      <i class="fa-solid fa-floppy-disk"></i> Save Transfer Fee Account
+    </button>
+  </div>
+
+  <!-- ─── SECTION 3: Telegram ─── -->
+  <div class="section-card" style="animation-delay:0.15s;">
+    <div class="card-header">
+      <div class="card-icon icon-blue"><i class="fa-brands fa-telegram"></i></div>
+      <div>
+        <div class="card-title">Telegram Support Channel</div>
+        <div class="card-sub">Link to your Telegram group or channel — shown to users for payment help and confirmation</div>
+      </div>
+    </div>
+    <div class="form-grid" style="margin-bottom:20px;">
+      <div class="field-group">
+        <label class="field-label">Channel / Group URL</label>
+        <input type="url" id="telegramUrl" class="field-input" placeholder="https://t.me/yourchannel" />
+        <span class="help-text">Example: https://t.me/9jaCashSupport — Leave blank to use the global support link</span>
+      </div>
+    </div>
+    <button class="save-btn" id="saveTelegramBtn" onclick="saveTelegram()">
+      <i class="fa-solid fa-floppy-disk"></i> Save Telegram Link
+    </button>
+  </div>
+
+  <!-- ─── SECTION 4: Crypto Payment ─── -->
+  <div class="section-card" style="animation-delay:0.20s;">
+    <div class="card-header">
+      <div class="card-icon icon-purple"><i class="fa-brands fa-bitcoin"></i></div>
+      <div>
+        <div class="card-title">Crypto Payment (USDT)</div>
+        <div class="card-sub">Optional USDT wallet for users who prefer crypto payments for upgrades</div>
+      </div>
+    </div>
+    <div class="form-grid cols-2" style="margin-bottom:20px;">
+      <div class="field-group">
+        <label class="field-label">Wallet Address</label>
+        <input type="text" id="cryptoAddress" class="field-input" placeholder="e.g. TW6zE…R9sT3" />
+        <span class="help-text">Accepts USDT. Leave blank to disable crypto payments</span>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Network</label>
+        <input type="text" id="cryptoNetwork" class="field-input" placeholder="e.g. USDT TRC20, BEP20" />
+      </div>
+    </div>
+    <button class="save-btn" id="saveCryptoBtn" onclick="saveCrypto()">
+      <i class="fa-solid fa-floppy-disk"></i> Save Crypto Wallet
+    </button>
+  </div>
+
+  <!-- ─── SECTION 5: Referral Link ─── -->
+  <div class="section-card" style="animation-delay:0.25s;">
+    <div class="card-header">
+      <div class="card-icon icon-teal"><i class="fa-solid fa-link"></i></div>
+      <div>
+        <div class="card-title">Your Referral Link</div>
+        <div class="card-sub">Share this link so new users register directly under your network</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:2px solid var(--border);border-radius:14px;padding:12px 14px;">
+      <input type="text" id="refLinkDisplay" readonly class="field-input" style="border:none;background:transparent;padding:0;font-size:13px;font-family:monospace;color:#818cf8;flex:1;min-width:0;" />
+      <button onclick="copyRefLink()" style="padding:10px 18px;border-radius:10px;background:var(--primary);color:#fff;font-size:12px;font-weight:800;border:none;cursor:pointer;white-space:nowrap;transition:all 0.3s;flex-shrink:0;">
+        <i class="fa-regular fa-copy"></i> Copy
+      </button>
+    </div>
+  </div>
+
+</div><!-- end .app -->
+
+<script>
+let adminSession = null;
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+
+// TOAST
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  const icon = document.getElementById('toastIcon');
+  document.getElementById('toastMsg').textContent = msg;
+  icon.className = type === 'error' ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-circle-check';
+  icon.style.color = type === 'error' ? '#ef4444' : '#10b981';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// LOGIN
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Verifying...';
+
+  fetch(API_URL + '/api/admin/junior/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status && data.junior) {
+      adminSession = data.junior;
+      localStorage.setItem('9jaCashJuniorAdmin', JSON.stringify(adminSession));
+      showDashboard();
+    } else throw new Error(data.error || 'Access denied');
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Access Payment Settings';
+    showToast(err.message, 'error');
+  });
+});
+
+function doLogout() {
+  localStorage.removeItem('9jaCashJuniorAdmin');
+  location.reload();
+}
+
+// SHOW DASHBOARD
+function showDashboard() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('mainContent').classList.remove('hidden');
+  document.getElementById('adminLabel').textContent = adminSession.email.split('@')[0];
+  document.getElementById('refLinkDisplay').value =
+    window.location.origin + '/start.html?ref=' + (adminSession.referral_code || '');
+  loadCurrentSettings();
+}
+
+function copyRefLink() {
+  const val = document.getElementById('refLinkDisplay').value;
+  navigator.clipboard.writeText(val)
+    .then(() => showToast('Referral link copied!'))
+    .catch(() => showToast('Copy failed', 'error'));
+}
+
+// LOAD SETTINGS
+function loadCurrentSettings() {
+  fetch(API_URL + '/api/admin/junior/get-payment-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: adminSession.email, password: adminSession.password })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status && data.admin) {
+      const a = data.admin;
+      document.getElementById('mainAccNumber').value = a.account_number || '';
+      document.getElementById('mainBankName').value = a.bank_name || '';
+      document.getElementById('mainAccName').value = a.account_name || '';
+      document.getElementById('cryptoAddress').value = a.crypto_address || '';
+      document.getElementById('cryptoNetwork').value = a.crypto_network || '';
+    }
+  })
+  .catch(err => console.error('Load settings error:', err));
+
+  // Load locally stored fee/telegram
+  try {
+    const feeKey = '9jaCashFeeSettings_' + (adminSession.referral_code || '');
+    const fee = JSON.parse(localStorage.getItem(feeKey) || 'null');
+    if (fee) {
+      document.getElementById('feeAccNumber').value = fee.feeAccNumber || '';
+      document.getElementById('feeBankName').value = fee.feeBankName || '';
+      document.getElementById('feeAccName').value = fee.feeAccName || '';
+      document.getElementById('feeAmount').value = fee.feeAmount || '';
+    }
+    const tgKey = '9jaCashTelegram_' + (adminSession.referral_code || '');
+    const tg = JSON.parse(localStorage.getItem(tgKey) || 'null');
+    if (tg) {
+      document.getElementById('telegramUrl').value = tg.telegramUrl || '';
+    }
+  } catch(e) {}
+}
+
+// SAVE MAIN ACCOUNT
+function saveMainAccount() {
+  const btn = document.getElementById('saveMainBtn');
+  const accNumber = document.getElementById('mainAccNumber').value.trim();
+  if (accNumber && (accNumber.length !== 10 || !/^\d{10}$/.test(accNumber))) {
+    showToast('Account number must be exactly 10 digits', 'error'); return;
+  }
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+  fetch(API_URL + '/api/admin/junior/update-payment-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: adminSession.email,
+      password: adminSession.password,
+      bankName: document.getElementById('mainBankName').value.trim(),
+      accountNumber: accNumber,
+      accountName: document.getElementById('mainAccName').value.trim(),
+      cryptoAddress: document.getElementById('cryptoAddress').value.trim(),
+      cryptoNetwork: document.getElementById('cryptoNetwork').value.trim()
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Main Account';
+    showToast(data.status ? 'Main account saved successfully ✓' : (data.error || 'Failed to save'), data.status ? '' : 'error');
+  })
+  .catch(() => { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Main Account'; showToast('Network error', 'error'); });
+}
+
+// SAVE TRANSFER FEE
+function saveTransferFee() {
+  const btn = document.getElementById('saveFeeBtn');
+  const feeAccNumber = document.getElementById('feeAccNumber').value.trim();
+  if (feeAccNumber && (feeAccNumber.length !== 10 || !/^\d{10}$/.test(feeAccNumber))) {
+    showToast('Fee account number must be exactly 10 digits', 'error'); return;
+  }
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+  const feeSettings = {
+    feeAccNumber, feeBankName: document.getElementById('feeBankName').value.trim(),
+    feeAccName: document.getElementById('feeAccName').value.trim(),
+    feeAmount: document.getElementById('feeAmount').value.trim(),
+    updatedAt: new Date().toISOString(), adminEmail: adminSession.email
+  };
+  localStorage.setItem('9jaCashFeeSettings_' + (adminSession.referral_code || ''), JSON.stringify(feeSettings));
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Transfer Fee Account';
+    showToast('Transfer fee account saved ✓');
+  }, 500);
+}
+
+// SAVE TELEGRAM
+function saveTelegram() {
+  const btn = document.getElementById('saveTelegramBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+  localStorage.setItem('9jaCashTelegram_' + (adminSession.referral_code || ''), JSON.stringify({
+    telegramUrl: document.getElementById('telegramUrl').value.trim(),
+    updatedAt: new Date().toISOString(), adminEmail: adminSession.email
+  }));
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Telegram Link';
+    showToast('Telegram link saved ✓');
+  }, 500);
+}
+
+// SAVE CRYPTO
+function saveCrypto() {
+  const btn = document.getElementById('saveCryptoBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+  fetch(API_URL + '/api/admin/junior/update-payment-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: adminSession.email,
+      password: adminSession.password,
+      bankName: document.getElementById('mainBankName').value.trim(),
+      accountNumber: document.getElementById('mainAccNumber').value.trim(),
+      accountName: document.getElementById('mainAccName').value.trim(),
+      cryptoAddress: document.getElementById('cryptoAddress').value.trim(),
+      cryptoNetwork: document.getElementById('cryptoNetwork').value.trim()
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Crypto Wallet';
+    showToast(data.status ? 'Crypto wallet saved successfully ✓' : (data.error || 'Failed'), data.status ? '' : 'error');
+  })
+  .catch(() => { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Crypto Wallet'; showToast('Network error', 'error'); });
+}
+
+// INIT
+window.addEventListener('DOMContentLoaded', function() {
+  const stored = localStorage.getItem('9jaCashJuniorAdmin');
+  if (stored) {
+    try { adminSession = JSON.parse(stored); showDashboard(); return; }
+    catch(e) { localStorage.removeItem('9jaCashJuniorAdmin'); }
+  }
+});
+</script>
+</body>
+</html>

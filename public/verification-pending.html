@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Verification Status - 9jaCash</title>
+
+
+
+
+<script src="firebase-init.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;color:#f8fafc;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+
+.bg-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;}
+.bg-wrap::before{content:'';position:absolute;top:-30%;right:-20%;width:600px;height:600px;background:radial-gradient(circle,rgba(99,102,241,0.1),transparent 70%);}
+.bg-wrap::after{content:'';position:absolute;bottom:-20%;left:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(16,185,129,0.08),transparent 70%);}
+
+.app{position:relative;z-index:1;max-width:420px;width:100%;text-align:center;}
+
+/* Processing animation */
+.process-ring{width:120px;height:120px;border-radius:50%;border:3px solid rgba(99,102,241,0.1);border-top-color:#6366f1;border-right-color:#8b5cf6;display:flex;align-items:center;justify-content:center;margin:0 auto 32px;position:relative;animation:spin 1.5s linear infinite;}
+.process-ring::before{content:'';position:absolute;inset:-12px;border-radius:50%;border:2px solid transparent;border-bottom-color:rgba(16,185,129,0.2);animation:spin 3s linear infinite reverse;}
+.process-ring i{color:#6366f1;font-size:36px;animation:pulse 2s ease-in-out infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.1);opacity:0.8;}}
+
+/* Failed state */
+.process-ring.failed{border-color:rgba(239,68,68,0.2);border-top-color:#ef4444;border-right-color:#f87171;animation:none;}
+.process-ring.failed::before{border-bottom-color:rgba(239,68,68,0.15);animation:none;}
+.process-ring.failed i{color:#ef4444;animation:shake 0.5s ease;}
+
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+
+.title{font-size:24px;font-weight:900;margin-bottom:10px;letter-spacing:-0.5px;}
+.subtitle{font-size:14px;color:#94a3b8;line-height:1.6;margin-bottom:32px;font-weight:500;max-width:320px;margin-left:auto;margin-right:auto;}
+
+/* Status card */
+.status-card{background:#1e293b;border-radius:24px;padding:24px;border:1px solid #334155;margin-bottom:20px;text-align:left;}
+.status-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.status-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;box-shadow:0 4px 16px rgba(245,158,11,0.3);transition:all 0.3s;}
+.status-icon.failed{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 16px rgba(239,68,68,0.3);}
+.status-title{font-size:16px;font-weight:800;color:#f8fafc;}
+.status-sub{font-size:12px;color:#94a3b8;margin-top:2px;}
+
+.status-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #334155;}
+.status-row:last-child{border-bottom:none;}
+.status-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;}
+.status-value{font-size:14px;font-weight:700;color:#f8fafc;}
+.status-value.green{color:#10b981;}
+.status-value.red{color:#ef4444;}
+.status-value.accent{color:#6366f1;}
+.status-value.mono{font-family:'Courier New',monospace;font-size:12px;letter-spacing:1px;}
+
+/* Timeline */
+.timeline{display:flex;flex-direction:column;gap:0;margin-bottom:24px;}
+.timeline-item{display:flex;gap:16px;position:relative;}
+.timeline-item:not(:last-child)::before{content:'';position:absolute;left:15px;top:36px;width:2px;height:calc(100% - 20px);background:#334155;transition:all 0.3s;}
+.timeline-dot{width:32px;height:32px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;flex-shrink:0;transition:all 0.3s;}
+.timeline-dot.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+.timeline-dot.done{background:#10b981;color:#fff;}
+.timeline-dot.failed{background:#ef4444;color:#fff;}
+.timeline-content{flex:1;padding-bottom:24px;}
+.timeline-title{font-size:14px;font-weight:700;color:#f8fafc;margin-bottom:4px;}
+.timeline-desc{font-size:12px;color:#64748b;font-weight:500;}
+
+/* Failed message */
+.failed-box{background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(245,158,11,0.05));border:1px solid rgba(239,68,68,0.2);border-radius:16px;padding:16px;margin-bottom:20px;display:none;align-items:flex-start;gap:12px;text-align:left;}
+.failed-box.show{display:flex;animation:slideUp 0.5s ease;}
+.failed-box i{color:#ef4444;font-size:20px;margin-top:2px;flex-shrink:0;}
+.failed-text{font-size:13px;color:#94a3b8;line-height:1.6;font-weight:500;}
+.failed-text strong{color:#f8fafc;}
+
+/* Buttons */
+.back-btn{width:100%;padding:18px;border-radius:18px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(99,102,241,0.3);margin-bottom:12px;}
+.back-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,0.4);}
+.back-btn:active{transform:scale(0.97);}
+
+/* Retry button - RED for failed */
+.retry-btn{width:100%;padding:18px;border-radius:18px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(239,68,68,0.3);margin-bottom:12px;}
+.retry-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(239,68,68,0.4);}
+.retry-btn:active{transform:scale(0.97);}
+
+/* Support button */
+.support-link{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:14px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.3s;text-decoration:none;margin-bottom:12px;}
+.support-link:hover{border-color:#229ed9;color:#229ed9;background:rgba(34,158,217,0.05);}
+.support-link i{font-size:16px;color:#229ed9;}
+.support-link span{color:#f8fafc;font-weight:700;}
+
+.footer{margin-top:24px;font-size:12px;color:#475569;font-weight:500;}
+
+/* Animations */
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.anim{animation:slideUp 0.6s ease both;}
+.d1{animation-delay:0.1s;}
+.d2{animation-delay:0.2s;}
+.d3{animation-delay:0.3s;}
+.d4{animation-delay:0.4s;}
+.d5{animation-delay:0.5s;}
+.hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<div class="bg-wrap"></div>
+
+<div class="app">
+
+<!-- Processing Ring -->
+<div class="process-ring anim d1" id="processRing">
+  <i class="fa-solid fa-hourglass-half" id="processIcon"></i>
+</div>
+
+<!-- Title & Subtitle -->
+<div class="title anim d1" id="mainTitle">Verifying Payment...</div>
+<div class="subtitle anim d2" id="mainSub">We are confirming your verification deposit. Please wait while our system checks your transaction.</div>
+<!-- Status Card -->
+<div class="status-card anim d3" id="statusCard">
+  <div class="status-header">
+    <div class="status-icon" id="statusIconBox"><i class="fa-solid fa-clock-rotate-left" id="statusIcon"></i></div>
+    <div>
+      <div class="status-title" id="statusTitle">Payment Under Review</div>
+      <div class="status-sub" id="statusSub">Checking transaction details</div>
+    </div>
+  </div>
+  
+  <div class="status-row">
+    <div class="status-label">Status</div>
+    <div class="status-value green" id="statusValue"><i class="fa-solid fa-circle" style="font-size:8px;margin-right:6px;"></i>Pending Verification</div>
+  </div>
+  <div class="status-row">
+    <div class="status-label">Required Amount</div>
+    <div class="status-value accent" id="feeDisplay">₦35,200</div>
+  </div>
+  <div class="status-row">
+    <div class="status-label">Expected Refund</div>
+    <div class="status-value" id="refundDisplay">₦35,000</div>
+  </div>
+  <div class="status-row">
+    <div class="status-label">Linked Account</div>
+    <div class="status-value mono" id="bankDisplay">**** ****</div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="timeline anim d4" id="timelineBox">
+  <div class="timeline-item">
+    <div class="timeline-dot active" id="dot1"><i class="fa-solid fa-hourglass-half"></i></div>
+    <div class="timeline-content">
+      <div class="timeline-title" id="step1Title">Payment Verification</div>
+      <div class="timeline-desc" id="step1Desc">Confirming your deposit transaction</div>
+    </div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-dot" id="dot2"><i class="fa-solid fa-rotate-left"></i></div>
+    <div class="timeline-content">
+      <div class="timeline-title" id="step2Title">Refund Processing</div>
+      <div class="timeline-desc" id="step2Desc">₦35,000 + wallet balance released to your account</div>
+    </div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-dot" id="dot3"><i class="fa-solid fa-check"></i></div>
+    <div class="timeline-content">
+      <div class="timeline-title" id="step3Title">Verification Complete</div>
+      <div class="timeline-desc" id="step3Desc">Your account is fully verified</div>
+    </div>
+  </div>
+</div>
+
+<!-- Failed Message Box -->
+<div class="failed-box anim d4" id="failedBox">
+  <i class="fa-solid fa-circle-exclamation"></i>
+  <div class="failed-text">
+    <strong>Payment could not be verified.</strong> Our system was unable to confirm your deposit. This may be due to network delays, incorrect transfer details, or the transaction not yet reflecting. Please retry your payment or contact support if you believe this is an error.
+  </div>
+</div>
+
+<!-- Buttons -->
+<button class="back-btn anim d5" id="backBtn" onclick="window.location.href='dashboard.html'">
+  <i class="fa-solid fa-house"></i> Back to Dashboard
+</button>
+
+<!-- Retry Payment Button - RED -->
+<button class="retry-btn anim d5 hidden" id="retryBtn" onclick="window.location.href='verify.html'">
+  <i class="fa-solid fa-rotate-right"></i> Retry Payment
+</button>
+
+<!-- Support Link -->
+<a class="support-link anim d5 hidden" id="supportLink" href="#" target="_blank">
+  <i class="fa-brands fa-telegram"></i>
+  <span>Contact Customer Care</span>
+</a>
+
+<div class="footer anim d5">9jaCash 2026 • Secure Verification System</div>
+
+</div>
+
+<script>
+  let userData = null;
+  try {
+    userData = JSON.parse(localStorage.getItem("9jaCashUser"));
+  } catch (e) { userData = null; }
+  
+  let telegramLink = "https://t.me/apex_customercare";
+  
+  // ========== FORMAT MONEY ==========
+  function formatMoney(num) {
+    if (!num && num !== 0) return "₦0";
+    let n = parseFloat(num);
+    if (isNaN(n)) return "₦0";
+    return "₦" + n.toLocaleString("en-NG");
+  }
+  
+  // ========== LOAD CUSTOMER CARE FROM ADMIN ==========
+  function loadCustomerCare() {
+    const stored = localStorage.getItem("9jaCashAdminConfig");
+    if (stored) {
+      try {
+        const config = JSON.parse(stored);
+        if (config.telegramLink) telegramLink = config.telegramLink;
+      } catch (e) {}
+    }
+    if (window._9jaCash && window._9jaCash.db) {
+      window._9jaCash.db.collection("settings").doc("payment").get()
+        .then(function(doc) {
+          if (doc.exists && doc.data().telegramLink) {
+            telegramLink = doc.data().telegramLink;
+            updateSupportLink();
+          }
+        })
+        .catch(function(err) { console.log("Firebase support link failed:", err); });
+    }
+    updateSupportLink();
+  }
+  
+  function updateSupportLink() {
+    const link = document.getElementById("supportLink");
+    if (link) link.href = telegramLink;
+  }
+  
+  // ========== LOAD DATA ==========
+  function loadData() {
+    const stored = localStorage.getItem("9jaCashVerificationPending");
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        document.getElementById("feeDisplay").textContent = formatMoney(data.feeAmount || 35200);
+        document.getElementById("refundDisplay").textContent = formatMoney(data.verificationRefund || 35000);
+        const mask = data.accountNumber ? "**** " + data.accountNumber.slice(-4) : "**** ****";
+        document.getElementById("bankDisplay").textContent = mask;
+      } catch (e) {}
+    }
+  }
+  
+  const docId = localStorage.getItem("latestReceiptDocId");
+
+  // ========== SWITCH TO FAILED WITH CUSTOM REASON ==========
+  function switchToFailed(reason) {
+    // Stop spinner, show X
+    const ring = document.getElementById("processRing");
+    const icon = document.getElementById("processIcon");
+    ring.classList.add("failed");
+    icon.className = "fa-solid fa-circle-xmark";
+    
+    // Update title
+    document.getElementById("mainTitle").textContent = "Payment Verification Failed";
+    document.getElementById("mainSub").textContent = "We could not confirm your deposit. Please retry your payment or contact support for assistance.";
+    
+    // Update status card
+    document.getElementById("statusIconBox").classList.add("failed");
+    document.getElementById("statusIcon").className = "fa-solid fa-circle-xmark";
+    document.getElementById("statusTitle").textContent = "Payment Not Confirmed";
+    document.getElementById("statusSub").textContent = "Transaction verification unsuccessful";
+    
+    const statusVal = document.getElementById("statusValue");
+    statusVal.className = "status-value red";
+    statusVal.innerHTML = '<i class="fa-solid fa-circle-xmark" style="font-size:10px;margin-right:6px;"></i>Failed';
+    
+    // Update timeline - NO "deposit received" step
+    document.getElementById("dot1").className = "timeline-dot failed";
+    document.getElementById("dot1").innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    document.getElementById("step1Title").textContent = "Payment Not Found";
+    document.getElementById("step1Desc").textContent = "We could not verify your deposit transaction";
+    
+    document.getElementById("dot2").className = "timeline-dot";
+    document.getElementById("dot2").innerHTML = '<i class="fa-solid fa-ban"></i>';
+    document.getElementById("step2Title").textContent = "Refund Cancelled";
+    document.getElementById("step2Desc").textContent = "No deposit confirmed — refund not applicable";
+    
+    document.getElementById("dot3").className = "timeline-dot";
+    document.getElementById("dot3").innerHTML = '<i class="fa-solid fa-lock"></i>';
+    document.getElementById("step3Title").textContent = "Account Locked";
+    document.getElementById("step3Desc").textContent = "Complete verification to unlock withdrawals";
+    
+    // Show failed box with custom reason
+    const failBoxText = document.querySelector("#failedBox .failed-text");
+    if (failBoxText) {
+      failBoxText.innerHTML = `<strong>Payment could not be verified.</strong> Reason: ${reason || 'Our system was unable to confirm your deposit. Please retry or contact support.'}`;
+    }
+    document.getElementById("failedBox").classList.add("show");
+    
+    // Show retry button and support link
+    document.getElementById("retryBtn").classList.remove("hidden");
+    document.getElementById("supportLink").classList.remove("hidden");
+  }
+
+  function listenToReceiptStatus() {
+    if (!window._9jaCash || !window._9jaCash.db || !docId) {
+      console.warn("Real-time listener unavailable: firebase offline.");
+      // Fallback: switch to failed after 25 seconds if completely offline
+      setTimeout(function() {
+        switchToFailed("Database connection timeout. Please check your network and try again.");
+      }, 25000);
+      return;
+    }
+
+    const db = window._9jaCash.db;
+    db.collection("verifications").doc(docId).onSnapshot(function(doc) {
+      if (doc.exists) {
+        const data = doc.data();
+        if (data.status === "Approved" || data.status === "approved" || data.status === "verified") {
+          window.location.href = "success.html";
+        } else if (data.status === "Declined" || data.status === "declined" || data.status === "rejected") {
+          switchToFailed(data.declineReason || "Payment proof could not be verified. Please submit a valid bank transfer receipt.");
+        }
+      }
+    }, function(err) {
+      console.error("Firestore onSnapshot error:", err);
+    });
+  }
+  
+  // ========== INIT ==========
+  window.addEventListener("DOMContentLoaded", function() {
+    loadData();
+    loadCustomerCare();
+    listenToReceiptStatus();
+  });
+</script>
+
+</body>
+
+</html>

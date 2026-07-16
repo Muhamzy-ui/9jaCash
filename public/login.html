@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>9jaCash — Log In</title>
+
+
+
+
+<script src="firebase-init.js"></script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;transition:all 0.3s ease;}
+
+/* Dark mode */
+body.dark-mode{background:#0f172a;color:#f8fafc;}
+body.dark-mode .soft-bg{background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.15),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(236,72,153,0.10),transparent 50%),#0f172a;}
+body.dark-mode .card{background:#1e293b;border-color:#334155;box-shadow:0 4px 24px rgba(0,0,0,0.2);}
+body.dark-mode .inp{background:#0f172a;border-color:#334155;color:#f8fafc;}
+body.dark-mode .inp:focus{border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,0.15);background:#0f172a;}
+body.dark-mode .inp::placeholder{color:#64748b;}
+body.dark-mode .lbl{color:#94a3b8;}
+body.dark-mode .count{color:#64748b;}
+body.dark-mode .header-title{color:#f8fafc;}
+body.dark-mode .header-sub{color:#94a3b8;}
+
+/* Soft background */
+.soft-bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.10),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(236,72,153,0.07),transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(16,185,129,0.04),transparent 50%),#f8fafc;transition:all 0.3s ease;}
+
+/* Floating shapes */
+.shape{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;animation:shapeFloat 15s ease-in-out infinite;}
+.shape-1{width:200px;height:200px;background:rgba(99,102,241,0.12);top:5%;right:10%;animation-delay:0s;}
+.shape-2{width:160px;height:160px;background:rgba(16,185,129,0.10);bottom:20%;left:5%;animation-delay:5s;}
+.shape-3{width:120px;height:120px;background:rgba(236,72,153,0.08);top:40%;left:30%;animation-delay:10s;}
+@keyframes shapeFloat{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(20px,-20px) scale(1.1);}}
+
+/* Card */
+.card{background:#fff;border-radius:24px;padding:32px 28px;border:1px solid #f1f5f9;box-shadow:0 4px 24px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.04);transition:all 0.3s ease;width:100%;max-width:420px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6,#ec4899);}
+
+/* Inputs */
+.inp{width:100%;padding:16px 18px;border-radius:16px;background:#f8fafc;border:2px solid #e2e8f0;color:#1e293b;font-size:15px;font-weight:600;outline:none;transition:all 0.3s;font-family:'Plus Jakarta Sans',sans-serif;}
+.inp:focus{border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,0.1);background:#fff;}
+.inp::placeholder{color:#94a3b8;font-weight:500;}
+
+/* Label */
+.lbl{display:block;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+
+/* Primary button */
+.btn-primary{width:100%;padding:18px;border-radius:18px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 4px 20px rgba(99,102,241,0.3);}
+.btn-primary::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:0.5s;}
+.btn-primary:hover::before{left:100%;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,0.4);}
+.btn-primary:active{transform:scale(0.97);}
+.btn-primary:disabled{background:#e2e8f0;color:#94a3b8;box-shadow:none;cursor:not-allowed;transform:none;}
+.btn-primary:disabled::before{display:none;}
+
+/* Animations */
+@keyframes slideUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+.s1{animation:slideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;}
+.s2{animation:slideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;}
+.s3{animation:slideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;}
+
+/* App container */
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 20px 40px;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+
+/* Header */
+.header-title{font-size:18px;font-weight:800;color:#1e293b;transition:color 0.3s;}
+.header-sub{font-size:13px;color:#64748b;font-weight:500;transition:color 0.3s;}
+
+/* Theme toggle */
+.theme-toggle{position:fixed;top:20px;right:20px;width:44px;height:44px;border-radius:14px;background:#fff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:16px;cursor:pointer;transition:all 0.3s;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.theme-toggle:hover{background:#f1f5f9;color:#6366f1;}
+body.dark-mode .theme-toggle{background:#1e293b;border-color:#334155;color:#94a3b8;}
+body.dark-mode .theme-toggle:hover{background:#334155;color:#818cf8;}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1e293b;color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.15);border:1px solid #334155;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast i{color:#10b981;}
+.toast.error i{color:#ef4444;}
+body.dark-mode .toast{background:#1e293b;border-color:#334155;}
+</style>
+</head>
+<body>
+  
+  <div class="soft-bg">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  
+  <!-- Theme Toggle -->
+  <button class="theme-toggle" onclick="toggleTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
+  
+  <!-- Toast -->
+  <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+  
+  <!-- App Container -->
+  <div class="app">
+    <div class="card s1">
+      
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center shadow-lg shadow-indigo-200">
+          <i class="fa-solid fa-right-to-bracket text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="header-title">Welcome Back</h1>
+          <p class="header-sub">Log in to your 9jaCash account</p>
+        </div>
+      </div>
+      
+      <form id="loginForm" class="space-y-5">
+        
+        <!-- Phone Number -->
+        <div class="s2">
+          <label class="lbl">Phone Number or Email</label>
+          <input type="text" id="phone" placeholder="08012345678 or user@gmail.com" class="inp" required />
+        </div>
+        
+        <!-- Password -->
+        <div class="s2">
+          <label class="lbl">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" class="inp" required />
+        </div>
+        
+        <!-- Submit button -->
+        <div class="s3 pt-2">
+          <button type="submit" id="loginBtn" class="btn-primary">
+            <span>Access Account</span>
+            <i class="fa-solid fa-chevron-right text-sm"></i>
+          </button>
+        </div>
+        
+      </form>
+      
+      <div class="s3 text-center mt-6">
+        <p class="text-xs text-[#64748b] font-semibold">
+          Don't have an account? <a href="start.html" class="text-[#6366f1] hover:underline">Link Bank & Register</a>
+        </p>
+      </div>
+      
+    </div>
+  </div>
+  
+  <script>
+// ========== THEME ==========
+function initTheme() {
+  const isDark = localStorage.getItem('9jaCashDark') === 'true';
+  if (isDark) {
+    document.body.classList.add('dark-mode');
+    document.getElementById('themeIcon').className = 'fa-solid fa-sun';
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('9jaCashDark', isDark);
+  document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+}
+
+// ========== TOAST ==========
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  const msgEl = document.getElementById('toastMsg');
+  const icon = t.querySelector('i');
+  
+  msgEl.textContent = msg;
+  if (type === 'error') {
+    icon.className = 'fa-solid fa-circle-xmark';
+    icon.style.color = '#ef4444';
+  } else {
+    icon.className = 'fa-solid fa-circle-check';
+    icon.style.color = '#10b981';
+  }
+  
+  t.classList.add('show');
+  setTimeout(function() {
+    t.classList.remove('show');
+  }, 2500);
+}
+
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+
+// ========== FORM SUBMIT ==========
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const phone = document.getElementById('phone').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const btn = document.getElementById('loginBtn');
+  
+  const isEmail = phone.includes('@');
+  if (!isEmail && (phone.length !== 11 || !/^\d{11}$/.test(phone))) {
+    showToast('Enter a valid 11-digit phone number or Gmail address', 'error');
+    return;
+  }
+  
+  if (password.length < 6) {
+    showToast('Password must be at least 6 characters', 'error');
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.innerHTML = '<span>Verifying...</span> <i class="fa-solid fa-circle-notch fa-spin text-sm"></i>';
+  
+  const phoneOrEmailVal = isEmail ? phone.toLowerCase() : phone;
+
+  // 1. Fetch from Firestore first to get the absolute cloud source of truth
+  if (window._9jaCash && window._9jaCash.db) {
+    const firestoreDb = window._9jaCash.db;
+    let queryPromise;
+    
+    if (isEmail) {
+      queryPromise = firestoreDb.collection('users').where('email', '==', phoneOrEmailVal).get()
+        .then(function(snapshot) {
+          if (snapshot.empty) throw new Error('No user account found with this email.');
+          return snapshot.docs[0];
+        });
+    } else {
+      queryPromise = firestoreDb.collection('users').doc(phoneOrEmailVal).get()
+        .then(function(doc) {
+          if (!doc.exists) throw new Error('No user account found with this phone number.');
+          return doc;
+        });
+    }
+    
+    queryPromise
+      .then(function(doc) {
+        const userData = doc.data();
+        if (userData.password !== password) {
+          throw new Error('Incorrect password. Please try again.');
+        }
+        if (userData.status === 'suspended') {
+          throw new Error('Your account has been suspended. Contact support.');
+        }
+        
+        const mappedUser = {
+          phone: userData.phone,
+          email: userData.email || `${userData.phone}@9jacash.com`,
+          fullName: userData.fullName || userData.name || "9jaCash User",
+          name: userData.fullName || userData.name || "9jaCash User",
+          bankName: userData.bankName || "Not linked",
+          accountNumber: userData.accountNumber || "Not linked",
+          balance: parseFloat(userData.balance) || 0,
+          miningPower: parseFloat(userData.miningPower) || 1,
+          totalMined: parseFloat(userData.totalMined) || 0,
+          referredBy: userData.referredBy || null,
+          status: userData.status || 'active',
+          createdAt: userData.createdAt || new Date().toISOString()
+        };
+
+        // 2. Sync to SQL backend
+        return fetch(API_URL + '/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: mappedUser.phone,
+            password: password,
+            fullName: mappedUser.fullName,
+            bankName: mappedUser.bankName,
+            accountNumber: mappedUser.accountNumber,
+            referredBy: mappedUser.referredBy,
+            email: mappedUser.email
+          })
+        })
+        .then(function() {
+          return fetch(API_URL + '/api/user/update-balance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: mappedUser.phone,
+              password: password,
+              balance: mappedUser.balance,
+              totalMined: mappedUser.totalMined
+            })
+          });
+        })
+        .then(function() {
+          // 3. Authenticate with backend
+          return fetch(API_URL + '/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phoneOrEmail: phoneOrEmailVal, password: password })
+          });
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status && data.user) {
+            localStorage.setItem('9jaCashUser', JSON.stringify(data.user));
+            localStorage.setItem('walletBalance', (data.user.balance || 0).toString());
+            localStorage.setItem('9jaCashOnboard', 'done');
+            showToast('Welcome back, ' + (data.user.fullName || 'User') + '!');
+            setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
+          } else {
+            // Local Session Fallback if login endpoint failed but sync succeeded
+            localStorage.setItem('9jaCashUser', JSON.stringify(mappedUser));
+            localStorage.setItem('walletBalance', mappedUser.balance.toString());
+            localStorage.setItem('9jaCashOnboard', 'done');
+            showToast('Welcome back!');
+            setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
+          }
+        });
+      })
+      .catch(function(err) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
+        showToast(err.message || 'Login failed', 'error');
+      });
+  } else {
+    // Direct SQL fallback if Firestore is not accessible
+    fetch(API_URL + '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneOrEmail: phoneOrEmailVal, password: password })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status && data.user) {
+        localStorage.setItem('9jaCashUser', JSON.stringify(data.user));
+        localStorage.setItem('walletBalance', (data.user.balance || 0).toString());
+        localStorage.setItem('9jaCashOnboard', 'done');
+        showToast('Welcome back!');
+        setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
+      } else {
+        showToast(data.error || 'Login failed', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
+      showToast('Database offline', 'error');
+    });
+  }
+});
+
+// ========== INIT ==========
+window.addEventListener('DOMContentLoaded', function() {
+  initTheme();
+});
+</script>
+</body>
+</html>

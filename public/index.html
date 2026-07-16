@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>9jaCash — Welcome</title>
+
+<!-- PWA / Add to Home Screen -->
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="9jaCash">
+<link rel="apple-touch-icon" href="9jaCash.png">
+<meta name="theme-color" content="#6366f1">
+<meta name="mobile-web-app-capable" content="yes">
+
+
+
+
+<script src="firebase.js"></script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;}
+
+.soft-bg{position:fixed;inset:0;z-index:0;background:
+  radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.10),transparent 50%),
+  radial-gradient(ellipse at 100% 100%,rgba(236,72,153,0.07),transparent 50%),
+  radial-gradient(ellipse at 50% 50%,rgba(16,185,129,0.04),transparent 50%),
+  #f8fafc;}
+
+.shape{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;animation:shapeFloat 15s ease-in-out infinite;}
+.shape-1{width:200px;height:200px;background:rgba(99,102,241,0.12);top:5%;right:10%;animation-delay:0s;}
+.shape-2{width:160px;height:160px;background:rgba(16,185,129,0.10);bottom:20%;left:5%;animation-delay:5s;}
+.shape-3{width:120px;height:120px;background:rgba(236,72,153,0.08);top:40%;left:30%;animation-delay:10s;}
+@keyframes shapeFloat{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(20px,-20px) scale(1.1);}}
+
+.card{background:#fff;border-radius:24px;padding:28px;border:1px solid #f1f5f9;box-shadow:0 4px 24px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.04);transition:all 0.3s ease;}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(0,0,0,0.08);}
+
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 20px rgba(99,102,241,0.3);transition:all 0.3s;}
+.btn-primary:hover{box-shadow:0 6px 24px rgba(99,102,241,0.4);transform:translateY(-2px);}
+.btn-primary:active{transform:scale(0.97);}
+
+.btn-secondary{background:#fff;color:#64748b;border:1.5px solid #e2e8f0;transition:all 0.3s;}
+.btn-secondary:hover{border-color:#6366f1;color:#818cf8;}
+
+.icon-box{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+
+.pill{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:50px;font-size:12px;font-weight:700;}
+.pill-green{background:#ecfdf5;border:1px solid #10b981;color:#10b981;}
+.pill-purple{background:#eef2ff;border:1px solid #6366f1;color:#6366f1;}
+.pill-amber{background:#fff7ed;border:1px solid #f59e0b;color:#f59e0b;}
+
+.stat-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.stat-row::-webkit-scrollbar{display:none;}
+
+.s1{animation:slideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;}
+.s2{animation:slideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;}
+.s3{animation:slideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;}
+.s4{animation:slideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.4s both;}
+.s5{animation:slideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.5s both;}
+.s6{animation:slideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.6s both;}
+.s7{animation:slideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.7s both;}
+
+@keyframes slideUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+
+.ticker-wrap{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #f1f5f9;padding:10px 0;z-index:50;overflow:hidden;}
+.ticker-track{display:inline-block;white-space:nowrap;animation:ticker 25s linear infinite;}
+.ticker-item{display:inline-flex;align-items:center;gap:6px;margin-right:32px;font-size:12px;font-weight:600;color:#64748b;}
+.ticker-item i{font-size:10px;}
+@keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 20px 80px;}
+
+/* ========== ADD TO HOME SCREEN BANNER (UNIVERSAL) ========== */
+.ath-banner{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(120px);width:calc(100% - 40px);max-width:400px;background:#1e293b;border:1px solid #334155;border-radius:20px;padding:16px 20px;z-index:200;box-shadow:0 20px 60px rgba(0,0,0,0.3);transition:all 0.6s cubic-bezier(0.34,1.56,0.64,1);opacity:0;}
+.ath-banner.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.ath-banner.hidden{display:none !important;}
+.ath-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.ath-icon{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;box-shadow:0 4px 12px rgba(99,102,241,0.3);}
+.ath-title{font-size:15px;font-weight:800;color:#f8fafc;}
+.ath-sub{font-size:12px;color:#94a3b8;font-weight:500;}
+.ath-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.ath-step{display:flex;align-items:center;gap:10px;}
+.ath-step-num{width:24px;height:24px;border-radius:50%;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);display:flex;align-items:center;justify-content:center;color:#818cf8;font-size:11px;font-weight:800;flex-shrink:0;}
+.ath-step-text{font-size:12px;color:#cbd5e1;font-weight:500;}
+.ath-step-text strong{color:#f8fafc;font-weight:700;}
+.ath-actions{display:flex;gap:10px;}
+.ath-btn{flex:1;padding:12px;border-radius:14px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.ath-btn-done{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;}
+.ath-btn-later{background:#334155;color:#94a3b8;}
+.ath-close{position:absolute;top:10px;right:14px;width:28px;height:28px;border-radius:50%;background:#334155;border:none;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;transition:all 0.3s;}
+.ath-close:hover{background:#475569;color:#f8fafc;}
+
+/* ========== NOTIFICATION PERMISSION BANNER ========== */
+.notify-banner{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-120px);width:calc(100% - 40px);max-width:400px;background:#1e293b;border:1px solid #334155;border-radius:20px;padding:16px 20px;z-index:200;box-shadow:0 20px 60px rgba(0,0,0,0.3);transition:all 0.6s cubic-bezier(0.34,1.56,0.64,1);opacity:0;}
+.notify-banner.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.notify-banner.hidden{display:none !important;}
+.notify-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.notify-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;box-shadow:0 4px 12px rgba(16,185,129,0.3);}
+.notify-title{font-size:15px;font-weight:800;color:#f8fafc;}
+.notify-sub{font-size:12px;color:#94a3b8;font-weight:500;line-height:1.5;}
+.notify-actions{display:flex;gap:10px;margin-top:14px;}
+.notify-btn{flex:1;padding:12px;border-radius:14px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.notify-btn-allow{background:linear-gradient(135deg,#10b981,#34d399);color:#fff;}
+.notify-btn-deny{background:#334155;color:#94a3b8;}
+
+/* ========== TOAST ========== */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1e293b;color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.3);border:1px solid #334155;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast i{color:#10b981;}
+</style>
+</head>
+<body>
+
+<div class="soft-bg">
+  <div class="shape shape-1"></div>
+  <div class="shape shape-2"></div>
+  <div class="shape shape-3"></div>
+</div>
+
+<!-- ADD TO HOME SCREEN BANNER -->
+<div class="ath-banner" id="athBanner">
+  <button class="ath-close" onclick="dismissAth()"><i class="fa-solid fa-xmark"></i></button>
+  <div class="ath-header">
+    <div class="ath-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+    <div>
+      <div class="ath-title" id="athTitle">Add 9jaCash to Home Screen</div>
+      <div class="ath-sub" id="athSub">Open like a real app — faster access</div>
+    </div>
+  </div>
+  <div class="ath-steps" id="athSteps">
+    <!-- Steps injected by JS based on device -->
+  </div>
+  <div class="ath-actions">
+    <button class="ath-btn ath-btn-done" onclick="markAthDone()">
+      <i class="fa-solid fa-check"></i> Done
+    </button>
+    <button class="ath-btn ath-btn-later" onclick="dismissAth()">
+      Later
+    </button>
+  </div>
+</div>
+
+<!-- NOTIFICATION PERMISSION BANNER -->
+<div class="notify-banner" id="notifyBanner">
+  <div class="notify-header">
+    <div class="notify-icon"><i class="fa-solid fa-bell"></i></div>
+    <div>
+      <div class="notify-title">Stay Updated</div>
+      <div class="notify-sub">Get instant alerts for withdrawals, refunds, bonuses & new tasks</div>
+    </div>
+  </div>
+  <div class="notify-actions">
+    <button class="notify-btn notify-btn-allow" onclick="requestNotify()">
+      <i class="fa-solid fa-bell"></i> Allow
+    </button>
+    <button class="notify-btn notify-btn-deny" onclick="dismissNotify()">
+      Not Now
+    </button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="s1 pt-8 pb-6 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center shadow-lg shadow-indigo-200">
+        <i class="fa-solid fa-bolt text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="font-extrabold text-lg tracking-tight">9jaCash</h1>
+        <p class="text-[11px] font-semibold text-[#64748b]">Earn Daily • Withdraw Fast</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+      <span class="text-[11px] font-bold text-[#10b981]">Live</span>
+    </div>
+  </div>
+
+  <!-- Hero Card -->
+  <div class="s2 card mb-5 text-center relative overflow-hidden">
+    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#6366f1] via-[#8b5cf6] to-[#ec4899]"></div>
+    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center mx-auto mb-5 shadow-xl shadow-indigo-200" style="animation:pulse 3s ease-in-out infinite;">
+      <i class="fa-solid fa-wallet text-white text-3xl"></i>
+    </div>
+    <h2 class="text-2xl font-black mb-2 leading-tight">Turn Time Into<br><span class="text-[#6366f1]">Real Cash</span></h2>
+    <p class="text-[13px] text-[#64748b] leading-relaxed mb-6 max-w-[260px] mx-auto">Check in daily, complete tasks, mine rewards, and withdraw instantly to your bank account.</p>
+    <div class="flex flex-wrap justify-center gap-2 mb-6">
+      <span class="pill pill-green"><i class="fa-solid fa-check text-[10px]"></i> Instant Withdraw</span>
+      <span class="pill pill-purple"><i class="fa-solid fa-check text-[10px]"></i> Daily Check-In</span>
+      <span class="pill pill-amber"><i class="fa-solid fa-check text-[10px]"></i> Auto Mining</span>
+    </div>
+    <div class="flex gap-3 mb-4">
+      <a href="start.html" class="btn-primary flex-1 py-4 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2">
+        <span>Get Started</span>
+        <i class="fa-solid fa-arrow-right text-sm"></i>
+      </a>
+      <a href="login.html" class="btn-secondary flex-1 py-4 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2">
+        <span>Log In</span>
+        <i class="fa-solid fa-arrow-right-to-bracket text-sm"></i>
+      </a>
+    </div>
+    <p class="text-[11px] text-[#94a3b8] mt-4 font-medium">
+      <i class="fa-solid fa-shield-halved text-[#10b981] mr-1"></i> Secure • Fast • Trusted by 50K+ users
+    </p>
+  </div>
+
+  <!-- How It Works -->
+  <div class="s3 mb-5">
+    <h3 class="text-sm font-bold text-[#64748b] uppercase tracking-wider mb-4 ml-1">How It Works</h3>
+    <div class="space-y-3">
+      <div class="card flex items-center gap-4 p-5">
+        <div class="icon-box bg-[#ecfdf5] text-[#10b981]"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="flex-1">
+          <h4 class="font-bold text-[15px] mb-0.5">Daily Check-In</h4>
+          <p class="text-[12px] text-[#64748b]">Claim ₦500 every day. Build your streak for bigger rewards.</p>
+        </div>
+        <div class="text-[#10b981] font-extrabold text-sm">₦500</div>
+      </div>
+      <div class="card flex items-center gap-4 p-5">
+        <div class="icon-box bg-[#eef2ff] text-[#6366f1]"><i class="fa-solid fa-list-check"></i></div>
+        <div class="flex-1">
+          <h4 class="font-bold text-[15px] mb-0.5">Complete Tasks</h4>
+          <p class="text-[12px] text-[#64748b]">Follow, like, share on social media. Earn per task.</p>
+        </div>
+        <div class="text-[#6366f1] font-extrabold text-sm">₦500+</div>
+      </div>
+      <div class="card flex items-center gap-4 p-5">
+        <div class="icon-box bg-[#fff7ed] text-[#f59e0b]"><i class="fa-solid fa-hammer"></i></div>
+        <div class="flex-1">
+          <h4 class="font-bold text-[15px] mb-0.5">Auto Mining</h4>
+          <p class="text-[12px] text-[#64748b]">Start mining and earn up to ₦30,000 daily. Upgrade for more.</p>
+        </div>
+        <div class="text-[#f59e0b] font-extrabold text-sm">₦30K</div>
+      </div>
+      <div class="card flex items-center gap-4 p-5">
+        <div class="icon-box bg-[#fef2f2] text-[#ef4444]"><i class="fa-solid fa-paper-plane"></i></div>
+        <div class="flex-1">
+          <h4 class="font-bold text-[15px] mb-0.5">Instant Withdraw</h4>
+          <p class="text-[12px] text-[#64748b]">Withdraw to any Nigerian bank. Minimum ₦50,000.</p>
+        </div>
+        <div class="text-[#ef4444] font-extrabold text-sm">Fast</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Stats -->
+  <div class="s4 mb-5">
+    <h3 class="text-sm font-bold text-[#64748b] uppercase tracking-wider mb-4 ml-1">Live Activity</h3>
+    <div class="stat-row">
+      <div class="card flex-shrink-0 w-[140px] p-4 text-center">
+        <div class="w-10 h-10 rounded-xl bg-[#ecfdf5] text-[#10b981] flex items-center justify-center mx-auto mb-2 text-lg"><i class="fa-solid fa-users"></i></div>
+        <div class="text-xl font-extrabold text-[#1e293b]">50K+</div>
+        <div class="text-[11px] font-semibold text-[#64748b]">Active Users</div>
+      </div>
+      <div class="card flex-shrink-0 w-[140px] p-4 text-center">
+        <div class="w-10 h-10 rounded-xl bg-[#eef2ff] text-[#6366f1] flex items-center justify-center mx-auto mb-2 text-lg"><i class="fa-solid fa-coins"></i></div>
+        <div class="text-xl font-extrabold text-[#1e293b]">₦2.5M+</div>
+        <div class="text-[11px] font-semibold text-[#64748b]">Paid Out</div>
+      </div>
+      <div class="card flex-shrink-0 w-[140px] p-4 text-center">
+        <div class="w-10 h-10 rounded-xl bg-[#fff7ed] text-[#f59e0b] flex items-center justify-center mx-auto mb-2 text-lg"><i class="fa-solid fa-clock"></i></div>
+        <div class="text-xl font-extrabold text-[#1e293b]">&lt;5min</div>
+        <div class="text-[11px] font-semibold text-[#64748b]">Withdraw Time</div>
+      </div>
+      <div class="card flex-shrink-0 w-[140px] p-4 text-center">
+        <div class="w-10 h-10 rounded-xl bg-[#fef2f2] text-[#ef4444] flex items-center justify-center mx-auto mb-2 text-lg"><i class="fa-solid fa-star"></i></div>
+        <div class="text-xl font-extrabold text-[#1e293b]">4.9</div>
+        <div class="text-[11px] font-semibold text-[#64748b]">User Rating</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Testimonials -->
+  <div class="s5 mb-6">
+    <h3 class="text-sm font-bold text-[#64748b] uppercase tracking-wider mb-4 ml-1">What Users Say</h3>
+    <div class="card p-5 mb-3">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center text-white font-bold text-sm">C</div>
+        <div>
+          <div class="font-bold text-[14px]">Chidi O.</div>
+          <div class="text-[11px] text-[#64748b]">Lagos • Withdrawn ₦150K</div>
+        </div>
+        <div class="ml-auto flex text-[#f59e0b] text-[10px]">
+          <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+        </div>
+      </div>
+      <p class="text-[13px] text-[#64748b] leading-relaxed">"I check in every morning and do tasks during my break. Already withdrawn 3 times. 9jaCash is legit!"</p>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#10b981] to-[#34d399] flex items-center justify-center text-white font-bold text-sm">A</div>
+        <div>
+          <div class="font-bold text-[14px]">Amina K.</div>
+          <div class="text-[11px] text-[#64748b]">Abuja • Withdrawn ₦320K</div>
+        </div>
+        <div class="ml-auto flex text-[#f59e0b] text-[10px]">
+          <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+        </div>
+      </div>
+      <p class="text-[13px] text-[#64748b] leading-relaxed">"The mining feature is my favorite. I upgraded to Gold and now I'm earning way more. Best side hustle!"</p>
+    </div>
+  </div>
+
+  <!-- Final CTA -->
+  <div class="s6 card text-center py-8 mb-4">
+    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200">
+      <i class="fa-solid fa-rocket text-white text-2xl"></i>
+    </div>
+    <h3 class="text-xl font-black mb-2">Ready to Start?</h3>
+    <p class="text-[13px] text-[#64748b] mb-6 max-w-[280px] mx-auto">Join 50,000+ Nigerians already earning daily with 9jaCash.</p>
+    <a href="start.html" class="btn-primary block w-full py-4 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2">
+      <span>Create Free Account</span>
+      <i class="fa-solid fa-arrow-right text-sm"></i>
+    </a>
+    <p class="text-xs text-[#94a3b8] mt-3 font-semibold">
+      Already have an account? <a href="login.html" class="text-[#6366f1] hover:underline">Log in here</a>
+    </p>
+    <p class="text-[11px] text-[#94a3b8] mt-4 font-medium">
+      <i class="fa-solid fa-lock text-[#10b981] mr-1"></i> No upfront payment required
+    </p>
+  </div>
+
+  <!-- Footer -->
+  <div class="s7 text-center pb-4">
+    <p class="text-[11px] text-[#94a3b8] font-medium">9jaCash 2026 • Secured with end-to-end encryption</p>
+  </div>
+
+</div>
+
+<!-- Bottom Ticker -->
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <span class="ticker-item"><i class="fa-solid fa-circle-check text-[#10b981]"></i> Chidi withdrew ₦50,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-fire text-[#f59e0b]"></i> Amina withdrew ₦125,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-bolt text-[#6366f1]"></i> Emeka withdrew ₦30,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-rocket text-[#ec4899]"></i> Fatima withdrew ₦200,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-coins text-[#10b981]"></i> Tunde withdrew ₦75,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-trophy text-[#f59e0b]"></i> Blessing withdrew ₦500,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-circle-check text-[#10b981]"></i> Chidi withdrew ₦50,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-fire text-[#f59e0b]"></i> Amina withdrew ₦125,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-bolt text-[#6366f1]"></i> Emeka withdrew ₦30,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-rocket text-[#ec4899]"></i> Fatima withdrew ₦200,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-coins text-[#10b981]"></i> Tunde withdrew ₦75,000</span>
+    <span class="ticker-item"><i class="fa-solid fa-trophy text-[#f59e0b]"></i> Blessing withdrew ₦500,000</span>
+  </div>
+</div>
+
+<script>
+// ========== TOAST ==========
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2500);
+}
+
+// ========== DEVICE DETECTION ==========
+function getDeviceInfo() {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const isAndroid = /Android/.test(ua);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+  const isChrome = /Chrome/.test(ua) && !/Edg/.test(ua);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  
+  return { isIOS, isAndroid, isSafari, isChrome, isStandalone };
+}
+
+// ========== ADD TO HOME SCREEN / PWA INSTALLATION ==========
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', function(e) {
+  // Prevent Chrome's default install prompt banner
+  e.preventDefault();
+  // Save the event so it can be triggered later
+  deferredPrompt = e;
+  
+  // Show our install banner
+  triggerAthBanner(true);
+});
+
+function triggerAthBanner(isPWA = false) {
+  if (localStorage.getItem("9jaCashAthDone") === "true") return;
+  if (localStorage.getItem("9jaCashAthDismissed") === "true") return;
+  
+  const device = getDeviceInfo();
+  if (device.isStandalone) return;
+  
+  const stepsContainer = document.getElementById("athSteps");
+  const banner = document.getElementById("athBanner");
+  
+  if (isPWA && deferredPrompt) {
+    // Android/Chrome native PWA install button
+    document.getElementById("athTitle").textContent = "Install 9jaCash App";
+    document.getElementById("athSub").textContent = "Get the native app experience on your device";
+    
+    stepsContainer.innerHTML = `
+      <div style="padding: 10px 0;">
+        <button id="pwaInstallBtn" class="ath-btn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; width: 100%; justify-content: center; padding: 14px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);">
+          <i class="fa-solid fa-cloud-arrow-down"></i> Install Now
+        </button>
+      </div>
+    `;
+    
+    // Bind click
+    setTimeout(() => {
+      const btn = document.getElementById("pwaInstallBtn");
+      if (btn) {
+        btn.onclick = function() {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function(choiceResult) {
+              if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+                markAthDone();
+              } else {
+                console.log('User dismissed the install prompt');
+              }
+              deferredPrompt = null;
+            });
+          }
+        };
+      }
+    }, 100);
+  } else {
+    // Regular guide steps
+    let stepsHTML = "";
+    if (device.isIOS && device.isSafari) {
+      stepsHTML = 
+        '<div class="ath-step">' +
+          '<div class="ath-step-num">1</div>' +
+          '<div class="ath-step-text">Tap the <strong>Share</strong> button <i class="fa-solid fa-arrow-up-from-bracket" style="color:#818cf8;"></i> at the bottom</div>' +
+        '</div>' +
+        '<div class="ath-step">' +
+          '<div class="ath-step-num">2</div>' +
+          '<div class="ath-step-text">Scroll down and tap <strong>"Add to Home Screen"</strong></div>' +
+        '</div>' +
+        '<div class="ath-step">' +
+          '<div class="ath-step-num">3</div>' +
+          '<div class="ath-step-text">Tap <strong>"Add"</strong> — 9jaCash icon appears on your home screen</div>' +
+        '</div>';
+    } else {
+      stepsHTML = 
+        '<div class="ath-step">' +
+          '<div class="ath-step-num">1</div>' +
+          '<div class="ath-step-text">Tap the browser <strong>Menu</strong> (3 dots/lines)</div>' +
+        '</div>' +
+        '<div class="ath-step">' +
+          '<div class="ath-step-num">2</div>' +
+          '<div class="ath-step-text">Tap <strong>"Add to Home Screen"</strong> or <strong>"Install"</strong></div>' +
+        '</div>' +
+        '<div class="ath-step">' +
+          '<div class="ath-step-num">3</div>' +
+          '<div class="ath-step-text">Tap <strong>"Add"</strong> — 9jaCash icon appears on your home screen</div>' +
+        '</div>';
+    }
+    stepsContainer.innerHTML = stepsHTML;
+  }
+  
+  // Show banner
+  setTimeout(function() {
+    banner.classList.add("show");
+  }, 2500);
+}
+
+function initAthBanner() {
+  // If Chrome PWA beforeinstallprompt fires, it will trigger it.
+  // Otherwise, we load standard guide after 3 seconds:
+  setTimeout(() => {
+    if (!deferredPrompt) {
+      triggerAthBanner(false);
+    }
+  }, 3000);
+}
+
+function markAthDone() {
+  localStorage.setItem("9jaCashAthDone", "true");
+  document.getElementById("athBanner").classList.remove("show");
+  setTimeout(function() {
+    document.getElementById("athBanner").classList.add("hidden");
+    initNotifyBanner();
+  }, 600);
+}
+
+function dismissAth() {
+  localStorage.setItem("9jaCashAthDismissed", "true");
+  document.getElementById("athBanner").classList.remove("show");
+  setTimeout(function() {
+    document.getElementById("athBanner").classList.add("hidden");
+    initNotifyBanner();
+  }, 600);
+}
+
+// ========== NOTIFICATION PERMISSION ==========
+function initNotifyBanner() {
+  if (localStorage.getItem("9jaCashNotifyDecided") === "true") return;
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted") {
+    localStorage.setItem("9jaCashNotifyDecided", "true");
+    return;
+  }
+  
+  setTimeout(function() {
+    const banner = document.getElementById("notifyBanner");
+    banner.classList.add("show");
+  }, 1000);
+}
+
+function requestNotify() {
+  if (!("Notification" in window)) {
+    showToast("Notifications not supported on this device");
+    return;
+  }
+  
+  Notification.requestPermission().then(function(permission) {
+    localStorage.setItem("9jaCashNotifyDecided", "true");
+    document.getElementById("notifyBanner").classList.remove("show");
+    setTimeout(function() {
+      document.getElementById("notifyBanner").classList.add("hidden");
+    }, 600);
+    
+    if (permission === "granted") {
+      showToast("Notifications enabled! You'll get alerts for withdrawals & refunds.");
+      // Register service worker for push notifications
+      registerServiceWorker();
+    } else {
+      showToast("Notifications disabled. Enable later in settings.");
+    }
+  });
+}
+
+function dismissNotify() {
+  localStorage.setItem("9jaCashNotifyDecided", "true");
+  document.getElementById("notifyBanner").classList.remove("show");
+  setTimeout(function() {
+    document.getElementById("notifyBanner").classList.add("hidden");
+  }, 600);
+}
+
+// ========== SERVICE WORKER (FOR PUSH NOTIFICATIONS) ==========
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(function(registration) {
+        console.log('Service Worker registered:', registration);
+      })
+      .catch(function(error) {
+        console.log('Service Worker registration failed:', error);
+      });
+  }
+}
+
+// ========== INIT ==========
+window.addEventListener("DOMContentLoaded", function() {
+  initAthBanner();
+  
+  // Capture referral code if present in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const ref = urlParams.get('ref') || urlParams.get('referral');
+  if (ref) {
+    localStorage.setItem('9jaCashReferralCode', ref);
+    console.log('Referral code captured and saved:', ref);
+  }
+});
+</script>
+
+</body>
+</html>

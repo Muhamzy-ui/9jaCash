@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>9jaCash | Payout Processing Terminal</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --neon-blue: #00f0ff;
+            --neon-purple: #b829dd;
+            --neon-pink: #ff2d95;
+            --neon-gold: #ffd700;
+            --neon-green: #00ff88;
+            --neon-orange: #ff6b35;
+            --dark-bg: #07070e;
+            --card-bg: rgba(255,255,255,0.02);
+            --card-border: rgba(255,255,255,0.06);
+            --glass: rgba(255,255,255,0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--dark-bg);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Particle Canvas */
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* App */
+        .app {
+            position: relative;
+            z-index: 1;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0 16px 40px;
+        }
+
+        /* Header */
+        .terminal-header {
+            padding: 24px 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-lockup {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+        }
+
+        .brand-icon::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%);
+            animation: sweep 3s infinite;
+        }
+
+        @keyframes sweep {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .brand-meta h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #fff, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-meta span {
+            font-size: 10px;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 500;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--neon-green);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: livePulse 1.5s infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.5); }
+        }
+
+        /* Next Payout Banner */
+        .payout-banner {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(184, 41, 221, 0.05));
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .payout-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+            animation: scanline 4s infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .banner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .banner-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--neon-blue);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .banner-timer {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+        }
+
+        .banner-timer span {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            -webkit-text-fill-color: rgba(255,255,255,0.4);
+            font-weight: 500;
+            display: block;
+            text-align: right;
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+        .queue-visual {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .queue-line {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .queue-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
+            border-radius: 2px;
+            transition: width 0.8s ease;
+            position: relative;
+            width: 0%;
+        }
+
+        .queue-fill::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            width: 12px;
+            height: 12px;
+            background: var(--neon-blue);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--neon-blue);
+            animation: nodePulse 1s infinite;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { box-shadow: 0 0 15px var(--neon-blue); }
+            50% { box-shadow: 0 0 25px var(--neon-blue), 0 0 40px var(--neon-purple); }
+        }
+
+        .queue-count {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.6);
+            white-space: nowrap;
+        }
+
+        /* Processing Feed */
+        .feed-section {
+            margin-bottom: 16px;
+        }
+
+        .feed-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 0 4px;
+        }
+
+        .feed-header h3 {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feed-header h3 i {
+            color: var(--neon-green);
+            font-size: 10px;
+        }
+
+        .feed-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+
+        .feed-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .feed-card {
+            flex-shrink: 0;
+            width: 160px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .feed-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .feed-card.gold::before {
+            background: linear-gradient(90deg, var(--neon-gold), #ff9500);
+        }
+
+        .feed-card.diamond::before {
+            background: linear-gradient(90deg, var(--neon-blue), #fff);
+        }
+
+        .feed-card.platinum::before {
+            background: linear-gradient(90deg, #c0c0c0, #e8e8e8);
+        }
+
+        .feed-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255,255,255,0.12);
+        }
+
+        .feed-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .feed-card.gold .feed-avatar {
+            background: rgba(255, 215, 0, 0.15);
+            color: var(--neon-gold);
+        }
+
+        .feed-card.diamond .feed-avatar {
+            background: rgba(0, 240, 255, 0.15);
+            color: var(--neon-blue);
+        }
+
+        .feed-card.platinum .feed-avatar {
+            background: rgba(192, 192, 192, 0.15);
+            color: #c0c0c0;
+        }
+
+        .feed-name {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .feed-plan {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .feed-card.gold .feed-plan {
+            color: var(--neon-gold);
+        }
+
+        .feed-card.diamond .feed-plan {
+            color: var(--neon-blue);
+        }
+
+        .feed-card.platinum .feed-plan {
+            color: #c0c0c0;
+        }
+
+        .feed-amount {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .feed-card.gold .feed-amount {
+            color: var(--neon-gold);
+        }
+
+        .feed-card.diamond .feed-amount {
+            color: var(--neon-blue);
+        }
+
+        .feed-card.platinum .feed-amount {
+            color: #c0c0c0;
+        }
+
+        .feed-bank {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .feed-status {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+            animation: statusBlink 2s infinite;
+        }
+
+        @keyframes statusBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Form Section */
+        .form-panel {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .panel-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+            box-shadow: 0 4px 20px rgba(0, 240, 255, 0.2);
+        }
+
+        .panel-header div h2 {
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .panel-header div p {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 2px;
+        }
+
+        /* Inputs */
+        .input-block {
+            margin-bottom: 18px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 8px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .input-field:focus {
+            border-color: var(--neon-blue);
+            background: rgba(0, 240, 255, 0.03);
+            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: rgba(255,255,255,0.25);
+        }
+
+        select.input-field {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+        }
+
+        /* Tier Grid */
+        .tier-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .tier-option {
+            background: rgba(255,255,255,0.03);
+            border: 1.5px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tier-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            transition: all 0.3s ease;
+        }
+
+        .tier-option:hover {
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+        }
+
+        .tier-option.active {
+            border-color: var(--neon-blue);
+            background: rgba(0, 240, 255, 0.05);
+        }
+
+        .tier-option.active::before {
+            height: 3px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+        }
+
+        .tier-option.free.active {
+            border-color: var(--neon-orange);
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .tier-option.free.active::before {
+            background: linear-gradient(90deg, var(--neon-orange), var(--neon-pink));
+        }
+
+        .tier-option.gold.active {
+            border-color: var(--neon-gold);
+            background: rgba(255, 215, 0, 0.05);
+        }
+
+        .tier-option.gold.active::before {
+            background: linear-gradient(90deg, var(--neon-gold), #ff9500);
+        }
+
+        .tier-option.diamond.active {
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tier-option.diamond.active::before {
+            background: linear-gradient(90deg, #fff, var(--neon-blue));
+        }
+
+        .tier-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .tier-badge {
+            font-size: 20px;
+        }
+
+        .tier-check {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s ease;
+        }
+
+        .tier-option.active .tier-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .tier-name {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .tier-price {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            font-weight: 500;
+        }
+
+        /* Process Button */
+        .process-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            border: none;
+            border-radius: 16px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 30px rgba(0, 240, 255, 0.2);
+        }
+
+        .process-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .process-btn:hover::before {
+            left: 100%;
+        }
+
+        .process-btn:active {
+            transform: scale(0.97);
+        }
+
+        .process-btn.processing {
+            background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+        }
+
+        .process-btn.blocked {
+            background: linear-gradient(135deg, var(--neon-orange), var(--neon-pink));
+        }
+
+        /* Verification Status */
+        .verify-strip {
+            display: none;
+            margin-top: 16px;
+            padding: 14px 16px;
+            background: rgba(0, 255, 136, 0.06);
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 14px;
+            align-items: center;
+            gap: 12px;
+            animation: stripIn 0.4s ease;
+        }
+
+        .verify-strip.show {
+            display: flex;
+        }
+
+        .verify-strip i {
+            font-size: 20px;
+            color: var(--neon-green);
+        }
+
+        .verify-strip div h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--neon-green);
+            margin-bottom: 2px;
+        }
+
+        .verify-strip div p {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        @keyframes stripIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Countdown Strip */
+        .countdown-strip {
+            display: none;
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(184, 41, 221, 0.05));
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 16px;
+            animation: stripIn 0.5s ease;
+        }
+
+        .countdown-strip.show {
+            display: block;
+        }
+
+        .countdown-strip .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--neon-blue);
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .countdown-strip .timer {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 38px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+
+        .countdown-strip .info {
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .countdown-strip .info span {
+            color: var(--neon-green);
+            font-weight: 700;
+        }
+
+        /* Success Screen */
+        .success-panel {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-panel.show {
+            display: block;
+            animation: stripIn 0.6s ease;
+        }
+
+        .success-halo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-green), #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.3);
+        }
+
+        .success-halo::before {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 2px solid var(--neon-green);
+            opacity: 0.3;
+            animation: haloExpand 2s infinite;
+        }
+
+        @keyframes haloExpand {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.15); opacity: 0; }
+        }
+
+        .success-halo i {
+            font-size: 42px;
+            color: #fff;
+        }
+
+        .success-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .success-sub {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 28px;
+        }
+
+        .receipt {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 8px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .receipt-row:last-child {
+            border-bottom: none;
+        }
+
+        .receipt-key {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .receipt-key i {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .receipt-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .receipt-value.green {
+            color: var(--neon-green);
+        }
+
+        .receipt-value.blue {
+            color: var(--neon-blue);
+        }
+
+        .receipt-value.gold {
+            color: var(--neon-gold);
+        }
+
+        /* Error Overlay */
+        .error-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 7, 14, 0.9);
+            backdrop-filter: blur(16px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .error-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .error-box {
+            background: linear-gradient(135deg, #1a0a0a, #0f0707);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            border-radius: 28px;
+            padding: 40px 28px;
+            text-align: center;
+            max-width: 360px;
+            width: 100%;
+            transform: scale(0.9) translateY(30px);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .error-overlay.show .error-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .error-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--neon-orange), var(--neon-pink));
+        }
+
+        .error-glow {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255, 107, 53, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 30px;
+            color: var(--neon-orange);
+            position: relative;
+        }
+
+        .error-glow::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px solid var(--neon-orange);
+            opacity: 0.2;
+            animation: haloExpand 2s infinite;
+        }
+
+        .error-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--neon-orange);
+            margin-bottom: 10px;
+        }
+
+        .error-desc {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .error-desc strong {
+            color: #fff;
+        }
+
+        .error-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--neon-orange), var(--neon-pink));
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .error-btn:active {
+            transform: scale(0.97);
+        }
+
+        .error-dismiss {
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.4);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px;
+            transition: color 0.3s ease;
+        }
+
+        .error-dismiss:hover {
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* Loader */
+        .btn-loader {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .btn-loader.show {
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Utility */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 400px) {
+            .tier-selector {
+                gap: 8px;
+            }
+            .tier-option {
+                padding: 12px;
+            }
+            .banner-timer {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particles"></canvas>
+
+    <div class="app">
+        <!-- Header -->
+        <div class="terminal-header">
+            <div class="brand-lockup">
+                <div class="brand-icon">₦</div>
+                <div class="brand-meta">
+                    <h1>9jaCash</h1>
+                    <span>Payout Terminal</span>
+                </div>
+            </div>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                LIVE
+            </div>
+        </div>
+
+        <!-- Next Payout Banner -->
+        <div class="payout-banner">
+            <div class="banner-header">
+                <div class="banner-label">Next Payout Batch</div>
+                <div class="banner-timer">
+                    <span id="mainTimer">02:00</span>
+                    <span>until processing</span>
+                </div>
+            </div>
+            <div class="queue-visual">
+                <div class="queue-line">
+                    <div class="queue-fill" id="queueFill"></div>
+                </div>
+                <div class="queue-count" id="queueCount">0 in queue</div>
+            </div>
+        </div>
+
+        <!-- Processing Feed -->
+        <div class="feed-section" id="feedSection">
+            <div class="feed-header">
+                <h3><i class="fas fa-circle"></i> Recently Processed</h3>
+            </div>
+            <div class="feed-scroll" id="feedScroll">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Form Panel -->
+        <div class="form-panel" id="formPanel">
+            <div class="panel-header">
+                <div class="panel-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div>
+                    <h2>Add to Next Payout</h2>
+                    <p>Queue user for upcoming batch</p>
+                </div>
+            </div>
+
+            <div class="input-block">
+                <label class="input-label">Full Name</label>
+                <input type="text" class="input-field" id="userName" placeholder="Enter user full name">
+            </div>
+
+            <div class="input-block">
+                <label class="input-label">Email Address</label>
+                <input type="email" class="input-field" id="userEmail" placeholder="user@email.com">
+            </div>
+
+            <div class="input-block">
+                <label class="input-label">Select Plan Tier</label>
+                <div class="tier-selector">
+                    <div class="tier-option free" data-tier="free" onclick="selectTier(this)">
+                        <div class="tier-top">
+                            <div class="tier-badge"><i class="fas fa-lock-open"></i></div>
+                            <div class="tier-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="tier-name">Free</div>
+                        <div class="tier-price">₦0 / mo</div>
+                    </div>
+                    <div class="tier-option" data-tier="basic" onclick="selectTier(this)">
+                        <div class="tier-top">
+                            <div class="tier-badge"><i class="fas fa-bolt"></i></div>
+                            <div class="tier-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="tier-name">Basic</div>
+                        <div class="tier-price" id="basicPrice">₦0 / mo</div>
+                    </div>
+                    <div class="tier-option gold" data-tier="gold" onclick="selectTier(this)">
+                        <div class="tier-top">
+                            <div class="tier-badge"><i class="fas fa-crown"></i></div>
+                            <div class="tier-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="tier-name">Gold</div>
+                        <div class="tier-price" id="goldPrice">₦0 / mo</div>
+                    </div>
+                    <div class="tier-option diamond" data-tier="diamond" onclick="selectTier(this)">
+                        <div class="tier-top">
+                            <div class="tier-badge"><i class="fas fa-gem"></i></div>
+                            <div class="tier-check"><i class="fas fa-check"></i></div>
+                        </div>
+                        <div class="tier-name">Diamond</div>
+                        <div class="tier-price" id="diamondPrice">₦0 / mo</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-block">
+                <label class="input-label">Payout Amount</label>
+                <input type="number" class="input-field" id="payoutAmount" placeholder="Amount to payout">
+            </div>
+
+            <div class="input-block">
+                <label class="input-label">Bank Account Number</label>
+                <input type="text" class="input-field" id="accountNumber" placeholder="10 digit account number" maxlength="10">
+            </div>
+
+            <div class="input-block" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div>
+                    <label class="input-label">Bank</label>
+                    <select class="input-field" id="bankName" style="color:rgba(255,255,255,0.5);">
+                        <option value="" style="background:#07070e;">Select Bank</option>
+                        <option value="Moniepoint" style="background:#07070e;">Moniepoint</option>
+                        <option value="OPay" style="background:#07070e;">OPay</option>
+                        <option value="Kuda" style="background:#07070e;">Kuda</option>
+                        <option value="Palmpay" style="background:#07070e;">Palmpay</option>
+                        <option value="Zenith" style="background:#07070e;">Zenith Bank</option>
+                        <option value="GTB" style="background:#07070e;">GTBank</option>
+                        <option value="First" style="background:#07070e;">First Bank</option>
+                        <option value="UBA" style="background:#07070e;">UBA</option>
+                        <option value="Access" style="background:#07070e;">Access Bank</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="input-label">Account Name</label>
+                    <input type="text" class="input-field" id="accountName" placeholder="Account holder">
+                </div>
+            </div>
+
+            <button class="process-btn" id="processBtn" onclick="processUser()">
+                <div class="btn-loader" id="processLoader"></div>
+                <span id="processText"><i class="fas fa-fingerprint"></i> Verify & Queue</span>
+            </button>
+
+            <div class="verify-strip" id="verifyStrip">
+                <i class="fas fa-shield-check"></i>
+                <div>
+                    <h4>Account Verified</h4>
+                    <p>Linked and verified on 9jaCash database</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Countdown Strip -->
+        <div class="countdown-strip" id="countdownStrip">
+            <div class="label"><i class="fas fa-hourglass-half" style="margin-right:6px;"></i>Next Payout Incoming</div>
+            <div class="timer" id="countdownTimer">02:00</div>
+            <div class="info">₦<<span id="stripAmount">0</span> will be credited to linked account</div>
+        </div>
+
+        <!-- Complete Button -->
+        <button class="process-btn" id="completeBtn" onclick="completeProcess()" style="display:none; background:linear-gradient(135deg, var(--neon-green), #059669); box-shadow: 0 4px 30px rgba(0,255,136,0.2);">
+            <div class="btn-loader" id="completeLoader"></div>
+            <span id="completeText"><i class="fas fa-check-double"></i> Complete Processing</span>
+        </button>
+
+        <!-- Success Panel -->
+        <div class="success-panel" id="successPanel">
+            <div class="success-halo">
+                <i class="fas fa-check"></i>
+            </div>
+            <div class="success-title">Queued Successfully</div>
+            <div class="success-sub">User added to next payout batch</div>
+
+            <div class="receipt">
+                <div class="receipt-row">
+                    <div class="receipt-key"><i class="fas fa-user"></i> User</div>
+                    <div class="receipt-value" id="rcptName">-</div>
+                </div>
+                <div class="receipt-row">
+                    <div class="receipt-key"><i class="fas fa-layer-group"></i> Plan</div>
+                    <div class="receipt-value gold" id="rcptTier">-</div>
+                </div>
+                <div class="receipt-row">
+                    <div class="receipt-key"><i class="fas fa-university"></i> Bank</div>
+                    <div class="receipt-value" id="rcptBank">-</div>
+                </div>
+                <div class="receipt-row">
+                    <div class="receipt-key"><i class="fas fa-hashtag"></i> Account</div>
+                    <div class="receipt-value" id="rcptAccount">-</div>
+                </div>
+                <div class="receipt-row">
+                    <div class="receipt-key"><i class="fas fa-coins"></i> Payout</div>
+                    <div class="receipt-value green" id="rcptAmount">-</div>
+                </div>
+                <div class="receipt-row">
+                    <div class="receipt-key"><i class="fas fa-clock"></i> ETA</div>
+                    <div class="receipt-value blue" id="rcptEta">2 mins</div>
+                </div>
+            </div>
+
+            <button class="process-btn" onclick="resetAll()" style="background:linear-gradient(135deg, var(--neon-blue), var(--neon-purple));">
+                <i class="fas fa-plus"></i> Queue Another User
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Overlay -->
+    <div class="error-overlay" id="errorOverlay" onclick="closeError(event)">
+        <div class="error-box">
+            <div class="error-glow">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="error-title">Processing Blocked</div>
+            <div class="error-desc">
+                This user is on the <strong>Free Plan</strong>. Free tier accounts cannot be queued for payout processing. Upgrade to Gold, or Diamond plan to proceed with next payout batch.
+            </div>
+            <button class="error-btn" onclick="closeErrorDirect()">
+                <i class="fas fa-arrow-up"></i> Upgrade Plan
+            </button>
+            <button class="error-dismiss" onclick="closeErrorDirect()">Dismiss</button>
+        </div>
+    </div>
+
+    <script>
+            // ===== CONFIGURATION =====
+        const TIER_PRICES = {
+            basic: Math.floor(Math.random() * 100000) + 100000,   // 100k - 200k
+            gold: Math.floor(Math.random() * 200000) + 300000,    // 300k - 500k
+            diamond: Math.floor(Math.random() * 300000) + 700000   // 700k - 1M
+        };
+
+        const NIGERIAN_NAMES = {
+            female: ['Chioma', 'Amara', 'Ngozi', 'Adaeze', 'Ifeoma', 'Oluchi', 'Chidinma', 'Zainab', 'Amina', 'Fatima', 'Blessing', 'Mercy', 'Grace', 'Faith', 'Joy', 'Peace', 'Hope', 'Patience', 'Esther', 'Ruth', 'Deborah', 'Mary', 'Martha', 'Elizabeth', 'Victoria', 'Precious', 'Divine', 'Favour', 'Success', 'Happiness'],
+            male: ['Chukwuemeka', 'Obinna', 'Ifeanyi', 'Chinedu', 'Emeka', 'Tochukwu', 'Ikenna', 'Oluwaseun', 'Tunde', 'Adebayo', 'Femi', 'Kunle', 'Ibrahim', 'Yusuf', 'Abdul', 'Sani', 'Musa', 'David', 'Daniel', 'John', 'Peter', 'Paul', 'James', 'Matthew', 'Mark', 'Luke', 'Joseph', 'Samuel', 'Michael', 'Gabriel']
+        };
+
+        const BANKS = ['Moniepoint', 'OPay', 'Kuda', 'Palmpay', 'Zenith Bank', 'GTBank', 'First Bank', 'UBA', 'Access Bank'];
+
+        let selectedTier = '';
+        let isVerified = false;
+        let countdownInterval = null;
+        let mainTimerInterval = null;
+        let queueUsers = [];
+        let startTime = Date.now();
+
+        // ===== PARTICLE SYSTEM =====
+        (function initParticles() {
+            const canvas = document.getElementById('particles');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 2 + 0.5;
+                    this.speedX = (Math.random() - 0.5) * 0.3;
+                    this.speedY = (Math.random() - 0.5) * 0.3;
+                    this.opacity = Math.random() * 0.5 + 0.1;
+                    this.color = Math.random() > 0.5 ? '0, 240, 255' : '184, 41, 221';
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`;
+                    ctx.fill();
+                }
+            }
+
+            for (let i = 0; i < 50; i++) particles.push(new Particle());
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                // Connect nearby particles
+                particles.forEach((p1, i) => {
+                    particles.slice(i + 1).forEach(p2 => {
+                        const dx = p1.x - p2.x;
+                        const dy = p1.y - p2.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.strokeStyle = `rgba(0, 240, 255, ${0.05 * (1 - dist / 100)})`;
+                            ctx.stroke();
+                        }
+                    });
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set random tier prices
+            document.getElementById('basicPrice').textContent = '₦' + TIER_PRICES.basic.toLocaleString() + ' / mo';
+            document.getElementById('goldPrice').textContent = '₦' + TIER_PRICES.gold.toLocaleString() + ' / mo';
+            document.getElementById('diamondPrice').textContent = '₦' + TIER_PRICES.diamond.toLocaleString() + ' / mo';
+
+            initQueue();
+            initMainTimer();
+            generateFeed();
+        });
+
+        // ===== QUEUE SIMULATION =====
+        function initQueue() {
+            updateQueue();
+            setInterval(updateQueue, 4000);
+        }
+
+        function updateQueue() {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const base = 4;
+            const added = Math.floor(elapsed / 20);
+            const total = Math.min(base + added, 30);
+
+            queueUsers = Array(total).fill(0).map(() => ({
+                amount: Math.floor(Math.random() * 100000) + 15000,
+                eta: Math.floor(Math.random() * 120) + 60
+            }));
+
+            const totalAmount = queueUsers.reduce((s, u) => s + u.amount, 0);
+            const pct = Math.min((total / 30) * 100, 100);
+
+            document.getElementById('queueFill').style.width = pct + '%';
+            document.getElementById('queueCount').textContent = total + ' in queue';
+        }
+
+        // ===== MAIN TIMER =====
+        function initMainTimer() {
+            let seconds = 120;
+            mainTimerInterval = setInterval(() => {
+                const m = Math.floor(seconds / 60);
+                const s = seconds % 60;
+                document.getElementById('mainTimer').textContent =
+                    `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                if (seconds <= 0) {
+                    seconds = 120;
+                    startTime = Date.now();
+                }
+                seconds--;
+            }, 1000);
+        }
+
+        // ===== TIER SELECTION =====
+        function selectTier(el) {
+            document.querySelectorAll('.tier-option').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            selectedTier = el.dataset.tier;
+        }
+
+        // ===== VERIFY & QUEUE =====
+        function processUser() {
+            const name = document.getElementById('userName').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+            const amount = document.getElementById('payoutAmount').value;
+            const accNum = document.getElementById('accountNumber').value;
+            const bank = document.getElementById('bankName').value;
+            const accName = document.getElementById('accountName').value.trim();
+
+            if (!name) { shake(document.getElementById('userName')); return; }
+            if (!email) { shake(document.getElementById('userEmail')); return; }
+            if (!amount) { shake(document.getElementById('payoutAmount')); return; }
+            if (!selectedTier) {
+                document.querySelector('.tier-selector').style.animation = 'modalShake 0.4s ease';
+                setTimeout(() => document.querySelector('.tier-selector').style.animation = '', 400);
+                return;
+            }
+            if (!accNum || accNum.length < 10) { shake(document.getElementById('accountNumber')); return; }
+            if (!bank) { shake(document.getElementById('bankName')); return; }
+            if (!accName) { shake(document.getElementById('accountName')); return; }
+
+            // Show loading
+            const btn = document.getElementById('processBtn');
+            const loader = document.getElementById('processLoader');
+            const text = document.getElementById('processText');
+
+            loader.classList.add('show');
+            text.style.display = 'none';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                loader.classList.remove('show');
+                text.style.display = 'inline';
+                btn.disabled = false;
+
+                // Show verify strip
+                document.getElementById('verifyStrip').classList.add('show');
+                isVerified = true;
+
+                // Change button to processing style
+                btn.classList.add('processing');
+                btn.innerHTML = '<i class="fas fa-shield-check"></i> Verified - Ready';
+
+                // Show countdown strip
+                document.getElementById('stripAmount').textContent = parseInt(amount).toLocaleString();
+                document.getElementById('countdownStrip').classList.add('show');
+
+                // Show complete button
+                document.getElementById('completeBtn').style.display = 'flex';
+
+                startCountdown();
+            }, 2000);
+        }
+
+        function startCountdown() {
+            let sec = 120;
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                const m = Math.floor(sec / 60);
+                const s = sec % 60;
+                document.getElementById('countdownTimer').textContent =
+                    `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                if (sec <= 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById('countdownTimer').textContent = '00:00';
+                }
+                sec--;
+            }, 1000);
+        }
+
+        // ===== COMPLETE PROCESSING =====
+        function completeProcess() {
+            if (!isVerified) return;
+
+            const btn = document.getElementById('completeBtn');
+            const loader = document.getElementById('completeLoader');
+            const text = document.getElementById('completeText');
+
+            loader.classList.add('show');
+            text.style.display = 'none';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                loader.classList.remove('show');
+                text.style.display = 'inline';
+                btn.disabled = false;
+
+                if (selectedTier === 'free') {
+                    // FREE PLAN = ERROR
+                    document.getElementById('errorOverlay').classList.add('show');
+                } else {
+                    // SUCCESS
+                    showSuccess();
+                }
+            }, 1500);
+        }
+
+        function showSuccess() {
+            const name = document.getElementById('userName').value;
+            const amount = document.getElementById('payoutAmount').value;
+            const accNum = document.getElementById('accountNumber').value;
+            const bank = document.getElementById('bankName').value;
+
+            document.getElementById('formPanel').style.display = 'none';
+            document.getElementById('countdownStrip').style.display = 'none';
+            document.getElementById('completeBtn').style.display = 'none';
+            document.getElementById('feedSection').style.display = 'none';
+
+            document.getElementById('rcptName').textContent = name;
+            document.getElementById('rcptTier').textContent = selectedTier.toUpperCase();
+            document.getElementById('rcptBank').textContent = bank;
+            document.getElementById('rcptAccount').textContent = '****' + accNum.slice(-4);
+            document.getElementById('rcptAmount').textContent = '₦' + parseInt(amount).toLocaleString();
+
+            document.getElementById('successPanel').classList.add('show');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ===== ERROR MODAL =====
+        function closeError(e) {
+            if (e.target === e.currentTarget) {
+                document.getElementById('errorOverlay').classList.remove('show');
+            }
+        }
+
+        function closeErrorDirect() {
+            document.getElementById('errorOverlay').classList.remove('show');
+        }
+
+        // ===== GENERATE FEED =====
+        function generateFeed() {
+            const scroll = document.getElementById('feedScroll');
+            const tiers = ['gold', 'diamond', 'platinum'];
+            const tierNames = { gold: 'Gold', diamond: 'Diamond', platinum: 'Platinum' };
+
+            for (let i = 0; i < 6; i++) {
+                const isFemale = Math.random() > 0.5;
+                const names = isFemale ? NIGERIAN_NAMES.female : NIGERIAN_NAMES.male;
+                const name = names[Math.floor(Math.random() * names.length)];
+                const tier = tiers[Math.floor(Math.random() * tiers.length)];
+                const amount = Math.floor(Math.random() * 800000) + 200000;
+                const bank = BANKS[Math.floor(Math.random() * BANKS.length)];
+
+                const card = document.createElement('div');
+                card.className = `feed-card ${tier}`;
+                card.innerHTML = `
+                    <div class="feed-status"></div>
+                    <div class="feed-avatar"><i class="fas fa-${isFemale ? 'venus' : 'mars'}"></i></div>
+                    <div class="feed-name">${name}</div>
+                    <div class="feed-plan">${tierNames[tier]} Plan</div>
+                    <div class="feed-amount">₦${amount.toLocaleString()}</div>
+                    <div class="feed-bank"><i class="fas fa-university" style="font-size:9px;"></i> ${bank}</div>
+                `;
+                scroll.appendChild(card);
+            }
+        }
+
+        // ===== RESET =====
+        function resetAll() {
+            document.getElementById('userName').value = '';
+            document.getElementById('userEmail').value = '';
+            document.getElementById('payoutAmount').value = '';
+            document.getElementById('accountNumber').value = '';
+            document.getElementById('bankName').value = '';
+            document.getElementById('accountName').value = '';
+
+            document.querySelectorAll('.tier-option').forEach(t => t.classList.remove('active'));
+            selectedTier = '';
+            isVerified = false;
+
+            const pBtn = document.getElementById('processBtn');
+            pBtn.classList.remove('processing');
+            pBtn.innerHTML = '<div class="btn-loader" id="processLoader"></div><span id="processText"><i class="fas fa-fingerprint"></i> Verify & Queue</span>';
+
+            document.getElementById('verifyStrip').classList.remove('show');
+            document.getElementById('countdownStrip').classList.remove('show');
+            document.getElementById('completeBtn').style.display = 'none';
+
+            document.getElementById('successPanel').classList.remove('show');
+            document.getElementById('formPanel').style.display = 'block';
+            document.getElementById('feedSection').style.display = 'block';
+
+            if (countdownInterval) clearInterval(countdownInterval);
+            document.getElementById('countdownTimer').textContent = '02:00';
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ===== SHAKE UTILITY =====
+        function shake(el) {
+            el.style.animation = 'modalShake 0.4s ease';
+            el.style.borderColor = 'var(--neon-orange)';
+            setTimeout(() => {
+                el.style.animation = '';
+                el.style.borderColor = '';
+            }, 400);
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>9jaCash - Tasks</title>
+
+
+
+
+<script src="firebase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Outfit',sans-serif;background:#fff;color:#1a1a2e;min-height:100vh;}
+
+/* Dark mode - matches dashboard */
+body.dark-mode{background:#0f172a;color:#f8fafc;}
+body.dark-mode .top-gradient{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%);}
+body.dark-mode .task-item{background:#1e293b;border-color:#334155;}
+body.dark-mode .task-name{color:#f8fafc;}
+body.dark-mode .task-desc{color:#94a3b8;}
+body.dark-mode .task-link-btn{background:#334155;border-color:#334155;color:#94a3b8;}
+body.dark-mode .tabs .tab{background:#1e293b;border-color:#334155;color:#94a3b8;}
+body.dark-mode .tabs .tab.active{background:#6366f1;color:#fff;border-color:#6366f1;}
+body.dark-mode .bottom-nav{background:#1e293b;border-color:#334155;}
+body.dark-mode .nav-item{color:#64748b;}
+body.dark-mode .nav-item.active{color:#818cf8;}
+body.dark-mode .nav-mid{border-color:#0f172a;}
+body.dark-mode .empty-box .empty-title{color:#f8fafc;}
+body.dark-mode .empty-box .empty-text{color:#94a3b8;}
+body.dark-mode .security-block{background:#0f172a;}
+body.dark-mode .security-title{color:#f8fafc;}
+body.dark-mode .security-text{color:#94a3b8;}
+body.dark-mode .earn-pill{background:rgba(255,255,255,0.1);}
+body.dark-mode .earn-value{color:#fff;}
+
+/* Warm gradient top */
+.top-gradient{position:fixed;top:0;left:0;right:0;height:280px;background:linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%);border-radius:0 0 40px 40px;z-index:0;}
+
+/* Main */
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 20px 100px;}
+
+/* Header */
+.header{padding:24px 0 16px;display:flex;align-items:center;gap:16px;}
+.back-btn{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer;border:none;transition:all 0.3s;}
+.back-btn:hover{background:rgba(255,255,255,0.3);}
+.header-text{color:#fff;}
+.header-title{font-size:24px;font-weight:800;}
+.header-sub{font-size:13px;opacity:0.8;margin-top:2px;}
+
+/* Earnings pill */
+.earn-pill{background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border-radius:16px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;color:#fff;}
+.earn-icon{width:48px;height:48px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;color:#667eea;font-size:20px;}
+.earn-info{flex:1;}
+.earn-label{font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:1px;}
+.earn-value{font-size:24px;font-weight:800;margin-top:2px;}
+
+/* Progress ring */
+.progress-ring{width:56px;height:56px;position:relative;}
+.progress-ring svg{transform:rotate(-90deg);}
+.progress-ring circle{fill:none;stroke-width:4;}
+.progress-ring .bg{stroke:rgba(255,255,255,0.2);}
+.progress-ring .fill{stroke:#fff;stroke-linecap:round;transition:stroke-dashoffset 0.6s ease;}
+.progress-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;}
+
+/* Task tabs */
+.tabs{display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:10px 20px;border-radius:100px;border:1px solid #e2e8f0;background:#fff;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;transition:all 0.3s;}
+.tab.active{background:#1a1a2e;color:#fff;border-color:#1a1a2e;}
+.tab:hover:not(.active){background:#f8fafc;}
+
+/* Task cards — vertical stack */
+.task-list{display:flex;flex-direction:column;gap:14px;}
+
+.task-item{background:#fff;border-radius:20px;padding:0;box-shadow:0 2px 16px rgba(0,0,0,0.06);border:1px solid #f1f5f9;overflow:hidden;transition:all 0.3s;}
+.task-item:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,0.1);}
+.task-item.completed{opacity:0.6;}
+.task-item.completed .task-status-bar{background:#10b981;}
+
+.task-status-bar{height:4px;background:linear-gradient(90deg,#667eea,#764ba2);}
+
+.task-body{padding:18px 20px;}
+.task-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;}
+.task-img{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;flex-shrink:0;}
+.task-img.tiktok{background:#000;}
+.task-img.facebook{background:#1877f2;}
+.task-img.youtube{background:#ff0000;}
+.task-img.instagram{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);}
+
+.task-main{flex:1;}
+.task-name{font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:4px;line-height:1.3;}
+.task-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:#f3e8ff;color:#8b5cf6;margin-bottom:8px;}
+.task-tag.hot{background:#fef3c7;color:#d97706;}
+.task-tag i{font-size:9px;}
+
+.task-reward{display:flex;align-items:center;gap:6px;font-size:18px;font-weight:800;color:#667eea;}
+.task-reward i{font-size:14px;}
+
+.task-desc{font-size:13px;color:#64748b;line-height:1.5;margin-bottom:14px;}
+
+.task-link-btn{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;color:#64748b;font-size:13px;font-weight:600;text-decoration:none;margin-bottom:14px;transition:all 0.3s;}
+.task-link-btn:hover{background:#eef2ff;border-color:#667eea;color:#667eea;}
+.task-link-btn i{color:#667eea;}
+
+.task-actions{display:flex;gap:10px;}
+.btn-start{flex:1;padding:14px;border-radius:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-start:active{transform:scale(0.97);}
+.btn-start.completed{background:#10b981;}
+.btn-skip{padding:14px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;color:#94a3b8;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all 0.3s;}
+.btn-skip:hover{background:#f1f5f9;}
+
+/* Empty state */
+.empty-box{text-align:center;padding:60px 20px;}
+.empty-illustration{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:48px;color:#fff;box-shadow:0 8px 32px rgba(240,147,251,0.3);}
+.empty-title{font-size:20px;font-weight:700;color:#1a1a2e;margin-bottom:8px;}
+.empty-text{font-size:14px;color:#64748b;max-width:260px;margin:0 auto;}
+
+/* Bottom nav - MATCHES DASHBOARD EXACTLY */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #f1f5f9;padding:10px 20px 24px;display:flex;justify-content:space-around;align-items:center;z-index:100;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:#94a3b8;text-decoration:none;font-size:10px;font-weight:600;transition:all 0.3s;border:none;background:none;cursor:pointer;}
+.nav-item i{font-size:20px;}
+.nav-item.active{color:#6366f1;}
+.nav-mid{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-top:-20px;box-shadow:0 4px 16px rgba(99,102,241,0.3);border:4px solid #fff;transition:all 0.3s;}
+.nav-mid:active{transform:scale(0.95);}
+body.dark-mode .nav-mid{border-color:#0f172a;}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1a1a2e;color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.15);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast i{color:#10b981;}
+
+/* Security */
+.security-block{position:fixed;inset:0;background:#fff;display:none;align-items:center;justify-content:center;z-index:9999;flex-direction:column;text-align:center;padding:20px;}
+.security-block.active{display:flex;}
+.security-icon{width:80px;height:80px;border-radius:28px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;margin-bottom:24px;box-shadow:0 12px 40px rgba(239,68,68,0.2);}
+.security-title{font-size:24px;font-weight:800;color:#1a1a2e;margin-bottom:8px;}
+.security-text{font-size:14px;color:#64748b;max-width:300px;line-height:1.6;}
+
+/* Theme toggle button in header */
+.theme-toggle-btn{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer;border:none;transition:all 0.3s;margin-left:auto;}
+.theme-toggle-btn:hover{background:rgba(255,255,255,0.35);}
+
+@keyframes slideUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+.anim{animation:slideUp 0.6s ease both;}
+.d1{animation-delay:0.1s;}
+.d2{animation-delay:0.2s;}
+.d3{animation-delay:0.3s;}
+</style>
+</head>
+<body>
+
+<div class="top-gradient"></div>
+
+<!-- Security Block -->
+<div class="security-block" id="securityBlock">
+  <div class="security-icon"><i class="fa-solid fa-shield-halved"></i></div>
+  <div class="security-title">Access Restricted</div>
+  <div class="security-text">Too many requests detected. Please wait before continuing.</div>
+</div>
+
+<div class="app">
+
+<!-- Header -->
+<div class="header anim d1">
+  <button class="back-btn" onclick="window.location.href='dashboard.html'">
+    <i class="fa-solid fa-arrow-left"></i>
+  </button>
+  <div class="header-text">
+    <div class="header-title">Earn & Grow</div>
+    <div class="header-sub">Complete tasks, stack cash</div>
+  </div>
+  <button class="theme-toggle-btn" onclick="toggleDarkMode()" id="themeBtn" title="Toggle theme">
+    <i class="fa-solid fa-sun" id="themeIcon"></i>
+  </button>
+</div>
+
+<!-- Earnings Pill -->
+<div class="earn-pill anim d1">
+  <div class="earn-icon"><i class="fa-solid fa-wallet"></i></div>
+  <div class="earn-info">
+    <div class="earn-label">Earned Today</div>
+    <div class="earn-value" id="totalEarned">₦0</div>
+  </div>
+  <div class="progress-ring">
+    <svg width="56" height="56" viewBox="0 0 56 56">
+      <circle class="bg" cx="28" cy="28" r="24"/>
+      <circle class="fill" id="progressCircle" cx="28" cy="28" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+    </svg>
+    <div class="progress-text" id="progressText">0%</div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs anim d2">
+  <button class="tab active" onclick="filterTasks('all', this)">All Tasks</button>
+  <button class="tab" onclick="filterTasks('hot', this)">Hot 🔥</button>
+  <button class="tab" onclick="filterTasks('social', this)">Social</button>
+  <button class="tab" onclick="filterTasks('completed', this)">Done</button>
+</div>
+
+<!-- Task List -->
+<div class="task-list anim d3" id="taskList">
+  <div style="text-align:center;padding:40px;">
+    <div style="width:48px;height:48px;border-radius:50%;border:3px solid #e2e8f0;border-top-color:#667eea;animation:spin 1s linear infinite;margin:0 auto 16px;"></div>
+    <p style="color:#94a3b8;font-size:14px;">Loading tasks...</p>
+  </div>
+</div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <button class="nav-item" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-house"></i>Home</button>
+  <button class="nav-item" onclick="window.location.href='upgrade.html'"><i class="fa-solid fa-rocket"></i>Upgrade</button>
+  <button class="nav-mid" onclick="window.location.href='dashboard.html?mine=true'"><i class="fa-solid fa-hammer"></i></button>
+  <button class="nav-item active" onclick="setNav(this)"><i class="fa-solid fa-list-check"></i>Tasks</button>
+  <button class="nav-item" onclick="window.location.href='profile.html'"><i class="fa-solid fa-user"></i>Profile</button>
+</div>
+
+<script>
+// ========== DARK MODE ==========
+function initDarkMode() {
+  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  if (isDark) {
+    document.body.classList.add("dark-mode");
+    document.getElementById("themeIcon").className = "fa-solid fa-moon";
+  } else {
+    document.body.classList.remove("dark-mode");
+    document.getElementById("themeIcon").className = "fa-solid fa-sun";
+  }
+}
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem("9jaCashDark", isDark);
+  document.getElementById("themeIcon").className = isDark ? "fa-solid fa-moon" : "fa-solid fa-sun";
+}
+
+// ========== SECURITY ==========
+const SecurityGate = {
+  requests: new Map(),
+  maxRequests: 40,
+  windowMs: 60000,
+  
+  checkLimit(key) {
+    const now = Date.now();
+    const windowStart = now - this.windowMs;
+    for (const [k, v] of this.requests) {
+      if (v < windowStart) this.requests.delete(k);
+    }
+    const count = this.requests.get(key) || 0;
+    if (count >= this.maxRequests) {
+      document.getElementById('securityBlock').classList.add('active');
+      setTimeout(() => document.getElementById('securityBlock').classList.remove('active'), 30000);
+      return false;
+    }
+    this.requests.set(key, count + 1);
+    return true;
+  }
+};
+
+// ========== USER DATA ==========
+let userData = null;
+try {
+  userData = JSON.parse(localStorage.getItem("9jaCashUser"));
+} catch(e) { userData = null; }
+
+if (!userData) {
+  window.location.href = "start.html";
+}
+
+// ========== TASK STATE ==========
+let allTasks = [];
+let completedTaskIds = [];
+let currentFilter = 'all';
+
+const CAT_ICONS = {
+  tiktok: 'fa-brands fa-tiktok',
+  facebook: 'fa-brands fa-facebook-f',
+  youtube: 'fa-brands fa-youtube',
+  instagram: 'fa-brands fa-instagram',
+  twitter: 'fa-brands fa-x-twitter',
+  other: 'fa-solid fa-globe'
+};
+
+const CAT_CLASSES = {
+  tiktok: 'tiktok',
+  facebook: 'facebook',
+  youtube: 'youtube',
+  instagram: 'instagram',
+  twitter: 'other',
+  other: 'other'
+};
+
+// ========== LOAD TASKS ==========
+async function loadTasks() {
+  const clientId = 'tasks_' + (userData?.phone || 'guest');
+  if (!SecurityGate.checkLimit(clientId)) {
+    showToast('Too many requests. Please wait.', 'error');
+    return;
+  }
+  
+  try {
+    let doc;
+    if (window._9jaCash && window._9jaCash.db) {
+      doc = await window._9jaCash.db.collection('settings').doc('tasks').get();
+    } else {
+      showEmpty();
+      return;
+    }
+    
+    if (!doc.exists) {
+      showEmpty();
+      return;
+    }
+    
+    allTasks = doc.data().tasks || [];
+    if (allTasks.length === 0) {
+      showEmpty();
+      return;
+    }
+    
+    const today = new Date().toDateString();
+    const saved = localStorage.getItem('completedTasks_' + today);
+    completedTaskIds = saved ? JSON.parse(saved) : [];
+    
+    renderTasks();
+    updateStats();
+    
+  } catch(err) {
+    console.error('Load error:', err);
+    document.getElementById('taskList').innerHTML = `
+      <div class="empty-box">
+        <div class="empty-illustration" style="background:linear-gradient(135deg,#667eea,#764ba2);"><i class="fa-solid fa-wifi-slash"></i></div>
+        <div class="empty-title">Connection Error</div>
+        <div class="empty-text">Could not load tasks. Check your connection.</div>
+      </div>
+    `;
+  }
+}
+
+function showEmpty() {
+  document.getElementById('taskList').innerHTML = `
+    <div class="empty-box">
+      <div class="empty-illustration"><i class="fa-solid fa-clipboard-check"></i></div>
+      <div class="empty-title">No Tasks Yet</div>
+      <div class="empty-text">Check back soon for new earning opportunities!</div>
+    </div>
+  `;
+}
+
+// ========== FILTER TASKS ==========
+function filterTasks(type, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = type;
+  renderTasks();
+}
+
+// ========== RENDER TASKS ==========
+function renderTasks() {
+  const container = document.getElementById('taskList');
+  container.innerHTML = '';
+  
+  let filtered = allTasks;
+  if (currentFilter === 'hot') filtered = allTasks.filter(t => t.hot);
+  else if (currentFilter === 'social') filtered = allTasks.filter(t => ['tiktok','facebook','instagram','twitter','youtube'].includes(t.category));
+  else if (currentFilter === 'completed') filtered = allTasks.filter(t => completedTaskIds.includes(t.id));
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-box">
+        <div class="empty-illustration" style="background:linear-gradient(135deg,#667eea,#764ba2);"><i class="fa-solid fa-filter"></i></div>
+        <div class="empty-title">No ${currentFilter} tasks</div>
+        <div class="empty-text">Try another category</div>
+      </div>
+    `;
+    return;
+  }
+  
+  filtered.forEach((task) => {
+    const isCompleted = completedTaskIds.includes(task.id);
+    const iconClass = CAT_ICONS[task.category] || CAT_ICONS.other;
+    const imgClass = CAT_CLASSES[task.category] || 'other';
+    
+    const div = document.createElement('div');
+    div.className = `task-item ${isCompleted ? 'completed' : ''}`;
+    div.innerHTML = `
+      <div class="task-status-bar"></div>
+      <div class="task-body">
+        <div class="task-top">
+          <div class="task-img ${imgClass}"><i class="${iconClass}"></i></div>
+          <div class="task-main">
+            <div class="task-name">${escapeHtml(task.name)}</div>
+            <div class="task-tag ${task.hot ? 'hot' : ''}"><i class="fa-solid fa-${task.hot ? 'fire' : 'tag'}"></i> ${task.category}</div>
+    <div class="task-reward"><i class="fa-solid fa-coins"></i> ₦${(task.amt || task.amount || 0).toLocaleString()}</div>
+          </div>
+        </div>
+    <div class="task-desc">Complete this ${task.category} task to earn ₦${(task.amt || task.amount || 0).toLocaleString()}. Tap the link to start.</div>
+        ${task.link ? `<a href="${escapeHtml(task.link)}" target="_blank" class="task-link-btn" onclick="trackTask('${task.id}')"><i class="fa-solid fa-link"></i> ${escapeHtml(truncateLink(task.link))}</a>` : ''}
+        <div class="task-actions">
+      ${!isCompleted ? `<button class="btn-start" onclick="startTask('${task.id}', '${escapeHtml(task.link || '')}', ${task.amt || task.amount || 0})"><i class="fa-solid fa-play"></i> Start Task</button>` : ''}
+          ${!isCompleted ? `<button class="btn-skip" onclick="skipTask('${task.id}')"><i class="fa-solid fa-forward"></i></button>` : ''}
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function truncateLink(url) {
+  if (!url) return 'No link';
+  return url.length > 35 ? url.substring(0, 32) + '...' : url;
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+let currentTaskId = null;
+
+function trackTask(id) {
+  currentTaskId = id;
+}
+
+function startTask(id, link, amount) {
+  if (!link) {
+    showToast('Task link not available', 'error');
+    return;
+  }
+  
+  currentTaskId = id;
+  
+  window.open(link, '_blank');
+  
+  Swal.fire({
+    title: 'Task Started! 🚀',
+    html: '<p style="color:#64748b;">Complete the task, then come back to claim.</p><div style="margin-top:20px;font-size:40px;font-weight:800;color:#667eea;" id="countdown">5</div>',
+    showConfirmButton: false,
+    showCancelButton: true,
+    cancelButtonText: 'Cancel',
+    cancelButtonColor: '#94a3b8',
+    background: '#fff',
+    color: '#1a1a2e',
+    allowOutsideClick: false,
+    didOpen: () => {
+      let count = 5;
+      const timer = setInterval(() => {
+        count--;
+        const el = document.getElementById('countdown');
+        if (el) el.textContent = count;
+        if (count <= 0) {
+          clearInterval(timer);
+          Swal.close();
+          showClaim(id, link, amount);
+        }
+      }, 1000);
+    }
+  });
+}
+
+
+function showClaim(id, link, amount) {
+  Swal.fire({
+    title: 'Claim Reward? 💰',
+    html: `<p style="color:#64748b;">Did you finish the task?</p><div style="font-size:42px;font-weight:800;color:#667eea;margin:20px 0;">+₦${amount.toLocaleString()}</div>`,
+    showCancelButton: true,
+    confirmButtonText: '✓ Yes, Claim',
+    cancelButtonText: 'Not Yet',
+    confirmButtonColor: '#667eea',
+    cancelButtonColor: '#94a3b8',
+    background: '#fff',
+    color: '#1a1a2e',
+    reverseButtons: true
+  }).then((result) => {
+    if (result.isConfirmed) claimTask(id, amount);
+  });
+}
+
+function claimTask(id, amount) {
+  if (!SecurityGate.checkLimit('claim_' + id)) {
+    showToast('Please wait before claiming again.', 'error');
+    return;
+  }
+  
+  if (completedTaskIds.includes(id)) {
+    showToast('Already claimed!', 'error');
+    return;
+  }
+  
+  completedTaskIds.push(id);
+  const today = new Date().toDateString();
+  localStorage.setItem('completedTasks_' + today, JSON.stringify(completedTaskIds));
+  
+  // Update balance - ADD to existing (matches dashboard logic)
+  let balance = parseFloat(localStorage.getItem("walletBalance")) || 0;
+  balance += amount;
+  localStorage.setItem("walletBalance", balance.toString());
+  
+  // Update userData
+  if (userData) {
+    userData.balance = balance;
+    userData.totalMined = (userData.totalMined || 0) + amount;
+    localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+    if (window._9jaCash && window._9jaCash.db) {
+      window._9jaCash.db.collection("users").doc(userData.phone).set(userData).catch(function(err){});
+    }
+  }
+  
+  // Save to activity
+  let tx = JSON.parse(localStorage.getItem('transactionHistory')) || [];
+  tx.unshift({
+    type: 'Task Reward',
+    amount: '₦' + amount.toLocaleString(),
+    status: 'Successful',
+    date: new Date().toLocaleString()
+  });
+  localStorage.setItem('transactionHistory', JSON.stringify(tx));
+  
+  renderTasks();
+  updateStats();
+  showToast(`🎉 +₦${amount.toLocaleString()} claimed!`);
+  
+  Swal.fire({
+    icon: 'success',
+    title: 'Claimed! 🎉',
+    text: `+₦${amount.toLocaleString()} added`,
+    confirmButtonColor: '#667eea',
+    timer: 2000,
+    showConfirmButton: false,
+    background: '#fff',
+    color: '#1a1a2e'
+  });
+}
+
+function skipTask(id) {
+  showToast('Skipped. Come back later!');
+}
+
+// ========== UPDATE STATS ==========
+function updateStats() {
+  const completed = completedTaskIds.length;
+  const total = allTasks.length;
+  const earned = allTasks.filter(t => completedTaskIds.includes(t.id)).reduce((sum, t) => sum + (t.amt || t.amount || 0), 0);
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  
+  document.getElementById('totalEarned').textContent = '₦' + earned.toLocaleString();
+  document.getElementById('progressText').textContent = percent + '%';
+  
+  // Update circle progress
+  const circle = document.getElementById('progressCircle');
+  const circumference = 2 * Math.PI * 24;
+  const offset = circumference - (percent / 100) * circumference;
+  circle.style.strokeDashoffset = offset;
+}
+
+// ========== TOAST ==========
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  const msgEl = document.getElementById('toastMsg');
+  const icon = t.querySelector('i');
+  
+  msgEl.textContent = msg;
+  if (type === 'error') {
+    icon.className = 'fa-solid fa-circle-xmark';
+    icon.style.color = '#ef4444';
+  } else {
+    icon.className = 'fa-solid fa-circle-check';
+    icon.style.color = '#10b981';
+  }
+  
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ========== NAV ==========
+function setNav(el) {
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  el.classList.add("active");
+}
+
+// ========== INIT ==========
+window.addEventListener("DOMContentLoaded", function() {
+  initDarkMode();
+  loadTasks();
+});
+</script>
+
+</body>
+</html>

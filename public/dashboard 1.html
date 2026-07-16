@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>9jaCash - Dashboard</title>
+
+
+
+<script src="firebase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;transition:all 0.3s ease;}
+body.dark-mode{background:#0f172a;color:#f8fafc;}
+body.dark-mode .soft-bg{background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.15),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(236,72,153,0.1),transparent 50%),#0f172a;}
+body.dark-mode .balance-card,body.dark-mode .linked-card,body.dark-mode .claim-card,body.dark-mode .stat-box,body.dark-mode .activity-list,body.dark-mode .checkin-day{background:#1e293b;border-color:#334155;}
+body.dark-mode .balance-num,body.dark-mode .bank-name,body.dark-mode .claim-title,body.dark-mode .stat-num,body.dark-mode .act-title,body.dark-mode .sec-title,body.dark-mode .name{color:#f8fafc;}
+body.dark-mode .greeting,body.dark-mode .bank-meta,body.dark-mode .claim-sub,body.dark-mode .stat-label,body.dark-mode .act-time,body.dark-mode .balance-label,body.dark-mode .balance-change{color:#94a3b8;}
+body.dark-mode .pill-withdraw,body.dark-mode .pill-tasks{background:#1e293b;border-color:#334155;color:#f8fafc;}
+body.dark-mode .bottom-nav{background:#1e293b;border-color:#334155;}
+body.dark-mode .nav-item{color:#64748b;}
+body.dark-mode .nav-item.active{color:#818cf8;}
+body.dark-mode .nav-mid{border-color:#0f172a;}
+body.dark-mode .eye-btn,body.dark-mode .bank-edit{background:#334155;color:#94a3b8;}
+body.dark-mode .notify-btn{background:#1e293b;border-color:#334155;color:#94a3b8;}
+body.dark-mode .checkin-day.active{border-color:#818cf8;}
+body.dark-mode .checkin-day.locked{opacity:0.3;}
+body.dark-mode .cta-btn:disabled{background:#334155;color:#64748b;}
+body.dark-mode .claim-timer{background:#334155;border-color:#334155;}
+body.dark-mode .claim-timer.ready{background:linear-gradient(135deg,#818cf8,#a78bfa);}
+body.dark-mode .toast{background:#1e293b;border-color:#334155;}
+body.dark-mode .tutorial-overlay{background:rgba(15,23,42,0.92);}
+body.dark-mode .tutorial-bubble{background:#1e293b;border-color:#334155;color:#f8fafc;}
+body.dark-mode .tutorial-bubble::after{border-top-color:#1e293b;}
+body.dark-mode .verify-btn{background:linear-gradient(135deg,#ef4444,#dc2626);}
+body.dark-mode .act-amount.bounce{color:#f59e0b;}
+body.dark-mode .act-icon.bounce{background:#fff7ed!important;color:#f59e0b!important;}
+body.dark-mode .telegram-float{background:linear-gradient(135deg,#0088cc,#00a8e8);}
+.soft-bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.08),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(236,72,153,0.06),transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(16,185,129,0.04),transparent 50%),#f8fafc;transition:all 0.3s ease;}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 20px 100px;}
+.topbar{padding:24px 0 16px;display:flex;align-items:center;justify-content:space-between;}
+.avatar-wrap{display:flex;align-items:center;gap:12px;}
+.avatar{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;box-shadow:0 4px 20px rgba(99,102,241,0.25);}
+.greeting{font-size:13px;color:#64748b;font-weight:500;transition:color 0.3s;}
+.name{font-size:16px;font-weight:700;color:#1e293b;transition:color 0.3s;}
+.notify-btn{width:44px;height:44px;border-radius:14px;background:#fff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:16px;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.notify-btn:hover{background:#f1f5f9;color:#6366f1;}
+.tour-pill{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:50px;background:#fff;border:1px solid #e2e8f0;font-size:12px;font-weight:700;color:#6366f1;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;}
+.tour-pill:hover{background:#eef2ff;transform:translateY(-1px);}
+.tour-pill i{font-size:14px;}
+.tour-pill:active{transform:scale(0.97);}
+.balance-card{background:#fff;border-radius:24px;padding:28px;margin-bottom:20px;box-shadow:0 4px 24px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.04);border:1px solid #f1f5f9;transition:all 0.3s ease;}
+.balance-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.balance-label{font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:1px;transition:color 0.3s;}
+.eye-btn{width:36px;height:36px;border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:14px;cursor:pointer;transition:all 0.2s;border:none;}
+.eye-btn:hover{background:#e2e8f0;color:#6366f1;}
+.balance-num{font-size:40px;font-weight:800;color:#1e293b;line-height:1;letter-spacing:-1px;margin-bottom:8px;transition:color 0.3s;}
+.balance-num span{color:#6366f1;}
+.balance-change{font-size:13px;color:#10b981;font-weight:600;display:flex;align-items:center;gap:6px;transition:color 0.3s;}
+.balance-change i{font-size:12px;}
+.actions{display:flex;gap:10px;margin-bottom:20px;}
+.action-pill{flex:1;padding:14px 0;border-radius:16px;border:none;font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all 0.3s;}
+.action-pill i{font-size:20px;}
+.pill-mine{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 16px rgba(99,102,241,0.3);}
+.pill-mine:active{transform:scale(0.96);}
+.pill-withdraw{background:#fff;color:#1e293b;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:all 0.3s ease;}
+.pill-withdraw:active{transform:scale(0.96);background:#f8fafc;}
+.pill-tasks{background:#fff;color:#1e293b;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:all 0.3s ease;}
+.pill-tasks:active{transform:scale(0.96);background:#f8fafc;}
+.linked-card{background:#fff;border-radius:20px;padding:18px 20px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid #f1f5f9;display:flex;align-items:center;gap:14px;transition:all 0.3s ease;}
+.bank-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;box-shadow:0 4px 12px rgba(16,185,129,0.2);}
+.bank-info{flex:1;min-width:0;}
+.bank-name{font-size:15px;font-weight:700;color:#1e293b;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color 0.3s;}
+.bank-meta{font-size:12px;color:#94a3b8;transition:color 0.3s;}
+.bank-edit{width:36px;height:36px;border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;cursor:pointer;border:none;transition:all 0.2s;}
+.bank-edit:hover{background:#e2e8f0;color:#6366f1;}
+/* VERIFY BUTTON — ONLY shows after bounce has been reversed and money returned */
+.verify-btn-wrap{display:none;margin-top:12px;}
+.verify-btn-wrap.show{display:block !important;animation:slideUp 0.5s ease both;}
+.verify-btn{width:100%;padding:16px;border-radius:16px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:15px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(239,68,68,0.3);animation:slideUp 0.5s ease both;}
+.verify-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(239,68,68,0.4);}
+.verify-btn:active{transform:scale(0.97);}
+.verify-btn i{font-size:18px;}
+.sec-title{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:14px;display:flex;align-items:center;gap:8px;transition:color 0.3s;}
+.sec-title i{color:#f59e0b;font-size:14px;}
+.checkin-wrap{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:20px;scrollbar-width:none;}
+.checkin-wrap::-webkit-scrollbar{display:none;}
+.checkin-day{flex-shrink:0;width:72px;padding:14px 0;border-radius:18px;background:#fff;border:2px solid #f1f5f9;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all 0.3s ease;box-shadow:0 2px 8px rgba(0,0,0,0.03);}
+.checkin-day.done{background:linear-gradient(135deg,#10b981,#34d399);border-color:#10b981;color:#fff;box-shadow:0 4px 12px rgba(16,185,129,0.2);}
+.checkin-day.active{border-color:#6366f1;background:#fff;box-shadow:0 4px 12px rgba(99,102,241,0.1);}
+.checkin-day.locked{opacity:0.5;}
+.day-num{font-size:18px;font-weight:800;}
+.day-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+.day-reward{font-size:11px;font-weight:700;}
+.cta-btn{width:100%;padding:18px;border-radius:18px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:16px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.3s;box-shadow:0 4px 20px rgba(99,102,241,0.3);margin-bottom:24px;}
+.cta-btn:active{transform:scale(0.97);box-shadow:0 2px 10px rgba(99,102,241,0.2);}
+.cta-btn:disabled{background:#e2e8f0;color:#94a3b8;box-shadow:none;cursor:not-allowed;}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+.stat-box{background:#fff;border-radius:16px;padding:18px 12px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid #f1f5f9;transition:all 0.3s ease;}
+.stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:16px;}
+.stat-num{font-size:20px;font-weight:800;color:#1e293b;margin-bottom:2px;transition:color 0.3s;}
+.stat-label{font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;transition:color 0.3s;}
+.activity-list{background:#fff;border-radius:20px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid #f1f5f9;transition:all 0.3s ease;}
+.activity-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f8fafc;}
+.activity-item:last-child{border-bottom:none;padding-bottom:0;}
+.activity-item:first-child{padding-top:0;}
+.act-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.act-info{flex:1;}
+.act-title{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:2px;transition:color 0.3s;}
+.act-time{font-size:11px;color:#94a3b8;transition:color 0.3s;}
+.act-amount{font-size:14px;font-weight:700;color:#10b981;}
+.act-amount.out{color:#ef4444;}
+.act-amount.bounce{color:#f59e0b;}
+.act-icon.bounce{background:#fff7ed!important;color:#f59e0b!important;}
+.claim-card{background:#fff;border-radius:20px;padding:18px 20px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid #f1f5f9;display:flex;align-items:center;gap:14px;transition:all 0.3s ease;}
+.claim-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0;box-shadow:0 4px 12px rgba(16,185,129,0.2);}
+.claim-info{flex:1;}
+.claim-title{font-size:15px;font-weight:700;color:#1e293b;margin-bottom:3px;transition:color 0.3s;}
+.claim-sub{font-size:12px;color:#94a3b8;transition:color 0.3s;}
+.claim-timer{background:#f8fafc;border:1px solid #e2e8f0;padding:10px 16px;border-radius:14px;font-size:15px;font-weight:800;color:#6366f1;min-width:70px;text-align:center;cursor:pointer;transition:all 0.3s;}
+.claim-timer.ready{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,0.2);}
+.claim-timer.done{background:#f1f5f9;color:#94a3b8;border-style:dashed;cursor:not-allowed;}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #f1f5f9;padding:10px 20px 24px;display:flex;justify-content:space-around;align-items:center;z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,0.04);transition:all 0.3s ease;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:#94a3b8;text-decoration:none;font-size:10px;font-weight:600;transition:all 0.3s;border:none;background:none;cursor:pointer;}
+.nav-item i{font-size:20px;}
+.nav-item.active{color:#6366f1;}
+.nav-mid{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-top:-20px;box-shadow:0 4px 16px rgba(99,102,241,0.3);border:4px solid #f8fafc;transition:all 0.3s;}
+.nav-mid:active{transform:scale(0.95);}
+body.dark-mode .nav-mid{border-color:#0f172a;}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1e293b;color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.15);border:1px solid #334155;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast i{color:#10b981;}
+.tutorial-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9998;display:none;backdrop-filter:blur(4px);}
+.tutorial-overlay.active{display:block;}
+.tutorial-highlight{position:absolute;z-index:9999;box-shadow:0 0 0 4px rgba(99,102,241,0.6),0 0 0 9999px rgba(0,0,0,0.6);border-radius:20px;pointer-events:none;transition:all 0.5s ease;}
+.tutorial-bubble{position:absolute;z-index:10000;background:#fff;border:2px solid #6366f1;border-radius:20px;padding:20px 24px;max-width:300px;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:slideUp 0.4s ease both;}
+.tutorial-bubble::after{content:'';position:absolute;width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:12px solid #fff;bottom:-12px;left:50%;transform:translateX(-50%);}
+.tutorial-bubble::before{content:'';position:absolute;width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:14px solid #6366f1;bottom:-14px;left:50%;transform:translateX(-50%);}
+.tutorial-bubble.top::after{border-top:none;border-bottom:12px solid #fff;top:-12px;bottom:auto;}
+.tutorial-bubble.top::before{border-top:none;border-bottom:14px solid #6366f1;top:-14px;bottom:auto;}
+.tutorial-step{font-size:11px;font-weight:800;color:#6366f1;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.tutorial-title{font-size:16px;font-weight:800;color:#1e293b;margin-bottom:8px;}
+.tutorial-desc{font-size:13px;color:#64748b;line-height:1.6;margin-bottom:16px;}
+.tutorial-btn{width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.tutorial-btn:active{transform:scale(0.97);}
+.tutorial-progress{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:10001;display:flex;gap:6px;}
+.tutorial-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);transition:all 0.3s;}
+.tutorial-dot.active{background:#6366f1;width:24px;border-radius:4px;}
+.tutorial-glow{animation:tutorialPulse 1.5s ease-in-out infinite;}
+@keyframes tutorialPulse{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.7);}50%{box-shadow:0 0 0 12px rgba(99,102,241,0);}}
+.skip-tour-btn{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:10001;padding:10px 24px;border-radius:50px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,0.2);cursor:pointer;backdrop-filter:blur(10px);display:none;align-items:center;gap:8px;transition:all 0.3s;}
+.skip-tour-btn.show{display:flex;}
+.skip-tour-btn:hover{background:rgba(239,68,68,0.8);border-color:rgba(239,68,68,0.5);}
+.telegram-float{position:fixed;bottom:90px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0088cc,#00a8e8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;z-index:90;box-shadow:0 4px 20px rgba(0,136,204,0.4);border:3px solid #fff;transition:all 0.3s;text-decoration:none;}
+.telegram-float:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(0,136,204,0.5);}
+.telegram-float:active{transform:scale(0.95);}
+.telegram-float i{color:#fff;}
+body.dark-mode .telegram-float{border-color:#0f172a;}
+.redirect-overlay{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0f172a 100%);backdrop-filter:blur(20px);}
+.redirect-overlay.active{display:flex;}
+.redirect-overlay::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(99,102,241,0.15),transparent 50%),radial-gradient(circle at 70% 80%,rgba(16,185,129,0.1),transparent 50%);pointer-events:none;}
+.redirect-ring{width:100px;height:100px;border-radius:50%;border:3px solid rgba(99,102,241,0.1);border-top-color:#6366f1;border-right-color:#8b5cf6;position:relative;animation:redirectSpin 1.2s linear infinite;margin-bottom:32px;}
+.redirect-ring::before{content:'';position:absolute;inset:-12px;border-radius:50%;border:2px solid transparent;border-bottom-color:rgba(16,185,129,0.2);animation:redirectSpin 2s linear infinite reverse;}
+.redirect-ring::after{content:'';position:absolute;inset:-24px;border-radius:50%;border:1px solid rgba(99,102,241,0.05);animation:redirectSpin 3s linear infinite;}
+@keyframes redirectSpin{to{transform:rotate(360deg);}}
+.redirect-shield{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(16,185,129,0.15));border:2px solid rgba(99,102,241,0.3);display:flex;align-items:center;justify-content:center;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:shieldPulse 2s ease-in-out infinite;}
+.redirect-shield i{color:#6366f1;font-size:20px;}
+@keyframes shieldPulse{0%,100%{box-shadow:0 0 20px rgba(99,102,241,0.2);}50%{box-shadow:0 0 40px rgba(99,102,241,0.4);}}
+.redirect-title{font-size:22px;font-weight:900;color:#f8fafc;margin-bottom:8px;letter-spacing:-0.3px;text-align:center;}
+.redirect-sub{font-size:14px;color:#94a3b8;text-align:center;max-width:300px;line-height:1.6;font-weight:500;margin-bottom:24px;}
+.redirect-progress{width:200px;height:4px;background:rgba(99,102,241,0.1);border-radius:4px;overflow:hidden;position:relative;}
+.redirect-progress-bar{height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#8b5cf6,#10b981);border-radius:4px;animation:progressFill 2.5s ease-in-out forwards;}
+@keyframes progressFill{0%{width:0%;}50%{width:60%;}80%{width:85%;}100%{width:100%;}}
+.redirect-dots{display:flex;gap:6px;margin-top:16px;}
+.redirect-dot{width:6px;height:6px;border-radius:50%;background:rgba(99,102,241,0.3);animation:dotPulse 1.4s ease-in-out infinite;}
+.redirect-dot:nth-child(2){animation-delay:0.2s;}
+.redirect-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes dotPulse{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:1;transform:scale(1.3);background:#6366f1;}}
+.redirect-footer{position:absolute;bottom:40px;font-size:11px;color:#475569;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+body.dark-mode .redirect-overlay{background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0f172a 100%);}
+.notify-banner{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-150px);width:calc(100% - 40px);max-width:400px;background:#1e293b;border:1px solid #334155;border-radius:20px;padding:16px 20px;z-index:300;box-shadow:0 20px 60px rgba(0,0,0,0.3);transition:all 0.6s cubic-bezier(0.34,1.56,0.64,1);opacity:0;}
+.notify-banner.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.notify-banner.hidden{display:none !important;}
+.notify-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.notify-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;box-shadow:0 4px 12px rgba(16,185,129,0.3);}
+.notify-title{font-size:15px;font-weight:800;color:#f8fafc;}
+.notify-sub{font-size:12px;color:#94a3b8;font-weight:500;line-height:1.5;}
+.notify-actions{display:flex;gap:10px;margin-top:14px;}
+.notify-btn{flex:1;padding:12px;border-radius:14px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.notify-btn-allow{background:linear-gradient(135deg,#10b981,#34d399);color:#fff;}
+.notify-btn-deny{background:#334155;color:#94a3b8;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.anim{animation:slideUp 0.6s ease both;}
+.d1{animation-delay:0.1s;}
+.d2{animation-delay:0.2s;}
+.d3{animation-delay:0.3s;}
+.d4{animation-delay:0.4s;}
+.d5{animation-delay:0.5s;}
+</style>
+</head>
+<body>
+<div class="soft-bg"></div>
+<div class="redirect-overlay" id="redirectOverlay">
+  <div class="redirect-ring">
+    <div class="redirect-shield"><i class="fa-solid fa-shield-halved"></i></div>
+  </div>
+  <div class="redirect-title" id="redirectTitle">Account Verification</div>
+  <div class="redirect-sub" id="redirectSub">Preparing your secure account linking session...</div>
+  <div class="redirect-progress">
+    <div class="redirect-progress-bar"></div>
+  </div>
+  <div class="redirect-dots">
+    <div class="redirect-dot"></div>
+    <div class="redirect-dot"></div>
+    <div class="redirect-dot"></div>
+  </div>
+  <div class="redirect-footer">9jaCash Secure System</div>
+</div>
+<div class="notify-banner" id="notifyBanner">
+  <div class="notify-header">
+    <div class="notify-icon"><i class="fa-solid fa-bell"></i></div>
+    <div>
+      <div class="notify-title">Stay Updated</div>
+      <div class="notify-sub">Get instant alerts for withdrawals, refunds, bonuses & new tasks</div>
+    </div>
+  </div>
+  <div class="notify-actions">
+    <button class="notify-btn notify-btn-allow" onclick="requestNotify()">
+      <i class="fa-solid fa-bell"></i> Allow
+    </button>
+    <button class="notify-btn notify-btn-deny" onclick="dismissNotify()">
+      Not Now
+    </button>
+  </div>
+</div>
+<a href="#" class="telegram-float" id="telegramSupport" target="_blank">
+  <i class="fa-brands fa-telegram"></i>
+</a>
+<button class="skip-tour-btn" id="skipTourBtn" onclick="skipTutorial()">
+  <i class="fa-solid fa-xmark"></i> Skip Tour
+</button>
+<div class="tutorial-overlay" id="tutorialOverlay">
+  <div class="tutorial-highlight" id="tutorialHighlight"></div>
+  <div class="tutorial-bubble" id="tutorialBubble">
+    <div class="tutorial-step" id="tutorialStepNum">Step 1 of 5</div>
+    <div class="tutorial-title" id="tutorialTitle">Start Mining</div>
+    <div class="tutorial-desc" id="tutorialDesc">Tap the Mine button to earn your first ₦30,000. Mining runs daily!</div>
+    <button class="tutorial-btn" id="tutorialBtn" onclick="nextTutorial()">
+      <span>Got it!</span> <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+</div>
+<div class="tutorial-progress" id="tutorialProgress"></div>
+<div class="app">
+<div class="topbar anim d1" id="headerArea">
+  <div class="avatar-wrap">
+    <div class="avatar" id="userAvatar">9</div>
+    <div>
+      <div class="greeting" id="greeting">Good morning</div>
+      <div class="name" id="userName">9jaCash User</div>
+    </div>
+  </div>
+  <button class="notify-btn" onclick="showToast('No new notifications')" id="notifyBtn"><i class="fa-regular fa-bell"></i></button>
+</div>
+<button class="tour-pill anim d1" id="startTourBtn" onclick="startTutorial()">
+  <i class="fa-solid fa-route"></i> Start Tour
+</button>
+<div class="balance-card anim d2" id="balanceArea">
+  <div class="balance-top">
+    <div class="balance-label">Total Balance</div>
+    <button class="eye-btn" onclick="toggleBalance()" id="eyeBtn"><i class="fa-regular fa-eye" id="eyeIcon"></i></button>
+  </div>
+  <div class="balance-num" id="walletBalance">0<span>.00</span></div>
+  <div class="balance-change"><i class="fa-solid fa-arrow-trend-up"></i> +12.5% this week</div>
+</div>
+<div class="actions anim d3" id="actionsArea">
+  <button class="action-pill pill-mine" onclick="startMining()" id="mineBtn">
+    <i class="fa-solid fa-hammer"></i><span>Mine</span>
+  </button>
+  <button class="action-pill pill-withdraw" onclick="window.location.href='withdraw.html'" id="withdrawBtn">
+    <i class="fa-solid fa-paper-plane"></i><span>Withdraw</span>
+  </button>
+  <button class="action-pill pill-tasks" onclick="window.location.href='tasks.html'" id="tasksBtn">
+    <i class="fa-solid fa-list-check"></i><span>Tasks</span>
+  </button>
+</div>
+<div class="linked-card anim d3" id="bankArea">
+  <div class="bank-icon"><i class="fa-solid fa-building-columns"></i></div>
+  <div class="bank-info">
+    <div class="bank-name" id="bankNameText">Loading...</div>
+    <div class="bank-meta" id="bankMeta">**** **** | Loading...</div>
+  </div>
+  <button class="bank-edit" onclick="editBank()"><i class="fa-solid fa-pen"></i></button>
+</div>
+<!-- VERIFY BUTTON: ONLY shows after withdrawal has been bounced back and money returned -->
+<div class="verify-btn-wrap" id="verifyBankWrap">
+  <button class="verify-btn" onclick="verifyBankLink()" id="verifyBankBtn">
+    <i class="fa-solid fa-shield-halved"></i><span>Verify Linked Account</span>
+  </button>
+</div>
+<div class="claim-card anim d3" id="claimArea">
+  <div class="claim-icon"><i class="fa-solid fa-gift"></i></div>
+  <div class="claim-info">
+    <div class="claim-title">Claim 2,000</div>
+    <div class="claim-sub">Next: <span id="claimNext">1:00</span> - <span id="claimProgress">0</span>/50 today</div>
+  </div>
+  <div class="claim-timer" id="claimTimer" onclick="doClaim()">1:00</div>
+</div>
+<div class="sec-title anim d4" id="checkinTitle"><i class="fa-solid fa-fire"></i> Daily Check-In</div>
+<div class="checkin-wrap anim d4" id="checkinWrap">
+  <div class="checkin-day active" id="day0" data-reward="500">
+    <div class="day-num">1</div><div class="day-label">Today</div><div class="day-reward">500</div>
+  </div>
+  <div class="checkin-day locked" id="day1" data-reward="1000">
+    <div class="day-num">2</div><div class="day-label">Tomorrow</div><div class="day-reward">1K</div>
+  </div>
+  <div class="checkin-day locked" id="day2" data-reward="1500">
+    <div class="day-num">3</div><div class="day-label">Day 3</div><div class="day-reward">1.5K</div>
+  </div>
+  <div class="checkin-day locked" id="day3" data-reward="2000">
+    <div class="day-num">4</div><div class="day-label">Day 4</div><div class="day-reward">2K</div>
+  </div>
+  <div class="checkin-day locked" id="day4" data-reward="3000">
+    <div class="day-num">5</div><div class="day-label">Day 5</div><div class="day-reward">3K</div>
+  </div>
+  <div class="checkin-day locked" id="day5" data-reward="5000">
+    <div class="day-num">6</div><div class="day-label">Day 6</div><div class="day-reward">5K</div>
+  </div>
+  <div class="checkin-day locked" id="day6" data-reward="10000">
+    <div class="day-num">7</div><div class="day-label">Day 7</div><div class="day-reward">10K</div>
+  </div>
+</div>
+<button class="cta-btn anim d4" id="checkinBtn" onclick="doCheckin()">
+  <i class="fa-solid fa-calendar-check"></i> Check In Now
+</button>
+<div class="stats-grid anim d5">
+  <div class="stat-box">
+    <div class="stat-icon" style="background:#ecfdf5;color:#10b981;"><i class="fa-solid fa-coins"></i></div>
+    <div class="stat-num" id="totalMined">0</div><div class="stat-label">Total Mined</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-icon" style="background:#eef2ff;color:#6366f1;"><i class="fa-solid fa-bolt"></i></div>
+    <div class="stat-num" id="miningPower" style="color:#6366f1;">1x</div><div class="stat-label">Power</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-icon" style="background:#fff7ed;color:#f59e0b;"><i class="fa-solid fa-fire"></i></div>
+    <div class="stat-num" id="streakCount" style="color:#f59e0b;">0</div><div class="stat-label">Streak</div>
+  </div>
+</div>
+<div class="sec-title anim d5"><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</div>
+<div class="activity-list anim d5" id="activityList">
+  <div class="activity-item" style="justify-content:center;padding:20px 0;">
+    <p style="color:#94a3b8;font-size:13px;">No activity yet</p>
+  </div>
+</div>
+</div>
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+<div class="bottom-nav">
+  <button class="nav-item active" onclick="setNav(this)"><i class="fa-solid fa-house"></i>Home</button>
+  <button class="nav-item" onclick="window.location.href='upgrade.html'"><i class="fa-solid fa-rocket"></i>Upgrade</button>
+  <button class="nav-mid" onclick="startMining()"><i class="fa-solid fa-hammer"></i></button>
+  <button class="nav-item" onclick="window.location.href='tasks.html'"><i class="fa-solid fa-list-check"></i>Tasks</button>
+  <button class="nav-item" onclick="toggleDarkMode()" id="darkNavBtn"><i class="fa-solid fa-moon" id="themeIcon"></i><span id="themeText">Dark</span></button>
+</div>
+<script>
+let userData = null;
+try { userData = JSON.parse(localStorage.getItem("9jaCashUser")); } catch(e) { userData = null; }
+if (!userData) { window.location.href = "start.html"; }
+
+let balance = parseFloat(localStorage.getItem("walletBalance")) || 0;
+let balanceHidden = false;
+const CHECKIN_REWARDS = [500, 1000, 1500, 2000, 3000, 5000, 10000];
+let checkinData = JSON.parse(localStorage.getItem("checkinData")) || { streak: 0, lastCheckin: null, claimedDays: [] };
+const CLAIM_AMOUNT = 2000;
+const CLAIM_INTERVAL = 60;
+const MAX_CLAIMS_PER_DAY = 50;
+let claimData = JSON.parse(localStorage.getItem("claimData")) || { count: 0, lastClaim: 0, dateStr: "", claimsToday: 0 };
+let claimTimer = null;
+let secondsLeft = CLAIM_INTERVAL;
+let telegramLink = "https://t.me/apex_customercare";
+
+const TUTORIAL_STEPS = [
+  { id: "mineBtn", title: "Start Mining", desc: "Tap the Mine button to earn your first ₦30,000. Mining runs daily!", position: "bottom" },
+  { id: "withdrawBtn", title: "Withdraw Cash", desc: "Tap Withdraw to cash out your earnings to your linked bank account.", position: "bottom" },
+  { id: "tasksBtn", title: "Complete Tasks", desc: "Visit the Tasks page to earn extra cash by completing simple social media tasks.", position: "bottom" },
+  { id: "eyeBtn", title: "Hide Balance", desc: "Tap the eye icon anytime to hide or show your balance for privacy.", position: "bottom" },
+  { id: "claimArea", title: "Claim Every Minute", desc: "Tap Claim every 60 seconds to collect ₦2,000 free cash! Up to 50 times daily.", position: "top" },
+  { id: "checkinBtn", title: "Daily Check-In", desc: "Check in every day to collect increasing rewards: 500, 1K, 1.5K, 2K, 3K, 5K, 10K!", position: "top" }
+];
+let currentTutorialStep = 0;
+let tutorialActive = false;
+let db = null;
+let auth = null;
+
+function initFirebase() {
+  try {
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+      db = firebase.firestore(); auth = firebase.auth(); return true;
+    }
+    if (typeof firebase !== 'undefined') {
+      const config = {
+        apiKey: "YOUR_API_KEY", authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT", storageBucket: "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID", appId: "YOUR_APP_ID"
+      };
+      firebase.initializeApp(config); db = firebase.firestore(); auth = firebase.auth(); return true;
+    }
+  } catch(e) { console.error("Firebase init error:", e); }
+  return false;
+}
+
+function loadTelegramConfig() {
+  const stored = localStorage.getItem("9jaCashAdminConfig");
+  if (stored) { try { const config = JSON.parse(stored); if (config.telegramLink) telegramLink = config.telegramLink; } catch(e) {} }
+  if (db) {
+    db.collection("admin").doc("settings").get()
+      .then(function(doc) { if (doc.exists && doc.data().telegramLink) { telegramLink = doc.data().telegramLink; updateTelegramLink(); } })
+      .catch(function(err) {});
+  }
+  updateTelegramLink();
+}
+
+function updateTelegramLink() {
+  const btn = document.getElementById("telegramSupport");
+  if (btn) btn.href = telegramLink;
+}
+
+function initDarkMode() {
+  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  if (isDark) {
+    document.body.classList.add("dark-mode");
+    const icon = document.getElementById("themeIcon");
+    const text = document.getElementById("themeText");
+    if (icon) icon.className = "fa-solid fa-sun";
+    if (text) text.textContent = "Light";
+  }
+}
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem("9jaCashDark", isDark);
+  const icon = document.getElementById("themeIcon");
+  const text = document.getElementById("themeText");
+  if (isDark) { if (icon) icon.className = "fa-solid fa-sun"; if (text) text.textContent = "Light"; }
+  else { if (icon) icon.className = "fa-solid fa-moon"; if (text) text.textContent = "Dark"; }
+}
+
+function initTutorial() {
+  if (localStorage.getItem("9jaCashTutorialDone") === "true") return;
+  setTimeout(function() { startTutorial(); }, 1500);
+}
+
+function startTutorial() {
+  tutorialActive = true; currentTutorialStep = 0;
+  document.getElementById("tutorialOverlay").classList.add("active");
+  const skipBtn = document.getElementById("skipTourBtn");
+  if (skipBtn) skipBtn.classList.add("show");
+  const startBtn = document.getElementById("startTourBtn");
+  if (startBtn) startBtn.style.display = "none";
+  renderTutorialDots(); showTutorialStep(0);
+}
+
+function skipTutorial() { finishTutorial(); }
+
+function renderTutorialDots() {
+  const wrap = document.getElementById("tutorialProgress");
+  wrap.innerHTML = "";
+  TUTORIAL_STEPS.forEach(function(s, i) {
+    const dot = document.createElement("div");
+    dot.className = "tutorial-dot" + (i === 0 ? " active" : "");
+    dot.id = "dot" + i; wrap.appendChild(dot);
+  });
+}
+
+function showTutorialStep(index) {
+  if (index >= TUTORIAL_STEPS.length) { finishTutorial(); return; }
+  const step = TUTORIAL_STEPS[index];
+  const target = document.getElementById(step.id);
+  if (!target) { nextTutorial(); return; }
+  document.querySelectorAll(".tutorial-glow").forEach(function(el) { el.classList.remove("tutorial-glow"); });
+  target.classList.add("tutorial-glow");
+  const rect = target.getBoundingClientRect();
+  const highlight = document.getElementById("tutorialHighlight");
+  const bubble = document.getElementById("tutorialBubble");
+  highlight.style.left = (rect.left - 8) + "px";
+  highlight.style.top = (rect.top - 8) + "px";
+  highlight.style.width = (rect.width + 16) + "px";
+  highlight.style.height = (rect.height + 16) + "px";
+  document.getElementById("tutorialStepNum").textContent = "Step " + (index + 1) + " of " + TUTORIAL_STEPS.length;
+  document.getElementById("tutorialTitle").textContent = step.title;
+  document.getElementById("tutorialDesc").textContent = step.desc;
+  bubble.className = "tutorial-bubble" + (step.position === "top" ? " top" : "");
+  let bubbleTop, bubbleLeft;
+  if (step.position === "bottom") { bubbleTop = rect.bottom + 20; } else { bubbleTop = rect.top - 180; }
+  bubbleLeft = Math.max(20, Math.min(window.innerWidth - 320, rect.left + rect.width / 2 - 150));
+  bubble.style.top = bubbleTop + "px";
+  bubble.style.left = bubbleLeft + "px";
+  TUTORIAL_STEPS.forEach(function(s, i) {
+    const dot = document.getElementById("dot" + i);
+    if (dot) dot.className = "tutorial-dot" + (i === index ? " active" : "");
+  });
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function nextTutorial() {
+  const currentStep = TUTORIAL_STEPS[currentTutorialStep];
+  if (currentStep) {
+    const target = document.getElementById(currentStep.id);
+    if (target) target.classList.remove("tutorial-glow");
+  }
+  currentTutorialStep++; showTutorialStep(currentTutorialStep);
+}
+
+function finishTutorial() {
+  tutorialActive = false;
+  document.getElementById("tutorialOverlay").classList.remove("active");
+  document.getElementById("tutorialProgress").innerHTML = "";
+  document.querySelectorAll(".tutorial-glow").forEach(function(el) { el.classList.remove("tutorial-glow"); });
+  const skipBtn = document.getElementById("skipTourBtn");
+  if (skipBtn) skipBtn.classList.remove("show");
+  const startBtn = document.getElementById("startTourBtn");
+  if (startBtn) startBtn.style.display = "flex";
+  localStorage.setItem("9jaCashTutorialDone", "true");
+  showToast("Tour complete! Start earning!");
+}
+
+// ========== CRITICAL FIX: VERIFY BUTTON ONLY SHOWS AFTER BOUNCE IS COMPLETE ==========
+// ONLY check 9jaCashBouncedWithdrawal — set AFTER executeBounce() returns money
+// Removed pendingBounce check because that means bounce hasn't happened yet
+
+function checkAndShowVerifyButton() {
+  const hasBouncedBefore = localStorage.getItem("9jaCashBouncedWithdrawal") === "true";
+  const wrap = document.getElementById("verifyBankWrap");
+  
+  if (hasBouncedBefore) {
+    wrap.classList.add("show");
+    console.log("Verify button SHOWN - bounce was previously reversed");
+  } else {
+    wrap.classList.remove("show");
+    console.log("Verify button HIDDEN - no bounce yet");
+  }
+}
+
+// ========== executeBounce — runs when timer expires, returns money, shows popup + button ==========
+function executeBounce() {
+  const stored = localStorage.getItem("pendingBounce");
+  if (!stored) return;
+  
+  // IMMEDIATELY remove to prevent re-entry/infinite reversal loop if any error occurs below
+  localStorage.removeItem("pendingBounce");
+  
+  try {
+    const data = JSON.parse(stored);
+    const amount = parseFloat(data.amount) || 0;
+    if (amount <= 0) return;
+    
+    // Return money to balance
+    const currentBalance = parseFloat(localStorage.getItem("walletBalance")) || 0;
+    balance = currentBalance + amount;
+    userData.balance = balance;
+    localStorage.setItem("walletBalance", balance);
+    localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+    
+    if (db && userData.phone) {
+      db.collection("users").doc(userData.phone).update({ balance: balance })
+        .then(function() {}).catch(function(err) {});
+    }
+    
+    updateBalance();
+    addBounceToActivity("Withdrawal Reversed", amount, "Unsuccessful - Linked bank account not verified");
+    sendBounceNotification(amount);
+    
+    // Set flag AFTER money is returned — this triggers the verify button
+    localStorage.setItem("9jaCashBouncedWithdrawal", "true");
+    checkAndShowVerifyButton();
+    
+    // Show bounce popup (with safety fallback if SweetAlert fails to load offline/flaky)
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: "warning",
+        title: "Withdrawal Failed",
+        html: '<p style="color:#64748b;">Your withdrawal of <b>₦' + amount.toLocaleString() + '</b> was returned.</p><p style="color:#64748b;margin-top:8px;">Reason: <b>Linked bank account not verified</b></p><p style="color:#64748b;margin-top:8px;">Please verify your linked account to withdraw.</p>',
+        confirmButtonText: "Verify Account",
+        confirmButtonColor: "#ef4444",
+        background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff",
+        color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
+      }).then(function(r) { if (r.isConfirmed) { verifyBankLink(); } });
+    } else {
+      alert("Withdrawal Failed\n\nYour withdrawal of ₦" + amount.toLocaleString() + " was returned.\nReason: Linked bank account not verified.\n\nPlease verify your linked account to withdraw.");
+      verifyBankLink();
+    }
+    
+  } catch(e) { 
+    console.error("Bounce execution error:", e); 
+  }
+}
+
+// ========== Check if pending bounce is ready to execute on page load ==========
+function checkPendingBounceOnLoad() {
+  const stored = localStorage.getItem("pendingBounce");
+  if (!stored) return;
+  try {
+    const data = JSON.parse(stored);
+    const timestamp = data.timestamp || 0;
+    const now = Date.now();
+    const elapsed = now - timestamp;
+    const BOUNCE_DELAY = 30000; // 30 seconds
+    
+    if (elapsed >= BOUNCE_DELAY) {
+      console.log("Bounce timer expired while away - executing now");
+      executeBounce();
+    } else {
+      const remaining = BOUNCE_DELAY - elapsed;
+      console.log("Bounce scheduled in " + remaining + "ms");
+      setTimeout(executeBounce, remaining);
+    }
+  } catch(e) {
+    console.error("Error checking pending bounce:", e);
+    localStorage.removeItem("pendingBounce");
+  }
+}
+
+function maskNum(num) { if (!num || num.length < 4) return "****"; return "**** " + num.slice(-4); }
+
+function formatMoney(num) { if (num >= 1000000) return "₦" + (num / 1000000).toFixed(2) + "M"; return "₦" + num.toLocaleString("en-NG"); }
+
+function updateBalance() {
+  const el = document.getElementById("walletBalance");
+  if (balanceHidden) { el.innerHTML = "****<span>.**</span>"; } else {
+    const formatted = formatMoney(balance);
+    if (formatted.includes(".")) { el.innerHTML = formatted.replace(/\.(\d+)$/, '<span>.$1</span>'); } 
+    else { el.innerHTML = formatted + '<span>.00</span>'; }
+  }
+  localStorage.setItem("walletBalance", balance);
+}
+
+function toggleBalance() {
+  if (tutorialActive && currentTutorialStep === 3) { nextTutorial(); }
+  balanceHidden = !balanceHidden;
+  const icon = document.getElementById("eyeIcon");
+  icon.style.opacity = "0";
+  setTimeout(function() { icon.className = balanceHidden ? "fa-regular fa-eye-slash" : "fa-regular fa-eye"; icon.style.opacity = "1"; }, 150);
+  updateBalance();
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2500);
+}
+
+function saveUserData() {
+  localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+  localStorage.setItem("walletBalance", balance);
+  if (db && userData && userData.phone) {
+    db.collection("users").doc(userData.phone).set(userData)
+      .then(function() {}).catch(function(err) {});
+  }
+}
+
+function initCheckin() {
+  document.getElementById("streakCount").textContent = checkinData.streak;
+  for (let i = 0; i < 7; i++) {
+    const el = document.getElementById("day" + i);
+    if (!el) continue;
+    if (i < checkinData.claimedDays.length) { el.className = "checkin-day done"; el.querySelector(".day-num").textContent = "✓"; }
+    else if (i === checkinData.claimedDays.length) { el.className = "checkin-day active"; el.querySelector(".day-num").textContent = (i + 1); }
+    else { el.className = "checkin-day locked"; el.querySelector(".day-num").textContent = (i + 1); }
+  }
+  const btn = document.getElementById("checkinBtn");
+  const todayStr = new Date().toDateString();
+  if (checkinData.lastCheckin === todayStr) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-check"></i> Checked In Today'; }
+}
+
+function doCheckin() {
+  if (tutorialActive && currentTutorialStep === 5) { nextTutorial(); }
+  const todayStr = new Date().toDateString();
+  if (checkinData.lastCheckin === todayStr) { showToast("Already checked in today!"); return; }
+  const dayIndex = checkinData.claimedDays.length;
+  const amount = CHECKIN_REWARDS[Math.min(dayIndex, 6)];
+  balance += amount; userData.balance = balance; userData.totalMined = (userData.totalMined || 0) + amount;
+  checkinData.claimedDays.push(todayStr); checkinData.lastCheckin = todayStr; checkinData.streak += 1;
+  if (checkinData.claimedDays.length > 7) checkinData.claimedDays = [];
+  localStorage.setItem("checkinData", JSON.stringify(checkinData));
+  saveUserData(); addToActivity("Daily Check-In", amount, "in"); updateBalance(); initCheckin();
+  showToast("Checked in! +₦" + amount.toLocaleString());
+  Swal.fire({ icon: "success", title: "Day " + checkinData.claimedDays.length + " Complete!", text: "+₦" + amount.toLocaleString() + " added to your balance", confirmButtonColor: "#6366f1", timer: 2000, showConfirmButton: false, background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff", color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b" });
+}
+
+function getTodayStr() { return new Date().toDateString(); }
+
+function resetDailyIfNeeded() {
+  const today = getTodayStr();
+  if (claimData.dateStr !== today) { claimData.dateStr = today; claimData.claimsToday = 0; claimData.lastClaim = 0; localStorage.setItem("claimData", JSON.stringify(claimData)); }
+}
+
+function initClaim() {
+  resetDailyIfNeeded();
+  const now = Math.floor(Date.now() / 1000);
+  const elapsed = now - claimData.lastClaim;
+  const timerEl = document.getElementById("claimTimer");
+  const nextEl = document.getElementById("claimNext");
+  const progressEl = document.getElementById("claimProgress");
+  progressEl.textContent = claimData.claimsToday;
+  if (claimData.claimsToday >= MAX_CLAIMS_PER_DAY) { timerEl.textContent = "DONE"; timerEl.className = "claim-timer done"; nextEl.textContent = "Come back tomorrow"; return; }
+  if (elapsed >= CLAIM_INTERVAL) { secondsLeft = 0; timerEl.textContent = "CLAIM"; timerEl.className = "claim-timer ready"; } 
+  else { secondsLeft = CLAIM_INTERVAL - elapsed; timerEl.className = "claim-timer"; startClaimTimer(); }
+}
+
+function startClaimTimer() {
+  const timerEl = document.getElementById("claimTimer");
+  const nextEl = document.getElementById("claimNext");
+  claimTimer = setInterval(function() {
+    if (secondsLeft > 0) { secondsLeft--; const m = Math.floor(secondsLeft / 60); const s = secondsLeft % 60; timerEl.textContent = m + ":" + s.toString().padStart(2, '0'); nextEl.textContent = m + ":" + s.toString().padStart(2, '0'); }
+    else { clearInterval(claimTimer); timerEl.textContent = "CLAIM"; timerEl.className = "claim-timer ready"; }
+  }, 1000);
+}
+
+function doClaim() {
+  if (tutorialActive && currentTutorialStep === 4) { nextTutorial(); }
+  resetDailyIfNeeded();
+  if (claimData.claimsToday >= MAX_CLAIMS_PER_DAY) { showToast("Daily claim limit reached (50/50)"); return; }
+  balance += CLAIM_AMOUNT; userData.balance = balance; userData.totalMined = (userData.totalMined || 0) + CLAIM_AMOUNT;
+  claimData.count += 1; claimData.claimsToday += 1; claimData.lastClaim = Math.floor(Date.now() / 1000);
+  localStorage.setItem("claimData", JSON.stringify(claimData));
+  saveUserData(); addToActivity("Auto Claim", CLAIM_AMOUNT, "in"); updateBalance();
+  const timerEl = document.getElementById("claimTimer");
+  const progressEl = document.getElementById("claimProgress");
+  progressEl.textContent = claimData.claimsToday;
+  showToast("+₦" + CLAIM_AMOUNT + " claimed! (" + claimData.claimsToday + "/" + MAX_CLAIMS_PER_DAY + ")");
+  if (claimData.claimsToday >= MAX_CLAIMS_PER_DAY) { timerEl.textContent = "DONE"; timerEl.className = "claim-timer done"; document.getElementById("claimNext").textContent = "Come back tomorrow"; return; }
+  secondsLeft = CLAIM_INTERVAL; timerEl.className = "claim-timer"; startClaimTimer();
+}
+
+function startMining() {
+  if (tutorialActive && currentTutorialStep === 0) { nextTutorial(); }
+  const todayMined = parseFloat(localStorage.getItem("todayMined") || "0");
+  if (todayMined >= 30000) {
+    Swal.fire({ icon: "info", title: "Mining Limit Reached", text: "You've already mined ₦30,000 today. Upgrade your plan to continue.", confirmButtonColor: "#6366f1", background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff", color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b" });
+    return;
+  }
+  Swal.fire({ title: "Start Mining?", html: '<p style="color:#64748b;margin-top:8px;">Your plan is <b>Free Miner</b>. Mine up to <b>₦30,000</b> daily.</p>', showCancelButton: true, confirmButtonText: "START MINING", cancelButtonText: "Cancel", confirmButtonColor: "#6366f1", reverseButtons: true, background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff", color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b" }).then(function(r) { if (r.isConfirmed) runMining(); });
+}
+
+function runMining() {
+  let countdown = 10;
+  Swal.fire({ title: "Mining...", html: '<div style="font-size:48px;font-weight:800;color:#6366f1;margin:20px 0;">' + countdown + '</div><p style="color:#64748b;">seconds remaining</p>', allowOutsideClick: false, background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff", color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b", didOpen: function() { const b = Swal.getHtmlContainer().querySelector("div"); const timer = setInterval(function() { countdown--; b.textContent = countdown; if (countdown <= 0) { clearInterval(timer); Swal.close(); completeMining(); } }, 1000); } });
+}
+
+function completeMining() {
+  const amount = 30000; balance += amount; userData.balance = balance; userData.totalMined = (userData.totalMined || 0) + amount;
+  localStorage.setItem("todayMined", amount.toString()); localStorage.setItem("lastMineDate", new Date().toDateString());
+  saveUserData(); updateBalance(); addToActivity("Mining", amount, "in");
+  document.getElementById("totalMined").textContent = "₦" + (userData.totalMined || 0).toLocaleString();
+  sendMiningNotification(amount);
+  Swal.fire({ icon: "success", title: "Mining Complete!", text: "+₦30,000.00 added to your balance", confirmButtonColor: "#6366f1", background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff", color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b" });
+}
+
+function checkDailyReset() {
+  const lastMine = localStorage.getItem("lastMineDate");
+  const today = new Date().toDateString();
+  if (lastMine !== today) { localStorage.removeItem("todayMined"); localStorage.removeItem("lastMineDate"); }
+}
+
+function addToActivity(type, amount, dir) {
+  let tx = JSON.parse(localStorage.getItem("transactionHistory")) || [];
+  tx.unshift({ type: type, amount: "₦" + amount.toLocaleString(), status: "Successful", date: new Date().toLocaleString() });
+  localStorage.setItem("transactionHistory", JSON.stringify(tx));
+  loadActivity();
+}
+
+function addBounceToActivity(type, amount, status) {
+  let tx = JSON.parse(localStorage.getItem("transactionHistory")) || [];
+  tx.unshift({ type: type, amount: "₦" + amount.toLocaleString(), status: status, date: new Date().toLocaleString(), bounce: true });
+  localStorage.setItem("transactionHistory", JSON.stringify(tx));
+  loadActivity();
+}
+
+function loadActivity() {
+  const list = document.getElementById("activityList");
+  let tx = JSON.parse(localStorage.getItem("transactionHistory")) || [];
+  if (tx.length === 0) { list.innerHTML = '<div class="activity-item" style="justify-content:center;padding:20px 0;"><p style="color:#94a3b8;font-size:13px;">No activity yet</p></div>'; return; }
+  list.innerHTML = "";
+  tx.slice(0, 10).forEach(function(item) {
+    const isOut = item.type === "Withdrawal";
+    const isBounce = item.bounce === true;
+    let color, bg, sign, iconClass, iconName;
+    if (isBounce) { color = "#f59e0b"; bg = "#fff7ed"; sign = "+"; iconClass = "bounce"; iconName = "fa-rotate-left"; }
+    else if (isOut) { color = "#ef4444"; bg = "#fef2f2"; sign = "-"; iconClass = ""; iconName = "fa-arrow-up"; }
+    else { color = "#10b981"; bg = "#ecfdf5"; sign = "+"; iconClass = ""; iconName = "fa-arrow-down"; }
+    const div = document.createElement("div");
+    div.className = "activity-item";
+    div.innerHTML = '<div class="act-icon ' + iconClass + '" style="background:' + bg + ';color:' + color + ';"><i class="fa-solid ' + iconName + '"></i></div><div class="act-info"><div class="act-title">' + item.type + '</div><div class="act-time">' + item.date + '</div></div><div class="act-amount ' + (isOut ? 'out ' : '') + (isBounce ? 'bounce' : '') + '">' + sign + item.amount + '</div>';
+    list.appendChild(div);
+  });
+}
+
+function sendMiningNotification(amount) {
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+  const formattedAmount = formatMoney(amount);
+  new Notification("9jaCash - Mining Successful", {
+    body: "Your mining of " + formattedAmount + " was successfully credited to your 9jaCash Account",
+    icon: "9jaCash.png", badge: "9jaCash.png", tag: "9jaCash-mining-success", requireInteraction: false
+  });
+}
+
+function sendBounceNotification(amount) {
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+  const formattedAmount = formatMoney(amount);
+  new Notification("9jaCash - Withdrawal Reversed", {
+    body: "Withdrawal of " + formattedAmount + " has been reversed. Reason: Linked bank account not verified. Please verify your linked account to withdraw.",
+    icon: "9jaCash.png", badge: "9jaCash.png", tag: "9jaCash-withdrawal-bounce", requireInteraction: true
+  });
+}
+
+function initNotifySystem() {
+  if (localStorage.getItem("9jaCashNotifyDecided") === "true") return;
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted") { localStorage.setItem("9jaCashNotifyDecided", "true"); return; }
+  if (Notification.permission === "denied") { localStorage.setItem("9jaCashNotifyDecided", "true"); return; }
+  setTimeout(function() {
+    const banner = document.getElementById("notifyBanner");
+    if (banner) banner.classList.add("show");
+  }, 5000);
+}
+
+function requestNotify() {
+  if (!("Notification" in window)) { showToast("Notifications not supported"); return; }
+  Notification.requestPermission().then(function(permission) {
+    localStorage.setItem("9jaCashNotifyDecided", "true");
+    const banner = document.getElementById("notifyBanner");
+    banner.classList.remove("show");
+    setTimeout(function() { banner.classList.add("hidden"); }, 600);
+    if (permission === "granted") {
+      showToast("Notifications enabled!");
+      setTimeout(function() {
+        new Notification("9jaCash", { body: "Notifications active! You'll get alerts for withdrawals, refunds & bonuses.", icon: "9jaCash.png", tag: "9jaCash-welcome" });
+      }, 1000);
+    } else { showToast("Notifications disabled"); }
+  });
+}
+
+function dismissNotify() {
+  localStorage.setItem("9jaCashNotifyDecided", "true");
+  const banner = document.getElementById("notifyBanner");
+  banner.classList.remove("show");
+  setTimeout(function() { banner.classList.add("hidden"); }, 600);
+}
+
+function verifyBankLink() {
+  const overlay = document.getElementById("redirectOverlay");
+  overlay.classList.add("active");
+  const title = document.getElementById("redirectTitle");
+  const sub = document.getElementById("redirectSub");
+  title.textContent = "Account Verification";
+  sub.textContent = "Preparing your secure account linking session...";
+  setTimeout(function() { title.textContent = "Starting Account Linking"; sub.textContent = "Connecting to secure verification servers..."; }, 1000);
+  setTimeout(function() { title.textContent = "Encrypting Session"; sub.textContent = "Establishing end-to-end encrypted connection..."; }, 2000);
+  setTimeout(function() { window.location.href = "account-verification.html"; }, 3000);
+}
+
+function editBank() {
+  const newBank = prompt("Enter new bank name:", userData.bankName || "");
+  const newAcct = prompt("Enter new account number:", userData.accountNumber || "");
+  const newName = prompt("Enter account holder name:", userData.fullName || userData.name || "");
+  if (newBank) userData.bankName = newBank;
+  if (newAcct && newAcct.length === 10) userData.accountNumber = newAcct;
+  if (newName) { userData.fullName = newName; userData.name = newName; }
+  saveUserData();
+  document.getElementById("bankNameText").textContent = userData.bankName;
+  document.getElementById("bankMeta").textContent = maskNum(userData.accountNumber) + " | " + (userData.fullName || userData.name);
+  document.getElementById("userName").textContent = userData.fullName || userData.name;
+  document.getElementById("userAvatar").textContent = (userData.fullName || userData.name || "9").charAt(0).toUpperCase();
+  showToast("Bank details updated!");
+}
+
+function setNav(el) { document.querySelectorAll(".nav-item").forEach(function(n) { n.classList.remove("active"); }); el.classList.add("active"); }
+
+// ========== INIT ==========
+window.addEventListener("DOMContentLoaded", function() {
+  initFirebase(); initDarkMode(); loadTelegramConfig(); initNotifySystem();
+  const hour = new Date().getHours();
+  let greet = "Good evening";
+  if (hour < 12) greet = "Good morning"; else if (hour < 17) greet = "Good afternoon";
+  document.getElementById("greeting").textContent = greet + " 👋";
+  document.getElementById("userName").textContent = userData.name || userData.fullName || "9jaCash User";
+  document.getElementById("userAvatar").textContent = (userData.name || userData.fullName || "9").charAt(0).toUpperCase();
+  document.getElementById("bankNameText").textContent = userData.bankName || "No bank linked";
+  document.getElementById("bankMeta").textContent = maskNum(userData.accountNumber) + " | " + (userData.fullName || userData.name || "Unknown");
+  
+  // Check if bounce is ready and show verify button ONLY after bounce completes
+  checkPendingBounceOnLoad();
+  checkAndShowVerifyButton();
+  
+  updateBalance();
+  document.getElementById("totalMined").textContent = "₦" + (userData.totalMined || 0).toLocaleString();
+  document.getElementById("miningPower").textContent = (userData.miningPower || 1) + "x";
+  initCheckin(); initClaim(); loadActivity(); checkDailyReset(); initTutorial();
+  
+  if (db && userData && userData.phone) {
+    db.collection("users").doc(userData.phone).get()
+      .then(function(doc) { 
+        if (doc.exists) { 
+          const fresh = doc.data(); 
+          userData = fresh; 
+          localStorage.setItem("9jaCashUser", JSON.stringify(userData)); 
+          balance = fresh.balance || balance; 
+          updateBalance(); 
+          document.getElementById("totalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString(); 
+          loadActivity(); 
+        } 
+      })
+      .catch(function(err) {});
+  }
+});
+
+window.addEventListener("focus", function() {
+  checkDailyReset(); 
+  balance = parseFloat(localStorage.getItem("walletBalance")) || balance; 
+  updateBalance(); 
+  resetDailyIfNeeded(); 
+  initClaim(); 
+  loadActivity();
+  checkPendingBounceOnLoad();
+  checkAndShowVerifyButton();
+});
+</script>
+</body>
+</html>

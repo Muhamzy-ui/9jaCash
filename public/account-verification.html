@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Link Account - 9jaCash</title>
+
+
+
+<script src="firebase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;color:#f8fafc;min-height:100vh;overflow-x:hidden}
+.app{max-width:480px;margin:0 auto;padding:0 20px 40px;position:relative;z-index:1}
+.bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 0% 0%,rgba(99,102,241,0.1),transparent 50%),radial-gradient(ellipse at 100% 100%,rgba(236,72,153,0.06),transparent 50%),#0f172a}
+.header{padding:28px 0 20px;display:flex;align-items:center;gap:14px}
+.back-btn{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:#64748b;font-size:16px;cursor:pointer;transition:all 0.3s;backdrop-filter:blur(10px);flex-shrink:0}
+.back-btn:hover{background:rgba(99,102,241,0.15);color:#818cf8;border-color:rgba(99,102,241,0.2)}
+.back-btn:active{transform:scale(0.92)}
+.header-text{flex:1}
+.header-title{font-size:20px;font-weight:800;color:#f8fafc;letter-spacing:-0.5px}
+.header-sub{font-size:13px;color:#64748b;margin-top:4px;font-weight:500}
+.steps{display:flex;align-items:center;gap:0;margin-bottom:28px;padding:0 8px}
+.step-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+.step-item:not(:last-child)::after{content:'';position:absolute;top:18px;right:-50%;width:100%;height:2px;background:#1e293b;border-radius:1px;z-index:0;transition:all 0.5s ease}
+.step-item.done:not(:last-child)::after{background:linear-gradient(90deg,#10b981,#6366f1)}
+.step-dot{width:36px;height:36px;border-radius:50%;background:#1e293b;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#64748b;position:relative;z-index:1;transition:all 0.4s ease}
+.step-dot.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);border-color:transparent;color:#fff;box-shadow:0 0 20px rgba(99,102,241,0.4);transform:scale(1.1)}
+.step-dot.done{background:#10b981;border-color:#10b981;color:#fff;box-shadow:0 0 15px rgba(16,185,129,0.3)}
+.step-label{font-size:11px;font-weight:700;color:#475569;transition:color 0.3s}
+.step-label.active{color:#818cf8}
+.step-label.done{color:#10b981}
+.total-card{background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:24px;padding:28px 24px;margin-bottom:16px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(99,102,241,0.25)}
+.total-card::before{content:'';position:absolute;top:-50%;right:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(255,255,255,0.06),transparent 50%);pointer-events:none}
+.total-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.5);margin-bottom:10px;position:relative}
+.total-value{font-size:38px;font-weight:900;color:#fff;line-height:1;letter-spacing:-1px;position:relative}
+.total-value span{font-size:22px;opacity:0.5}
+.total-breakdown{font-size:12px;margin-top:12px;opacity:0.5;font-weight:500;position:relative}
+.total-breakdown i{margin-right:6px}
+.pending-wrap{margin-bottom:16px;display:none}
+.pending-badge{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:50px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);color:#fbbf24;font-size:13px;font-weight:700;backdrop-filter:blur(10px)}
+.pending-badge i{animation:spin 2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.card{background:rgba(30,41,59,0.5);border:1px solid rgba(255,255,255,0.04);border-radius:24px;padding:24px;margin-bottom:16px;backdrop-filter:blur(20px);transition:all 0.3s ease}
+.card:hover{border-color:rgba(99,102,241,0.15)}
+.card-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.card-icon{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,0.2)}
+.card-icon.green{background:linear-gradient(135deg,#10b981,#34d399)}
+.card-icon.purple{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+.card-icon.orange{background:linear-gradient(135deg,#f59e0b,#fbbf24)}
+.card-title{font-size:17px;font-weight:800;color:#f8fafc}
+.card-desc{font-size:12px;color:#64748b;margin-top:3px;font-weight:500}
+.sec-title{font-size:14px;font-weight:700;color:#f8fafc;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.sec-title i{color:#6366f1;font-size:14px}
+.info-text{font-size:12px;color:#64748b;line-height:1.7;margin-bottom:16px;font-weight:500}
+.info-text i{color:#6366f1;margin-right:6px}
+.bank-box{display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;background:rgba(15,23,42,0.5);border:1px solid rgba(255,255,255,0.04);transition:all 0.3s}
+.bank-box:hover{border-color:rgba(99,102,241,0.2)}
+.bank-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;box-shadow:0 4px 16px rgba(16,185,129,0.2);flex-shrink:0}
+.bank-info{flex:1;min-width:0}
+.bank-name{font-size:15px;font-weight:700;color:#f8fafc;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bank-meta{font-size:12px;color:#64748b}
+.bank-edit{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:#64748b;font-size:14px;cursor:pointer;transition:all 0.2s;flex-shrink:0}
+.bank-edit:hover{background:rgba(99,102,241,0.15);color:#818cf8;border-color:rgba(99,102,241,0.2)}
+.edit-form{display:none;margin-top:16px;padding-top:16px;border-top:1px dashed rgba(255,255,255,0.06);animation:slideDown 0.3s ease}
+.edit-form.show{display:block}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.form-group{margin-bottom:16px}
+.form-group:last-child{margin-bottom:0}
+.form-label{display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
+.form-label i{color:#818cf8;margin-right:6px;font-size:11px}
+.input-wrap{position:relative}
+.form-input{width:100%;padding:16px 16px 16px 52px;border-radius:16px;background:rgba(15,23,42,0.5);border:2px solid rgba(255,255,255,0.06);color:#f8fafc;font-size:15px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.3s;outline:none}
+.form-input:focus{border-color:rgba(99,102,241,0.4);box-shadow:0 0 0 4px rgba(99,102,241,0.08);background:rgba(15,23,42,0.7)}
+.form-input::placeholder{color:#475569;font-weight:500}
+.form-input:disabled{background:rgba(15,23,42,0.3);color:#475569;border-color:rgba(255,255,255,0.03);cursor:not-allowed}
+.input-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:#475569;font-size:16px;transition:all 0.3s}
+.form-input:focus + .input-icon{color:#818cf8}
+.key-input-wrap{position:relative}
+.key-input{width:100%;padding:18px 18px 18px 56px;border-radius:18px;background:rgba(15,23,42,0.5);border:2px solid rgba(255,255,255,0.06);color:#f8fafc;font-size:20px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:6px;text-transform:uppercase;transition:all 0.3s;outline:none;text-align:center}
+.key-input:focus{border-color:rgba(99,102,241,0.4);box-shadow:0 0 0 4px rgba(99,102,241,0.08);background:rgba(15,23,42,0.7)}
+.key-input::placeholder{color:#475569;font-weight:500;letter-spacing:1px;text-transform:none;font-size:14px}
+.key-input-icon{position:absolute;left:20px;top:50%;transform:translateY(-50%);color:#475569;font-size:18px;transition:all 0.3s}
+.key-input:focus + .key-input-icon{color:#818cf8}
+.status-badge{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:50px;font-size:12px;font-weight:700;margin-top:14px;transition:all 0.3s}
+.status-badge.pending{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);color:#fbbf24}
+.status-badge.valid{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);color:#34d399}
+.status-badge.invalid{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);color:#f87171}
+.status-badge i{font-size:13px}
+.btn-row{display:flex;gap:10px;margin-top:16px}
+.btn-primary{flex:1;padding:16px;border-radius:16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(99,102,241,0.25);position:relative;overflow:hidden}
+.btn-primary::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);transition:0.5s}
+.btn-primary:hover::before{left:100%}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,0.35)}
+.btn-primary:active{transform:scale(0.97)}
+.btn-primary:disabled{background:#1e293b;color:#475569;box-shadow:none;cursor:not-allowed;border:1px solid #334155}
+.btn-primary:disabled::before{display:none}
+.btn-secondary{flex:1;padding:16px;border-radius:16px;background:rgba(255,255,255,0.04);color:#94a3b8;font-size:14px;font-weight:700;border:1px solid rgba(255,255,255,0.08);cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-secondary:hover{background:rgba(99,102,241,0.1);color:#818cf8;border-color:rgba(99,102,241,0.2)}
+.btn-secondary:active{transform:scale(0.97)}
+.action-btn{width:100%;padding:20px;border-radius:20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:17px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 8px 32px rgba(99,102,241,0.3);position:relative;overflow:hidden;margin-top:8px}
+.action-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);transition:0.5s}
+.action-btn:hover::before{left:100%}
+.action-btn:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(99,102,241,0.4)}
+.action-btn:active{transform:scale(0.97)}
+.action-btn:disabled{background:#1e293b;color:#475569;box-shadow:none;cursor:not-allowed;border:1px solid #334155}
+.action-btn:disabled::before{display:none}
+.overlay{position:fixed;inset:0;background:#0f172a;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:1000}
+.overlay.active{display:flex}
+.overlay-ring{width:80px;height:80px;border:4px solid rgba(99,102,241,0.08);border-top:4px solid #6366f1;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:32px}
+.overlay-title{color:#f8fafc;font-size:24px;font-weight:900;margin-bottom:10px;letter-spacing:-0.5px}
+.overlay-sub{color:#64748b;font-size:14px;font-weight:500;text-align:center;padding:0 20px}
+.overlay-progress{width:200px;height:4px;background:#1e293b;border-radius:4px;margin-top:28px;overflow:hidden}
+.overlay-fill{height:100%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:4px;width:0;transition:width 0.3s ease}
+.overlay-steps{margin-top:32px;display:flex;flex-direction:column;gap:16px;align-items:center}
+.overlay-step{display:flex;align-items:center;gap:14px;font-size:14px;color:#475569;font-weight:500;opacity:0.4;transition:all 0.3s}
+.overlay-step.active{opacity:1;color:#818cf8}
+.overlay-step.done{opacity:1;color:#34d399}
+.overlay-step i{width:24px;text-align:center;font-size:16px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:#1e293b;color:#fff;padding:16px 28px;border-radius:16px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(20px)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast i{color:#34d399}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:slideUp 0.7s ease both}
+.d1{animation-delay:0.1s}
+.d2{animation-delay:0.2s}
+.d3{animation-delay:0.3s}
+.d4{animation-delay:0.4s}
+.d5{animation-delay:0.5s}
+.d6{animation-delay:0.6s}
+.d7{animation-delay:0.7s}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<div class="app">
+
+<!-- Header -->
+<div class="header anim d1">
+  <button class="back-btn" onclick="window.location.href='dashboard.html'">
+    <i class="fa-solid fa-arrow-left"></i>
+  </button>
+  <div class="header-text">
+    <div class="header-title">Link Bank Account</div>
+    <div class="header-sub">Verify & withdraw your funds</div>
+  </div>
+</div>
+
+<!-- Steps -->
+<div class="steps anim d1">
+  <div class="step-item" id="stepItem1">
+    <div class="step-dot active" id="stepDot1">1</div>
+    <span class="step-label active" id="stepLabel1">Details</span>
+  </div>
+  <div class="step-item" id="stepItem2">
+    <div class="step-dot" id="stepDot2">2</div>
+    <span class="step-label" id="stepLabel2">Verify</span>
+  </div>
+  <div class="step-item" id="stepItem3">
+    <div class="step-dot" id="stepDot3">3</div>
+    <span class="step-label" id="stepLabel3">Complete</span>
+  </div>
+</div>
+
+<!-- Total Amount -->
+<div class="total-card anim d2">
+  <div class="total-label"><i class="fa-solid fa-wallet"></i> Total Withdrawal Amount</div>
+  <div class="total-value" id="totalWithdrawalAmount">₦0<span>.00</span></div>
+  <div class="total-breakdown" id="amountBreakdown"><i class="fa-solid fa-circle-info"></i> Dashboard balance + pending reversals</div>
+</div>
+
+<!-- Pending Badge -->
+<div class="pending-wrap" id="pendingWrap">
+  <div class="pending-badge">
+    <i class="fa-solid fa-rotate-left"></i>
+    <span id="pendingText">Pending reversal</span>
+  </div>
+</div>
+
+<!-- Hidden elements for JS compatibility -->
+<div id="dashboardBalance" style="display:none">₦0.00</div>
+<div id="pendingBadge" style="display:none"></div>
+<div id="pendingAmount" style="display:none"></div>
+
+<!-- Linked Bank -->
+<div class="card anim d3">
+  <div class="card-header">
+    <div class="card-icon green"><i class="fa-solid fa-building-columns"></i></div>
+    <div>
+      <div class="card-title">Linked Account</div>
+      <div class="card-desc">Funds will be sent here</div>
+    </div>
+  </div>
+  <div class="info-text"><i class="fa-solid fa-circle-info"></i>This is your currently linked bank account. Tap the edit icon to change it.</div>
+  <div class="bank-box" id="bankDisplay">
+    <div class="bank-icon"><i class="fa-solid fa-building-columns"></i></div>
+    <div class="bank-info">
+      <div class="bank-name" id="bankNameText">Loading...</div>
+      <div class="bank-meta" id="bankMeta">**** **** | Loading...</div>
+    </div>
+    <button class="bank-edit" onclick="editBank()" id="editBankBtn"><i class="fa-solid fa-pen"></i></button>
+  </div>
+  <div class="edit-form" id="bankEditForm">
+    <div class="form-group">
+      <label class="form-label"><i class="fa-solid fa-building-columns"></i>Bank Name</label>
+      <div class="input-wrap">
+        <i class="fa-solid fa-building-columns input-icon"></i>
+        <input type="text" class="form-input" id="editBankName" placeholder="Enter bank name">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label"><i class="fa-solid fa-hashtag"></i>Account Number</label>
+      <div class="input-wrap">
+        <i class="fa-solid fa-hashtag input-icon"></i>
+        <input type="tel" class="form-input" id="editAccountNumber" maxlength="10" placeholder="10-digit number">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label"><i class="fa-solid fa-user"></i>Account Name</label>
+      <div class="input-wrap">
+        <i class="fa-solid fa-user input-icon"></i>
+        <input type="text" class="form-input" id="editAccountName" placeholder="Account holder name">
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveBankEdit()" style="width:100%;margin-top:8px">
+      <i class="fa-solid fa-check"></i> Save Changes
+    </button>
+  </div>
+</div>
+
+<!-- Payout Key -->
+<div class="card anim d4">
+  <div class="card-header">
+    <div class="card-icon purple"><i class="fa-solid fa-key"></i></div>
+    <div>
+      <div class="card-title">Payout Key</div>
+      <div class="card-desc">Enter key to authorize withdrawal</div>
+    </div>
+  </div>
+  <div class="key-input-wrap">
+    <i class="fa-solid fa-lock key-input-icon"></i>
+    <input type="text" id="payoutKeyInput" class="key-input" placeholder="Enter payout key" maxlength="20" autocomplete="off">
+  </div>
+  <div id="keyStatus" class="status-badge pending">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <span id="keyStatusText">Enter your payout key above</span>
+  </div>
+  <div class="btn-row">
+    <button class="btn-primary" id="verifyKeyBtn" onclick="verifyPayoutKey()">
+      <i class="fa-solid fa-shield-halved"></i> Verify Key
+    </button>
+    <button class="btn-secondary" onclick="window.location.href='buy.html'">
+      <i class="fa-solid fa-cart-shopping"></i> Purchase
+    </button>
+  </div>
+</div>
+
+<!-- Account Details -->
+<div class="card anim d5">
+  <div class="card-header">
+    <div class="card-icon orange"><i class="fa-solid fa-user-circle"></i></div>
+    <div>
+      <div class="card-title">Your Details</div>
+      <div class="card-desc">Confirm your contact info</div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label"><i class="fa-solid fa-envelope"></i>Email Address</label>
+    <div class="input-wrap">
+      <i class="fa-solid fa-envelope input-icon"></i>
+      <input type="email" class="form-input" id="emailInput" placeholder="your@email.com">
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label"><i class="fa-solid fa-phone"></i>Phone Number</label>
+    <div class="input-wrap">
+      <i class="fa-solid fa-phone input-icon"></i>
+      <input type="tel" class="form-input" id="phoneInput" disabled>
+    </div>
+  </div>
+</div>
+
+<!-- Info -->
+<div class="card anim d6" style="background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(52,211,153,0.03));border-color:rgba(16,185,129,0.1)">
+  <div class="sec-title" style="color:#34d399"><i class="fa-solid fa-lightbulb" style="color:#34d399"></i>What Happens Next</div>
+  <div class="info-text" style="color:#94a3b8">
+    <i class="fa-solid fa-check" style="color:#34d399"></i> Your account will be verified<br>
+    <i class="fa-solid fa-check" style="color:#34d399"></i> Total balance of <b id="infoBalance" style="color:#f8fafc">₦0</b> will be withdrawn<br>
+    <i class="fa-solid fa-check" style="color:#34d399"></i> And sent to your verified linked account within 5 - 10 mins
+  </div>
+</div>
+
+<!-- Action Button -->
+<button class="action-btn anim d7" id="proceedBtn" onclick="verifyAndWithdraw()" disabled>
+  <i class="fa-solid fa-shield-halved"></i> Verify Linking & Withdrawal
+</button>
+
+</div>
+
+<!-- Processing Overlay -->
+<div class="overlay" id="linkingOverlay">
+  <div class="overlay-ring"></div>
+  <div class="overlay-title" id="linkingText">Verifying Link...</div>
+  <div class="overlay-sub" id="linkingSub">Connecting to your bank securely</div>
+  <div class="overlay-progress">
+    <div class="overlay-fill" id="linkingProgress"></div>
+  </div>
+  <div class="overlay-steps">
+    <div class="overlay-step active" id="linkStep1"><i class="fa-solid fa-shield-halved"></i> Verifying credentials...</div>
+    <div class="overlay-step" id="linkStep2"><i class="fa-solid fa-building-columns"></i> Connecting to bank...</div>
+    <div class="overlay-step" id="linkStep3"><i class="fa-solid fa-check"></i> Finalizing link...</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+<script>
+let userData = null;
+try { userData = JSON.parse(localStorage.getItem("9jaCashUser")); } catch(e) { userData = null; }
+if (!userData) { window.location.href = "start.html"; }
+
+let balance = parseFloat(localStorage.getItem("walletBalance")) || 0;
+let pendingBounce = null;
+let payoutKeyVerified = false;
+let validPayoutKeys = [];
+let totalWithdrawalAmount = 0;
+
+// ========== INIT DARK MODE ==========
+function initDarkMode() {
+  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  if (isDark) document.body.classList.add("dark-mode");
+}
+
+// ========== FORMAT MONEY ==========
+function formatMoney(num) {
+  if (num >= 1000000) return "₦" + (num / 1000000).toFixed(2) + "M";
+  return "₦" + num.toLocaleString("en-NG");
+}
+
+// ========== CALCULATE TOTAL WITHDRAWAL AMOUNT ==========
+function calculateTotalAmount() {
+  let dashboardBalance = parseFloat(localStorage.getItem("walletBalance")) || 0;
+  let pendingBounceAmount = 0;
+  let hasPendingBounce = false;
+  let bounceTimeLeft = 0;
+  
+  const stored = localStorage.getItem("pendingBounce");
+  if (stored) {
+    try {
+      pendingBounce = JSON.parse(stored);
+      const now = Date.now();
+      const elapsed = now - pendingBounce.timestamp;
+      
+      if (elapsed < 60000) {
+        pendingBounceAmount = parseFloat(pendingBounce.amount) || 0;
+        hasPendingBounce = true;
+        bounceTimeLeft = Math.ceil((60000 - elapsed) / 1000);
+      }
+    } catch(e) {
+      console.error("Bounce check error:", e);
+    }
+  }
+  
+  // Total = dashboard balance + pending bounce (if not yet reversed)
+  totalWithdrawalAmount = dashboardBalance + pendingBounceAmount;
+  
+  // Update dashboard balance display (hidden but kept for JS compatibility)
+  const dashEl = document.getElementById("dashboardBalance");
+  const dashFormatted = formatMoney(dashboardBalance);
+  if (dashFormatted.includes(".")) {
+    const parts = dashFormatted.split(".");
+    dashEl.innerHTML = parts[0] + '<span>.' + parts[1] + '</span>';
+  } else {
+    dashEl.innerHTML = dashFormatted + '<span>.00</span>';
+  }
+  
+  // Update total withdrawal amount display
+  const totalEl = document.getElementById("totalWithdrawalAmount");
+  const totalFormatted = formatMoney(totalWithdrawalAmount);
+  if (totalFormatted.includes(".")) {
+    const parts = totalFormatted.split(".");
+    totalEl.innerHTML = parts[0] + '<span>.' + parts[1] + '</span>';
+  } else {
+    totalEl.innerHTML = totalFormatted + '<span>.00</span>';
+  }
+  
+  // Update info balance
+  document.getElementById("infoBalance").textContent = formatMoney(totalWithdrawalAmount);
+  
+  // Show pending badge if there's a bounce
+  if (hasPendingBounce) {
+    document.getElementById("pendingWrap").style.display = "block";
+    document.getElementById("pendingText").textContent = "₦" + pendingBounceAmount.toLocaleString("en-NG") + " returning in " + bounceTimeLeft + "s";
+    
+    document.getElementById("amountBreakdown").innerHTML = '<i class="fa-solid fa-calculator"></i> ₦' + dashboardBalance.toLocaleString("en-NG") + ' (dashboard) + ₦' + pendingBounceAmount.toLocaleString("en-NG") + ' (pending reversal)';
+  } else {
+    document.getElementById("pendingWrap").style.display = "none";
+    document.getElementById("amountBreakdown").innerHTML = '<i class="fa-solid fa-circle-info"></i> Your full dashboard balance will be withdrawn';
+  }
+  
+  return totalWithdrawalAmount;
+}
+
+// ========== LOAD USER DATA ==========
+function loadUserData() {
+  const bankName = userData.bankName || "";
+  const accountNumber = userData.accountNumber || "";
+  const fullName = userData.fullName || userData.name || "";
+  
+  document.getElementById("bankNameText").textContent = bankName || "No bank linked";
+  document.getElementById("bankMeta").textContent = maskNum(accountNumber) + " | " + (fullName || "Unknown");
+  
+  document.getElementById("editBankName").value = bankName;
+  document.getElementById("editAccountNumber").value = accountNumber;
+  document.getElementById("editAccountName").value = fullName;
+  
+  document.getElementById("phoneInput").value = userData.phone || "";
+  
+  if (userData.email) {
+    document.getElementById("emailInput").value = userData.email;
+  }
+}
+
+function maskNum(num) {
+  if (!num || num.length < 4) return "****";
+  return "**** " + num.slice(-4);
+}
+
+// ========== EDIT BANK ==========
+function editBank() {
+  const form = document.getElementById("bankEditForm");
+  const display = document.getElementById("bankDisplay");
+  
+  if (form.style.display === "none" || form.style.display === "") {
+    form.style.display = "block";
+    display.style.opacity = "0.5";
+    document.getElementById("editBankBtn").innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  } else {
+    form.style.display = "none";
+    display.style.opacity = "1";
+    document.getElementById("editBankBtn").innerHTML = '<i class="fa-solid fa-pen"></i>';
+  }
+}
+
+function saveBankEdit() {
+  const newBank = document.getElementById("editBankName").value.trim();
+  const newAcct = document.getElementById("editAccountNumber").value.trim();
+  const newName = document.getElementById("editAccountName").value.trim();
+  
+  if (!newBank || !newAcct || !newName) {
+    showToast("Fill all bank details");
+    return;
+  }
+  if (newAcct.length !== 10) {
+    showToast("Account number must be 10 digits");
+    return;
+  }
+  
+  userData.bankName = newBank;
+  userData.accountNumber = newAcct;
+  userData.fullName = newName;
+  userData.name = newName;
+  
+  localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+  
+  document.getElementById("bankNameText").textContent = newBank;
+  document.getElementById("bankMeta").textContent = maskNum(newAcct) + " | " + newName;
+  
+  editBank();
+  showToast("Bank details updated!");
+}
+
+// ========== PAYOUT KEY VERIFICATION ==========
+function loadPayoutKeys() {
+  const keys = localStorage.getItem("9jaCashPayoutKeys");
+  if (keys) validPayoutKeys = JSON.parse(keys);
+  const userKey = localStorage.getItem("9jaCashUserPayoutKey");
+  if (userKey) {
+    document.getElementById("payoutKeyInput").value = userKey;
+    verifyPayoutKey();
+  }
+}
+
+async function verifyPayoutKey() {
+  const input = document.getElementById("payoutKeyInput").value.trim().toUpperCase();
+  const statusEl = document.getElementById("keyStatus");
+  const verifyBtn = document.getElementById("verifyKeyBtn");
+
+  if (!input) {
+    statusEl.className = "status-badge pending";
+    statusEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i><span>Enter your payout key above</span>';
+    lockProceed();
+    return;
+  }
+
+  verifyBtn.disabled = true;
+  verifyBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Verifying...';
+
+  const userKey = localStorage.getItem("9jaCashUserPayoutKey");
+  const validKeys = JSON.parse(localStorage.getItem("9jaCashPayoutKeys") || "[]");
+  let isValid = false;
+
+  if (window._9jaCash && window._9jaCash.db) {
+    try {
+      const doc = await window._9jaCash.db.collection("settings").doc("payoutKeys").get();
+      if (doc.exists) {
+        const data = doc.data();
+        const currentKey = data.currentKey || "";
+        if (input === currentKey.toUpperCase()) isValid = true;
+        if (!isValid && data.history && Array.isArray(data.history)) {
+          isValid = data.history.some(k => k.toUpperCase() === input);
+        }
+      }
+    } catch (err) {
+      console.error("Firebase check failed:", err);
+    }
+  }
+
+  if (!isValid) {
+    if (userKey && input === userKey.toUpperCase()) isValid = true;
+    if (!isValid && validKeys.includes(input)) isValid = true;
+  }
+
+  if (isValid) {
+    handleKeyValid(input);
+  } else {
+    handleKeyInvalid();
+  }
+}
+
+function handleKeyValid(key) {
+  const statusEl = document.getElementById("keyStatus");
+  const verifyBtn = document.getElementById("verifyKeyBtn");
+
+  statusEl.className = "status-badge valid";
+  statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>Payout key verified • Ready to proceed</span>';
+  verifyBtn.disabled = false;
+  verifyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Verified';
+  verifyBtn.style.background = 'linear-gradient(135deg,#10b981,#34d399)';
+
+  payoutKeyVerified = true;
+  localStorage.setItem("9jaCashUserPayoutKey", key);
+  unlockProceed();
+  showToast("Payout key verified!");
+}
+
+function handleKeyInvalid() {
+  const statusEl = document.getElementById("keyStatus");
+  const verifyBtn = document.getElementById("verifyKeyBtn");
+
+  statusEl.className = "status-badge invalid";
+  statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i><span>Invalid payout key • Purchase a new one</span>';
+  verifyBtn.disabled = false;
+  verifyBtn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Verify Key';
+  verifyBtn.style.background = '';
+
+  payoutKeyVerified = false;
+  lockProceed();
+}
+
+function lockProceed() {
+  document.getElementById("proceedBtn").disabled = true;
+}
+
+function unlockProceed() {
+  document.getElementById("proceedBtn").disabled = false;
+}
+
+// ========== VERIFY LINKING & WITHDRAWAL ==========
+function verifyAndWithdraw() {
+  if (!payoutKeyVerified) {
+    showToast("Verify your payout key first!");
+    return;
+  }
+  
+  const email = document.getElementById("emailInput").value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast("Enter a valid email address");
+    document.getElementById("emailInput").focus();
+    return;
+  }
+  
+  // Save email to user data
+  userData.email = email;
+  localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+  
+  // Save withdrawal data for verify.html
+  const withdrawalData = {
+    amount: totalWithdrawalAmount,
+    bankName: userData.bankName || "",
+    accountNumber: userData.accountNumber || "",
+    accountName: userData.fullName || userData.name || "",
+    email: email,
+    phone: userData.phone || "",
+    payoutKey: document.getElementById("payoutKeyInput").value.toUpperCase(),
+    date: new Date().toLocaleString(),
+    status: "pending_verification"
+  };
+  localStorage.setItem("9jaCashVerifyData", JSON.stringify(withdrawalData));
+  
+  // Show linking overlay with animation
+  const overlay = document.getElementById("linkingOverlay");
+  overlay.classList.add("active");
+  
+  const progressFill = document.getElementById("linkingProgress");
+  let progress = 0;
+  const progressInterval = setInterval(function() {
+    progress += 2;
+    progressFill.style.width = progress + "%";
+  }, 150);
+  
+  setTimeout(function() {
+    document.getElementById("linkStep1").className = "overlay-step done";
+    document.getElementById("linkStep2").className = "overlay-step active";
+    document.getElementById("linkingSub").textContent = "Establishing secure connection...";
+  }, 4000);
+  
+  setTimeout(function() {
+    document.getElementById("linkStep2").className = "overlay-step done";
+    document.getElementById("linkStep3").className = "overlay-step active";
+    document.getElementById("linkingSub").textContent = "Finalizing account verification...";
+  }, 8000);
+  
+  setTimeout(function() {
+    document.getElementById("linkStep3").className = "overlay-step done";
+    document.getElementById("linkingText").textContent = "Verification Ready!";
+    document.getElementById("linkingSub").textContent = "Redirecting to verification page...";
+    
+    clearInterval(progressInterval);
+    progressFill.style.width = "100%";
+    
+    // Update step indicators
+    document.getElementById("stepDot1").className = "step-dot done";
+    document.getElementById("stepLabel1").className = "step-label done";
+    document.getElementById("stepItem1").classList.add("done");
+    document.getElementById("stepDot2").className = "step-dot done";
+    document.getElementById("stepLabel2").className = "step-label done";
+    document.getElementById("stepItem2").classList.add("done");
+    document.getElementById("stepDot3").className = "step-dot active";
+    document.getElementById("stepLabel3").className = "step-label active";
+    
+    // Redirect to verify.html
+    setTimeout(function() {
+      window.location.href = "verify.html";
+    }, 1500);
+  }, 12000);
+}
+
+// ========== TOAST ==========
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2500);
+}
+
+// ========== INIT ==========
+window.addEventListener("DOMContentLoaded", function() {
+  initDarkMode();
+  calculateTotalAmount();
+  loadUserData();
+  loadPayoutKeys();
+  lockProceed();
+});
+</script>
+
+</body>
+</html>

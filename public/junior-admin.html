@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>9jaCash — Junior Admin Portal</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+:root {
+  --bg: #0b0f19;
+  --surface: #131a2e;
+  --surface-card: #1c2642;
+  --border: #2c3b63;
+  --primary: #8b5cf6;
+  --primary-glow: rgba(139, 92, 246, 0.15);
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* Animated background */
+.bg-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.bg-wrap::before{content:'';position:absolute;top:-20%;left:-20%;width:800px;height:800px;background:radial-gradient(circle,rgba(139,92,246,0.06),transparent 70%);animation:float1 25s ease-in-out infinite;}
+.bg-wrap::after{content:'';position:absolute;bottom:-10%;right:-10%;width:600px;height:600px;background:radial-gradient(circle,rgba(16,185,129,0.04),transparent 70%);animation:float2 20s ease-in-out infinite;}
+@keyframes float1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-30px,50px) scale(1.05);}}
+@keyframes float2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(40px,-30px) scale(1.1);}}
+
+/* Custom scrollbars */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--primary);}
+
+/* App layouts */
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:40px 20px;}
+.hidden{display:none !important;}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:all 0.3s;}
+.card:hover{border-color:rgba(139, 92, 246, 0.4);}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:14px;}
+
+/* Inputs */
+.inp{width:100%;padding:14px 16px;border-radius:12px;background:var(--bg);border:2px solid var(--border);color:var(--text);font-size:14px;font-weight:600;outline:none;transition:all 0.3s;}
+.inp:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-glow);}
+.inp::placeholder{color:var(--text-muted);font-weight:500;}
+
+.lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:block;}
+
+/* Tables */
+.table-wrap{overflow-x:auto;width:100%;}
+table{width:100%;border-collapse:collapse;text-align:left;}
+th{padding:14px 16px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid var(--border);}
+td{padding:14px 16px;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+
+/* Buttons */
+.btn{padding:12px 20px;border-radius:12px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;box-shadow:0 4px 16px var(--primary-glow);}
+.btn-primary:hover{box-shadow:0 6px 20px rgba(139, 92, 246, 0.3);transform:translateY(-1px);}
+.btn-secondary{background:var(--surface-card);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--border);}
+
+.badge{padding:4px 10px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;}
+.badge-pending{background:rgba(245,158,11,0.15);color:var(--warning);border:1px solid rgba(245,158,11,0.3);}
+.badge-approved{background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3);}
+.badge-rejected{background:rgba(239,68,68,0.15);color:var(--danger);border:1px solid rgba(239,68,68,0.3);}
+
+/* Login Card */
+.login-box{width:100%;max-width:400px;margin:100px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:32px;position:relative;overflow:hidden;}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),#ec4899);}
+.login-avatar{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--primary),#7c3aed);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;color:#fff;box-shadow:0 8px 24px var(--primary-glow);}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--surface-card);color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:99999;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.3);border:1px solid var(--border);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast i{color:var(--success);}
+.toast.error i{color:var(--danger);}
+@media(max-width:768px) {
+  .app { padding: 20px 12px; }
+  .card { padding: 16px; border-radius: 16px; }
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 600px; }
+  .flex.items-center.gap-3.w-full {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+}
+@media(max-width:480px) {
+  .flex.flex-col.md\:flex-row {
+    align-items: stretch !important;
+  }
+  .flex.items-center.gap-3.w-full {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .login-box {
+    margin: 40px auto 0 !important;
+    padding: 20px 16px !important;
+  }
+}
+</style>
+
+
+
+<script src="firebase-init.js"></script>
+</head>
+<body>
+
+<div class="bg-wrap"></div>
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+
+<!-- LOGIN PAGE -->
+<div id="loginScreen" class="login-box">
+  <div class="login-avatar"><i class="fa-solid fa-user-gear"></i></div>
+  <h2 class="text-xl font-extrabold text-center mb-1">Junior Admin HQ</h2>
+  <p class="text-xs text-center text-slate-400 mb-6">Access your referred user manager</p>
+  
+  <form id="loginForm" class="space-y-4">
+    <div>
+      <label class="lbl">Email Address</label>
+      <input type="email" id="loginEmail" placeholder="junior@9jacash.com" class="inp" required />
+    </div>
+    <div>
+      <label class="lbl">Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" class="inp" required />
+    </div>
+    <button type="submit" id="loginBtn" class="btn btn-primary w-full justify-center mt-2 py-3.5">
+      <span>Verify Credentials</span>
+      <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>
+    </button>
+  </form>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div id="mainDashboard" class="app hidden">
+  
+  <!-- Top Bar -->
+  <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-lg">
+          <i class="fa-solid fa-users-viewfinder"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-black tracking-tight" id="juniorWelcome">Junior Dashboard</h1>
+          <p class="text-xs text-[#94a3b8]">Referred network monitoring center</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-3 w-full md:w-auto">
+      <div class="px-4 py-2 bg-[#131a2e] border border-[#2c3b63] rounded-xl text-xs font-bold text-violet-400">
+        Ref Code: <span id="refCodeLabel" class="font-mono text-white text-sm ml-1">—</span>
+      </div>
+      <a href="junior-admin-payments.html" class="btn btn-primary py-2.5 text-sm">
+        <i class="fa-solid fa-credit-card"></i> Payments
+      </a>
+      <button onclick="doLogout()" class="btn btn-secondary py-2.5 ml-auto md:ml-0 text-red-400 border-red-950 hover:bg-red-950/20">
+        <i class="fa-solid fa-right-from-bracket"></i> Log Out
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">Total Referrals</span>
+        <span class="text-violet-400 text-lg"><i class="fa-solid fa-users"></i></span>
+      </div>
+      <div class="text-2xl font-extrabold" id="statUsers">0</div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">User Balances</span>
+        <span class="text-emerald-400 text-lg"><i class="fa-solid fa-wallet"></i></span>
+      </div>
+      <div class="text-2xl font-extrabold font-mono text-emerald-400" id="statBalances">₦0</div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">Pending Payouts</span>
+        <span class="text-amber-400 text-lg"><i class="fa-solid fa-hourglass-half"></i></span>
+      </div>
+      <div class="text-2xl font-extrabold text-amber-400" id="statPending">0</div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">Total Paid Out</span>
+        <span class="text-blue-400 text-lg"><i class="fa-solid fa-circle-check"></i></span>
+      </div>
+      <div class="text-2xl font-extrabold text-blue-400" id="statPaid">0</div>
+    </div>
+  </div>
+
+  <!-- Referral Link Box -->
+  <div class="card p-5 mb-8 relative overflow-hidden" style="background: linear-gradient(135deg, rgba(139,92,246,0.06), transparent);">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h4 class="font-extrabold text-[15px] mb-1">Your Referral link for New Registrations</h4>
+        <p class="text-xs text-slate-400">Share this link with users. When they register, they will appear in your network.</p>
+      </div>
+      <div class="flex items-center gap-2 bg-[#0b0f19] p-2 rounded-xl border border-[#2c3b63] w-full md:max-w-md">
+        <input type="text" id="refLinkInput" readonly class="flex-1 bg-transparent border-none outline-none text-xs font-bold font-mono text-violet-400" style="min-width: 0;" />
+        <button onclick="copyRefLink()" class="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0">
+          <i class="fa-regular fa-copy"></i> Copy Link
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-8">
+    
+    <!-- Payout Requests -->
+    <div class="card">
+      <div class="card-header">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-money-bill-transfer text-amber-400"></i>
+          <h3 class="font-extrabold text-base">Withdrawal Payout Requests</h3>
+        </div>
+        <span class="badge badge-pending" id="pendingLabel">0 Pending</span>
+      </div>
+      
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Name / Phone</th>
+              <th>Bank Account</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="withdrawalTable">
+            <tr>
+              <td colspan="6" class="text-center text-slate-400 py-6">No withdrawal requests found</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Referred Users -->
+    <div class="card">
+      <div class="card-header">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-users text-violet-400"></i>
+          <h3 class="font-extrabold text-base">My Referred Users Network</h3>
+        </div>
+      </div>
+      
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Joined Date</th>
+              <th>Full Name</th>
+              <th>Phone / Email</th>
+              <th>Bank Account</th>
+              <th>Balance</th>
+              <th>Mining Power</th>
+              <th>Status</th>
+              <th>Control Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userTable">
+            <tr>
+              <td colspan="8" class="text-center text-slate-400 py-6">No referred users in your network</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    <!-- Payment & Verification Receipts -->
+    <div class="card mt-8" style="margin-top: 32px;">
+      <div class="card-header">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-file-invoice-dollar text-violet-400"></i>
+          <div>
+            <h3 class="font-extrabold text-[15px]">Payment & Verification Receipts</h3>
+            <p class="text-xs text-slate-400">Approve plan upgrades, payout key purchases, and verification requests for your network</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="purgeNetworkReceipts()" class="btn btn-secondary py-1.5 px-3 text-xs text-red-400 border-red-950 hover:bg-red-950/20 font-bold" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-trash-can"></i> Purge Network History</button>
+          <span class="text-xs font-bold bg-violet-600/10 text-violet-400 px-3 py-1.5 rounded-full border border-violet-500/20" id="receiptsBadge" style="display:none;">0 Pending</span>
+        </div>
+      </div>
+      <div class="overflow-x-auto table-wrap">
+        <table class="w-full text-left" style="border-collapse: collapse; min-width: 800px; width:100%;">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>User Name / Phone</th>
+              <th>Request Type</th>
+              <th>Details</th>
+              <th>Receipt Image</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="receiptListTable">
+            <tr>
+              <td colspan="6" class="text-center text-slate-400 py-6">Loading network receipts from Firestore...</td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+
+    <!-- Video Testimony Submissions -->
+    <div class="card">
+      <div class="card-header">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-video text-violet-400"></i>
+          <h3 class="font-extrabold text-base">Video Testimony Challenge Submissions</h3>
+        </div>
+        <span class="badge badge-pending" id="videoPendingLabel">0 Pending</span>
+      </div>
+      
+      <div class="overflow-x-auto table-wrap">
+        <table class="w-full text-left" style="border-collapse: collapse; min-width: 800px; width:100%;">
+          <thead>
+            <tr>
+              <th>User Name</th>
+              <th>Phone Number</th>
+              <th>Video URL Link</th>
+              <th>Submitted Date</th>
+              <th>Status</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="videoSubmissionListTable">
+            <tr>
+              <td colspan="6" class="text-center text-slate-400 py-6">No video submissions yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Payment Settings Card -->
+    <div class="card mb-8">
+      <div class="card-header">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-white text-lg">
+            <i class="fa-solid fa-credit-card"></i>
+          </div>
+          <div>
+            <h4 class="font-extrabold text-[15px]">My Payment Settings</h4>
+            <p class="text-xs text-slate-400">Referred users will pay directly into these accounts for payout keys and upgrades</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="lbl">Account Number</label>
+          <input type="text" id="accNumber" class="inp" maxlength="10" placeholder="10 digits">
+        </div>
+        <div>
+          <label class="lbl">Bank Name</label>
+          <input type="text" id="bankName" class="inp" placeholder="e.g. GTBank, Zenith">
+        </div>
+        <div>
+          <label class="lbl">Account Holder Name</label>
+          <input type="text" id="accName" class="inp" placeholder="e.g. John Doe">
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="lbl">Crypto Wallet Address (USDT)</label>
+          <input type="text" id="cryptoAddress" class="inp" placeholder="TRC20 Wallet Address">
+        </div>
+        <div>
+          <label class="lbl">Crypto Network</label>
+          <input type="text" id="cryptoNetwork" class="inp" placeholder="TRC20, BEP20">
+        </div>
+      </div>
+      
+      <div class="flex justify-end">
+        <button id="saveSettingsBtn" onclick="savePaymentSettings()" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> Save Payment Details
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+let adminSession = null;
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+
+// ========== TOAST ==========
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  const msgEl = document.getElementById('toastMsg');
+  const icon = t.querySelector('i');
+  
+  msgEl.textContent = msg;
+  if (type === 'error') {
+    icon.className = 'fa-solid fa-circle-xmark';
+    icon.style.color = '#ef4444';
+  } else {
+    icon.className = 'fa-solid fa-circle-check';
+    icon.style.color = '#10b981';
+  }
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+// ========== COPY REFERRAL LINK ==========
+function copyRefLink() {
+  const input = document.getElementById('refLinkInput');
+  input.select();
+  input.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(input.value)
+    .then(() => showToast('Referral link copied!'))
+    .catch(() => showToast('Copy failed', 'error'));
+}
+
+// ========== AUTHENTICATION ==========
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  const btn = document.getElementById('loginBtn');
+  
+  btn.disabled = true;
+  btn.innerHTML = '<span>Verifying...</span> <i class="fa-solid fa-circle-notch fa-spin text-sm"></i>';
+  
+  fetch(API_URL + '/api/admin/junior/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status && data.junior) {
+      adminSession = data.junior;
+      localStorage.setItem('9jaCashJuniorAdmin', JSON.stringify(adminSession));
+      showToast('Authentication Successful');
+      setTimeout(showDashboard, 1000);
+    } else {
+      throw new Error(data.error || 'Access denied');
+    }
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.innerHTML = '<span>Verify Credentials</span> <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>';
+    showToast(err.message, 'error');
+  });
+});
+
+function doLogout() {
+  localStorage.removeItem('9jaCashJuniorAdmin');
+  location.reload();
+}
+
+// ========== VIEW DISPLAY SWITCH ==========
+function showDashboard() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('mainDashboard').classList.remove('hidden');
+  
+  document.getElementById('juniorWelcome').textContent = 'Welcome, ' + adminSession.email.split('@')[0];
+  document.getElementById('refCodeLabel').textContent = adminSession.referral_code;
+  
+  const link = window.location.origin + '/start.html?ref=' + adminSession.referral_code;
+  document.getElementById('refLinkInput').value = link;
+  
+  // Load custom payment details
+  fetch(API_URL + '/api/admin/junior/get-payment-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: adminSession.email, password: adminSession.password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status && data.admin) {
+      document.getElementById('accNumber').value = data.admin.account_number || '';
+      document.getElementById('bankName').value = data.admin.bank_name || '';
+      document.getElementById('accName').value = data.admin.account_name || '';
+      document.getElementById('cryptoAddress').value = data.admin.crypto_address || '';
+      document.getElementById('cryptoNetwork').value = data.admin.crypto_network || '';
+    }
+  })
+  .catch(err => console.error('Failed to load payment settings:', err));
+
+  loadDashboardData();
+  // Poll data every 10 seconds for real-time dashboard updates
+  setInterval(loadDashboardData, 10000);
+}
+
+// ========== SAVE PAYMENT SETTINGS ==========
+function savePaymentSettings() {
+  if (!adminSession) return;
+  const btn = document.getElementById('saveSettingsBtn');
+  const accNumber = document.getElementById('accNumber').value.trim();
+  const bankName = document.getElementById('bankName').value.trim();
+  const accName = document.getElementById('accName').value.trim();
+  const cryptoAddress = document.getElementById('cryptoAddress').value.trim();
+  const cryptoNetwork = document.getElementById('cryptoNetwork').value.trim();
+
+  if (accNumber && accNumber.length !== 10) {
+    showToast('Account number must be 10 digits', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+
+  fetch(API_URL + '/api/admin/junior/update-payment-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: adminSession.email,
+      password: adminSession.password,
+      bankName,
+      accountNumber: accNumber,
+      accountName: accName,
+      cryptoAddress,
+      cryptoNetwork
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Payment Details';
+    if (data.status) {
+      showToast('Payment settings saved successfully');
+    } else {
+      showToast(data.error || 'Failed to save settings', 'error');
+    }
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Payment Details';
+    showToast('Network error', 'error');
+  });
+}
+
+// ========== LOAD DASHBOARD DATA ==========
+function loadDashboardData() {
+  if (!adminSession) return;
+  const refCode = adminSession.referral_code;
+  
+  // 1. Fetch Users
+  fetch(API_URL + '/api/admin/junior/users?referralCode=' + refCode)
+    .then(res => res.json())
+    .then(data => {
+      if (data.status && Array.isArray(data.users)) {
+        renderUsers(data.users);
+      }
+    })
+    .catch(err => console.error('Error fetching users:', err));
+    
+  // 2. Fetch Withdrawals
+  fetch(API_URL + '/api/admin/junior/withdrawals?referralCode=' + refCode)
+    .then(res => res.json())
+    .then(data => {
+      if (data.status && Array.isArray(data.withdrawals)) {
+        renderWithdrawals(data.withdrawals);
+      }
+    })
+    .catch(err => console.error('Error fetching withdrawals:', err));
+    
+  // 3. Fetch Video Submissions
+  loadJuniorVideoSubmissions();
+}
+
+// ========== RENDER DATA ==========
+function renderUsers(users) {
+  referredUserPhones = users.map(u => u.phone);
+  loadDashboardReceipts();
+  
+  document.getElementById('statUsers').textContent = users.length;
+  
+  let totalBal = 0;
+  users.forEach(u => totalBal += parseFloat(u.balance || 0));
+  document.getElementById('statBalances').textContent = '₦' + totalBal.toLocaleString();
+  
+  const tbody = document.getElementById('userTable');
+  if (users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-6">No referred users in your network</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = '';
+  users.forEach(u => {
+    const tr = document.createElement('tr');
+    
+    const isSuspended = u.status === 'suspended';
+    const statusClass = isSuspended ? 'badge-rejected' : 'badge-approved';
+    const statusText = isSuspended ? 'Suspended' : 'Active';
+    const toggleBtnText = isSuspended ? 'Activate' : 'Suspend';
+    const toggleBtnClass = isSuspended ? 'text-emerald-400 hover:text-emerald-300' : 'text-rose-400 hover:text-rose-300';
+    const nextStatus = isSuspended ? 'active' : 'suspended';
+    
+    tr.innerHTML = `
+      <td class="text-slate-400">${new Date(u.created_at).toLocaleDateString()}</td>
+      <td class="font-bold text-white">${u.full_name || '—'}</td>
+      <td>
+        <div class="text-white font-mono">${u.phone}</div>
+        <div class="text-xs text-slate-400 mt-0.5">${u.email}</div>
+      </td>
+      <td>
+        <div class="text-white">${u.bank_name || '—'}</div>
+        <div class="text-xs text-slate-400 font-mono mt-0.5">${u.account_number || '—'}</div>
+      </td>
+      <td class="font-bold text-emerald-400 font-mono">₦${parseFloat(u.balance).toLocaleString()}</td>
+      <td class="font-bold text-violet-400 text-center font-mono">${u.mining_power}x</td>
+      <td><span class="badge ${statusClass}">${statusText}</span></td>
+      <td>
+        <div class="flex items-center gap-3">
+          <button onclick="editBalance('${u.phone}', ${u.balance})" class="text-blue-400 hover:text-blue-300 font-bold hover:underline">
+            <i class="fa-solid fa-pen-to-square"></i> Balance
+          </button>
+          <button onclick="toggleSuspend('${u.phone}', '${nextStatus}')" class="${toggleBtnClass} font-bold hover:underline">
+            <i class="fa-solid fa-ban"></i> ${toggleBtnText}
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderWithdrawals(withdrawals) {
+  const pending = withdrawals.filter(w => w.status === 'Pending').length;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('pendingLabel').textContent = pending + ' Pending';
+  
+  let totalPaidAmount = 0;
+  withdrawals.filter(w => w.status === 'Approved').forEach(w => {
+    totalPaidAmount += parseFloat(w.amount || 0);
+  });
+  document.getElementById('statPaid').textContent = '₦' + totalPaidAmount.toLocaleString();
+  
+  const tbody = document.getElementById('withdrawalTable');
+  if (withdrawals.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No withdrawal requests found</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = '';
+  withdrawals.forEach(w => {
+    const tr = document.createElement('tr');
+    
+    let statusClass = 'badge-pending';
+    if (w.status === 'Approved') statusClass = 'badge-approved';
+    if (w.status === 'Rejected') statusClass = 'badge-rejected';
+    
+    const isPending = w.status === 'Pending';
+    const actionButtons = isPending ? `
+      <div class="flex items-center gap-2">
+        <button onclick="approvePayout('${w.id}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all">
+          <i class="fa-solid fa-check"></i> Approve
+        </button>
+        <button onclick="rejectPayout('${w.id}')" class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-extrabold transition-all">
+          <i class="fa-solid fa-rotate-left"></i> Reject (Bounce)
+        </button>
+      </div>
+    ` : `<span class="text-xs text-slate-500 font-bold">Processed</span>`;
+    
+    tr.innerHTML = `
+      <td class="text-slate-400">${new Date(w.created_at).toLocaleString()}</td>
+      <td>
+        <div class="text-white font-bold">${w.full_name}</div>
+        <div class="text-xs text-slate-400 font-mono mt-0.5">${w.phone}</div>
+      </td>
+      <td>
+        <div class="text-white">${w.bank_name}</div>
+        <div class="text-xs text-slate-400 font-mono mt-0.5">${w.account_number}</div>
+      </td>
+      <td class="font-bold text-white font-mono">₦${parseFloat(w.amount).toLocaleString()}</td>
+      <td><span class="badge ${statusClass}">${w.status}</span></td>
+      <td>${actionButtons}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ========== CONTROL ACTIONS ==========
+function editBalance(phone, currentBalance) {
+  Swal.fire({
+    title: 'Edit User Balance',
+    html: '<p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">Update user balance directly in the database</p>',
+    input: 'number',
+    inputValue: currentBalance,
+    showCancelButton: true,
+    confirmButtonText: 'Update Balance',
+    confirmButtonColor: '#8b5cf6',
+    cancelButtonText: 'Cancel',
+    background: '#131a2e',
+    color: '#f1f5f9'
+  }).then(res => {
+    if (res.isConfirmed && res.value !== '') {
+      fetch(API_URL + '/api/admin/junior/update-user-balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, balance: Number(res.value) })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          showToast('Balance updated!');
+          loadDashboardData();
+        } else {
+          showToast(data.error, 'error');
+        }
+      })
+      .catch(() => showToast('Failed to connect to database', 'error'));
+    }
+  });
+}
+
+function toggleSuspend(phone, nextStatus) {
+  const title = nextStatus === 'suspended' ? 'Suspend User?' : 'Reactivate User?';
+  const text = nextStatus === 'suspended' ? 'Suspended users cannot log in or perform mining/withdrawals.' : 'Reactivated users will regain full account access.';
+  const btnColor = nextStatus === 'suspended' ? '#ef4444' : '#10b981';
+  
+  Swal.fire({
+    title,
+    text,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: nextStatus === 'suspended' ? 'Suspend' : 'Reactivate',
+    confirmButtonColor: btnColor,
+    cancelButtonText: 'Cancel',
+    background: '#131a2e',
+    color: '#f1f5f9'
+  }).then(res => {
+    if (res.isConfirmed) {
+      fetch(API_URL + '/api/admin/junior/suspend-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, status: nextStatus })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          showToast(data.message);
+          loadDashboardData();
+        } else {
+          showToast(data.error, 'error');
+        }
+      })
+      .catch(() => showToast('Database connection failed', 'error'));
+    }
+  });
+}
+
+function approvePayout(id) {
+  Swal.fire({
+    title: 'Approve Payout Request?',
+    text: 'Confirm that this payout has been sent successfully to the user\'s bank account.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Approve Payout',
+    confirmButtonColor: '#10b981',
+    cancelButtonText: 'Cancel',
+    background: '#131a2e',
+    color: '#f1f5f9'
+  }).then(res => {
+    if (res.isConfirmed) {
+      fetch(API_URL + '/api/admin/junior/approve-withdrawal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          showToast('Withdrawal payout approved!');
+          loadDashboardData();
+        } else {
+          showToast(data.error, 'error');
+        }
+      })
+      .catch(() => showToast('Approval server error', 'error'));
+    }
+  });
+}
+
+function rejectPayout(id) {
+  Swal.fire({
+    title: 'Reject & Bounce Withdrawal?',
+    text: 'This will fail the withdrawal and AUTOMATICALLY refund the amount back to the user\'s balance in the database.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Reject & Refund',
+    confirmButtonColor: '#ef4444',
+    cancelButtonText: 'Cancel',
+    background: '#131a2e',
+    color: '#f1f5f9'
+  }).then(res => {
+    if (res.isConfirmed) {
+      fetch(API_URL + '/api/admin/junior/reject-withdrawal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          showToast('Withdrawal rejected. Balance refunded!');
+          loadDashboardData();
+        } else {
+          showToast(data.error, 'error');
+        }
+      })
+      .catch(() => showToast('Rejection error', 'error'));
+    }
+  });
+}
+
+// ========== INITIALIZATION ==========
+window.addEventListener('DOMContentLoaded', function() {
+  const stored = localStorage.getItem('9jaCashJuniorAdmin');
+  if (stored) {
+    try {
+      adminSession = JSON.parse(stored);
+      showDashboard();
+    } catch (e) {
+      localStorage.removeItem('9jaCashJuniorAdmin');
+    }
+  }
+});
+function parseLocaleDate(dateStr) {
+  if (!dateStr) return 0;
+  const parsed = Date.parse(dateStr);
+  if (!isNaN(parsed)) return parsed;
+  try {
+    const cleanStr = dateStr.replace(/[^0-9\/\-:\s,ap]/gi, '').trim();
+    const parts = cleanStr.split(/[\s,]+/);
+    if (parts.length >= 2) {
+      const datePart = parts[0];
+      const timePart = parts[1];
+      const isPM = dateStr.toLowerCase().includes('pm');
+      const isAM = dateStr.toLowerCase().includes('am');
+      const dateSubparts = datePart.split(/[\/\-]/);
+      const timeSubparts = timePart.split(':');
+      if (dateSubparts.length === 3 && timeSubparts.length >= 2) {
+        let year = parseInt(dateSubparts[2]);
+        if (year < 100) year += 2000;
+        let month = parseInt(dateSubparts[1]) - 1;
+        let day = parseInt(dateSubparts[0]);
+        if (day > 12) {
+          month = parseInt(dateSubparts[1]) - 1;
+          day = parseInt(dateSubparts[0]);
+        } else if (month + 1 > 12) {
+          month = parseInt(dateSubparts[0]) - 1;
+          day = parseInt(dateSubparts[1]);
+        }
+        let hour = parseInt(timeSubparts[0]);
+        const min = parseInt(timeSubparts[1]);
+        const sec = timeSubparts[2] ? parseInt(timeSubparts[2]) : 0;
+        if (isPM && hour < 12) hour += 12;
+        if (isAM && hour === 12) hour = 0;
+        const d = new Date(year, month, day, hour, min, sec);
+        if (!isNaN(d.getTime())) return d.getTime();
+      }
+    }
+  } catch (e) {
+    console.warn("Manual date parse failed:", dateStr, e);
+  }
+  return 0;
+}
+
+// ========== RECEIPTS MANAGEMENT ==========
+let referredUserPhones = [];
+let allReceipts = [];
+
+function purgeNetworkReceipts() {
+  if (allReceipts.length === 0) {
+    Swal.fire({ icon: 'info', title: 'No Receipts', text: 'There are no receipts in your network to purge.', confirmButtonColor: '#8b5cf6', background: '#131a2e', color: '#f1f5f9' });
+    return;
+  }
+  
+  Swal.fire({
+    title: 'Purge Network History?',
+    text: `This will permanently delete all ${allReceipts.length} receipt records in your network from the database. This action cannot be undone.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Purge Network',
+    background: '#131a2e',
+    color: '#f1f5f9'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Purging receipts...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      const db = window._9jaCash.db;
+      const batch = db.batch();
+      
+      allReceipts.forEach(r => {
+        const ref = db.collection(r._collection).doc(r.id);
+        batch.delete(ref);
+      });
+      
+      batch.commit().then(() => {
+        Swal.fire({ icon: 'success', title: 'Purged!', text: 'Your referred network receipt history has been purged successfully.', confirmButtonColor: '#8b5cf6', background: '#131a2e', color: '#f1f5f9' });
+        loadDashboardReceipts();
+      }).catch(err => {
+        console.error('Purge error:', err);
+        Swal.fire({ icon: 'error', title: 'Purge Failed', text: err.message, confirmButtonColor: '#8b5cf6', background: '#131a2e', color: '#f1f5f9' });
+      });
+    }
+  });
+}
+
+function loadDashboardReceipts() {
+  const table = document.getElementById('receiptListTable');
+  const badgeEl = document.getElementById('receiptsBadge');
+  
+  if (!window._9jaCash || !window._9jaCash.db) {
+    table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">Firebase not initialized</td></tr>';
+    return;
+  }
+  
+  if (referredUserPhones.length === 0) {
+    table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No payment receipts found in your network</td></tr>';
+    badgeEl.style.display = 'none';
+    return;
+  }
+  
+  const db = window._9jaCash.db;
+  
+  Promise.all([
+    db.collection('paymentReceipts').get().then(snap => snap.docs.map(d => ({ id: d.id, _collection: 'paymentReceipts', ...d.data() }))),
+    db.collection('verifications').get().then(snap => snap.docs.map(d => ({ id: d.id, _collection: 'verifications', ...d.data() })))
+  ])
+  .then(function(results) {
+    const receipts = results[0].concat(results[1]);
+    
+    const filtered = receipts.filter(function(r) {
+      const userPhone = r.userId || r.phone;
+      return referredUserPhones.includes(userPhone);
+    });
+    
+    filtered.sort((a, b) => {
+      const timeA = a.createdAt || parseLocaleDate(a.date);
+      const timeB = b.createdAt || parseLocaleDate(b.date);
+      return timeB - timeA;
+    });
+    allReceipts = filtered;
+    
+    const pendingCount = filtered.filter(r => r.status === 'pending_verification' || r.status === 'pending').length;
+    if (badgeEl) {
+      badgeEl.textContent = pendingCount + ' Pending';
+      badgeEl.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+    }
+    
+    renderReceiptsTable(filtered);
+  })
+  .catch(function(err) {
+    console.error('Error fetching receipts:', err);
+    table.innerHTML = '<tr><td colspan="6" class="text-center text-red-400 py-6">Failed to load network receipts</td></tr>';
+  });
+}
+
+function renderReceiptsTable(receipts) {
+  const table = document.getElementById('receiptListTable');
+  if (receipts.length === 0) {
+    table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No payment receipts found in your network</td></tr>';
+    return;
+  }
+  
+  table.innerHTML = '';
+  receipts.forEach(function(r) {
+    const isPending = r.status === 'pending_verification' || r.status === 'pending';
+    let statusClass = 'badge-pending';
+    let statusLabel = 'Pending';
+    
+    if (r.status === 'Approved' || r.status === 'approved' || r.status === 'verified') {
+      statusClass = 'badge-approved';
+      statusLabel = 'Approved ✅';
+    } else if (r.status === 'Declined' || r.status === 'declined' || r.status === 'rejected') {
+      statusClass = 'badge-rejected';
+      statusLabel = 'Declined ❌';
+    }
+    
+    const typeLabel = r.type === 'account_verification' ? 'Account Verification' : (r.flowType || r.type || 'Payment');
+    const details = r.plan ? `${r.plan} (₦${parseFloat(r.amount || 0).toLocaleString()})` : `Verify Fee (₦${parseFloat(r.feeAmount || 35200).toLocaleString()})`;
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.date || '—'}</td>
+      <td>
+        <div class="font-extrabold text-white">${r.userName || r.accountName || 'Unknown'}</div>
+        <div class="text-xs text-slate-400 font-mono">${r.userId || r.phone || '—'}</div>
+      </td>
+      <td><span class="px-2.5 py-1 rounded bg-[#131a2e] border border-[#2c3b63] text-violet-400 text-[10px] font-bold uppercase">${typeLabel}</span></td>
+      <td class="font-bold text-white">${details}</td>
+      <td>
+        ${r.receiptImage ? `
+          <button onclick="viewReceiptImage('${r.id}')" class="px-2.5 py-1.5 rounded bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 text-xs font-bold transition-all">
+            <i class="fa-solid fa-image"></i> View Proof
+          </button>
+        ` : '<span class="text-xs text-slate-500">No attachment</span>'}
+      </td>
+      <td class="text-right">
+        ${isPending ? `
+          <button onclick="approveReceipt('${r.id}', '${r._collection}')" class="px-2.5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all mr-2">Approve</button>
+          <button onclick="declineReceipt('${r.id}', '${r._collection}')" class="px-2.5 py-1.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-extrabold transition-all">Decline</button>
+        ` : `<span class="${statusClass} px-2.5 py-1 rounded text-xs font-bold">${statusLabel}</span>`}
+      </td>
+    `;
+    table.appendChild(tr);
+  });
+}
+
+function viewReceiptImage(id) {
+  const receipt = allReceipts.find(r => r.id === id);
+  if (receipt && receipt.receiptImage) {
+    Swal.fire({
+      title: 'Payment Proof',
+      html: `
+        <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">Submitted by ${receipt.userName || 'User'} (${receipt.userId || receipt.phone})</div>
+        <img src="${receipt.receiptImage}" style="max-width:100%; border-radius:8px; border:1px solid #334155; max-height: 450px; object-fit: contain;" />
+      `,
+      confirmButtonText: 'Close',
+      confirmButtonColor: '#6366f1',
+      background: '#1e293b',
+      color: '#f8fafc'
+    });
+  } else {
+    Swal.fire({ icon: 'error', title: 'No Image Found', text: 'Proof does not contain image attachment', confirmButtonColor: '#6366f1' });
+  }
+}
+
+function approveReceipt(id, collectionName) {
+  const receipt = allReceipts.find(r => r.id === id);
+  if (!receipt) return;
+  
+  const phone = receipt.userId || receipt.phone;
+  
+  Swal.fire({
+    title: 'Approve Payment?',
+    text: `Are you sure you want to approve this ${receipt.type || 'payment'} for ₦${parseFloat(receipt.amount || receipt.feeAmount || 0).toLocaleString()}?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Yes, Approve'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      const db = window._9jaCash.db;
+      db.collection(collectionName).doc(id).update({ status: 'Approved' })
+        .then(() => {
+          if (collectionName === 'verifications' || receipt.type === 'account_verification') {
+            return db.collection('users').doc(phone).get().then(uDoc => {
+              if (uDoc.exists) {
+                const uData = uDoc.data();
+                const newBal = (parseFloat(uData.balance) || 0) + 35000;
+                
+                return db.collection('users').doc(phone).update({
+                  balance: newBal,
+                  status: 'active'
+                }).then(() => {
+                  return fetch(API_URL + '/api/user/update-balance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      phone: phone,
+                      balance: newBal,
+                      totalMined: uData.totalMined || 0,
+                      adminSecret: '9jaCashAdminMasterSecretCode1083'
+                    })
+                  });
+                }).then(() => {
+                  return fetch(API_URL + '/api/admin/super/send-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      phone: phone,
+                      title: 'Verification Approved',
+                      content: 'Your account has been fully verified. ₦35,000 refund was successfully credited to your wallet.',
+                      type: 'alert'
+                    })
+                  });
+                });
+              }
+            });
+          }
+          else if (receipt.flowType === 'payoutKey' || receipt.type === 'payoutKey' || (receipt.plan && receipt.plan.includes('Key'))) {
+            const keyStr = 'KEY-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            return db.collection('users').doc(phone).update({
+              payoutKey: keyStr
+            }).then(() => {
+              return fetch(API_URL + '/api/admin/super/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  phone: phone,
+                  title: 'Payout Key Issued',
+                  content: `Your payout key was successfully generated: ${keyStr}. Copy this key to verify your withdrawal request.`,
+                  type: 'payout_key'
+                })
+              });
+            });
+          }
+          else if (receipt.type === 'upgrade' || receipt.flowType === 'upgrade') {
+            let multiplier = 1.5;
+            if (receipt.plan && receipt.plan.includes('Silver')) multiplier = 2.0;
+            if (receipt.plan && receipt.plan.includes('Gold')) multiplier = 3.0;
+            if (receipt.plan && receipt.plan.includes('Diamond')) multiplier = 5.0;
+            
+            return db.collection('users').doc(phone).update({
+              miningPower: multiplier,
+              planName: receipt.plan
+            }).then(() => {
+              return fetch(API_URL + '/api/user/update-plan-power', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  phone: phone,
+                  plan: receipt.plan,
+                  miningPower: multiplier,
+                  adminSecret: '9jaCashAdminMasterSecretCode1083'
+                })
+              });
+            }).then(() => {
+              return fetch(API_URL + '/api/admin/super/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  phone: phone,
+                  title: 'Plan Upgrade Success',
+                  content: `Your purchase was verified. Your account is now active on the ${receipt.plan || 'Basic Plan'} (${multiplier}x mining power).`,
+                  type: 'alert'
+                })
+              });
+            });
+          }
+        })
+        .then(() => {
+          Swal.fire({ icon: 'success', title: 'Approved', text: 'Payment approved and notification sent!', confirmButtonColor: '#6366f1' });
+          loadDashboardData();
+        })
+        .catch(err => {
+          console.error(err);
+          Swal.fire({ icon: 'error', title: 'Approval Failed', text: err.message || 'Operation failed', confirmButtonColor: '#6366f1' });
+        });
+    }
+  });
+}
+
+function declineReceipt(id, collectionName) {
+  const receipt = allReceipts.find(r => r.id === id);
+  if (!receipt) return;
+  
+  const phone = receipt.userId || receipt.phone;
+  
+  Swal.fire({
+    title: 'Decline Payment?',
+    text: 'Reason for decline:',
+    input: 'text',
+    inputPlaceholder: 'e.g. Invalid bank reference / receipt image not readable',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Yes, Decline'
+  }).then(res => {
+    if (res.isConfirmed) {
+      const reason = res.value || 'Payment proof could not be verified.';
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      const db = window._9jaCash.db;
+      db.collection(collectionName).doc(id).update({ status: 'Declined' })
+        .then(() => {
+          return fetch(API_URL + '/api/admin/super/send-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: phone,
+              title: 'Payment Declined',
+              content: `Your payment request was declined. Reason: ${reason}. Please make a new submission with valid proof.`,
+              type: 'alert'
+            })
+          });
+        })
+        .then(() => {
+          Swal.fire({ icon: 'success', title: 'Declined', text: 'Payment status updated to Declined.', confirmButtonColor: '#6366f1' });
+          loadDashboardData();
+        })
+        .catch(err => {
+          console.error(err);
+          Swal.fire({ icon: 'error', title: 'Failed to Decline', text: err.message || 'Operation failed', confirmButtonColor: '#6366f1' });
+        });
+    }
+  });
+}
+
+// ========== JUNIOR ADMIN VIDEO SUBMISSIONS ==========
+let juniorVideoSubmissions = [];
+
+function loadJuniorVideoSubmissions() {
+  if (!adminSession) return;
+  const refCode = adminSession.referral_code;
+  const table = document.getElementById('videoSubmissionListTable');
+  const badgeEl = document.getElementById('videoPendingLabel');
+  
+  if (!table) return;
+
+  fetch(API_URL + '/api/admin/junior/video-submissions?referralCode=' + refCode)
+    .then(r => r.json())
+    .then(data => {
+      if (data.status && data.submissions) {
+        juniorVideoSubmissions = data.submissions;
+        const pendingCount = juniorVideoSubmissions.filter(s => s.status === 'Pending').length;
+        if (badgeEl) {
+          badgeEl.textContent = pendingCount + ' Pending';
+          badgeEl.className = pendingCount > 0 ? 'badge badge-pending font-bold' : 'badge badge-approved';
+        }
+        renderVideoSubmissionsTable(juniorVideoSubmissions);
+      } else {
+        table.innerHTML = '<tr><td colspan="6" class="text-center text-red-400 py-6">Failed to load video submissions.</td></tr>';
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      table.innerHTML = '<tr><td colspan="6" class="text-center text-red-400 py-6">Error connecting to server.</td></tr>';
+    });
+}
+
+function renderVideoSubmissionsTable(subs) {
+  const table = document.getElementById('videoSubmissionListTable');
+  if (!table) return;
+  if (subs.length === 0) {
+    table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No video submissions found in your network.</td></tr>';
+    return;
+  }
+  
+  table.innerHTML = '';
+  subs.forEach(function(s) {
+    const isPending = s.status === 'Pending';
+    let statusClass = 'badge-pending';
+    let statusLabel = 'Pending';
+    
+    if (s.status === 'Approved') {
+      statusClass = 'badge-approved';
+      statusLabel = 'Approved ✅';
+    } else if (s.status === 'Rejected') {
+      statusClass = 'badge-rejected';
+      statusLabel = 'Declined ❌';
+    }
+    
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    tr.innerHTML = `
+      <td style="padding: 12px 10px; font-size: 13px; font-weight: 600;">${s.full_name || '—'}</td>
+      <td style="padding: 12px 10px; font-size: 12px; font-family: monospace;">${s.phone || '—'}</td>
+      <td style="padding: 12px 10px; font-size: 12px;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <a href="${s.video_url}" target="_blank" class="text-violet-400 font-bold hover:underline">
+            <i class="fa-solid fa-play"></i> Watch Video
+          </a>
+          <a href="${s.video_url}" download="video_${s.phone}.mp4" class="text-emerald-400 font-bold hover:underline" style="color:var(--success); text-decoration:underline;">
+            <i class="fa-solid fa-download"></i> Save to Phone
+          </a>
+        </div>
+      </td>
+      <td style="padding: 12px 10px; font-size: 12px; color: #94a3b8;">${new Date(s.created_at).toLocaleString('en-NG')}</td>
+      <td style="padding: 12px 10px; font-size: 11px;">
+        <span class="badge ${statusClass}">${statusLabel}</span>
+      </td>
+      <td style="padding: 12px 10px; text-align: right;">
+        ${isPending ? `
+          <button class="px-3 py-1 rounded bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] cursor-pointer mr-1" onclick="approveVideo('${s.id}')"><i class="fa-solid fa-check"></i> Approve</button>
+          <button class="px-3 py-1 rounded bg-red-500 hover:bg-red-600 text-white font-bold text-[10px] cursor-pointer" onclick="declineVideo('${s.id}')"><i class="fa-solid fa-xmark"></i> Decline</button>
+        ` : 'Processed'}
+      </td>
+    `;
+    table.appendChild(tr);
+  });
+}
+
+function approveVideo(id) {
+  Swal.fire({
+    title: 'Approve Submission',
+    text: 'Reward amount to credit user (₦):',
+    input: 'number',
+    inputValue: '5000',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Approve & Credit',
+    background: '#131a2e',
+    color: '#fff'
+  }).then(res => {
+    if (res.isConfirmed) {
+      const reward = parseFloat(res.value) || 5000;
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      fetch(API_URL + '/api/admin/approve-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, rewardAmount: reward })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Approved', text: `Submission approved and ₦${reward.toLocaleString()} credited successfully!`, confirmButtonColor: '#8b5cf6' });
+          loadDashboardData();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Approval Failed', text: data.error || 'Unable to approve video.', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue.', confirmButtonColor: '#8b5cf6' });
+      });
+    }
+  });
+}
+
+function declineVideo(id) {
+  Swal.fire({
+    title: 'Decline Submission',
+    text: 'Reason for decline:',
+    input: 'text',
+    inputPlaceholder: 'e.g. Invalid link / Video does not talk about 9jaCash',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Decline',
+    background: '#131a2e',
+    color: '#fff'
+  }).then(res => {
+    if (res.isConfirmed) {
+      const reason = res.value || 'Video does not meet guidelines.';
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      fetch(API_URL + '/api/admin/reject-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, reason: reason })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Declined', text: 'Submission successfully declined.', confirmButtonColor: '#8b5cf6' });
+          loadDashboardData();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Operation Failed', text: data.error || 'Unable to decline video.', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue.', confirmButtonColor: '#8b5cf6' });
+      });
+    }
+  });
+}
+
+</script>
+</body>
+</html>
