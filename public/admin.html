@@ -815,11 +815,12 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Referred By</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Balance</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: right;">Actions</th>
           </tr>
         </thead>
         <tbody id="allUsersListTable">
           <tr>
-            <td colspan="7" style="padding: 15px; text-align: center; color: var(--text3);">Loading registered users...</td>
+            <td colspan="8" style="padding: 15px; text-align: center; color: var(--text3);">Loading registered users...</td>
           </tr>
         </tbody>
       </table>
@@ -1536,6 +1537,39 @@ function deleteJuniorAdmin(email) {
   });
 }
 
+function deleteUser(phone, name) {
+  Swal.fire({
+    title: 'Delete User?',
+    text: `Are you sure you want to permanently delete user "${name}" (${phone})? This will also remove their transaction proofs, notifications, and balance data!`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ff4757',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Yes, Delete',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch(API_URL + '/api/admin/super/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          showToast('User deleted successfully', 'success');
+          loadAllUsersList();
+          loadSuperStats();
+        } else {
+          showToast(data.error || 'Deletion failed', 'error');
+        }
+      })
+      .catch(err => showToast('Connection error', 'error'));
+    }
+  });
+}
+
 // ========== REGISTERED USERS DIRECTORY ==========
 function loadAllUsersList() {
   fetch(API_URL + '/api/admin/super/users')
@@ -1553,6 +1587,7 @@ function loadAllUsersList() {
         data.users.forEach(u => {
           const joinedDate = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
           const uStatusColor = u.status === 'suspended' ? 'var(--danger)' : 'var(--accent)';
+          const cleanName = (u.full_name || '9jaCash User').replace(/'/g, "\\'").replace(/"/g, '\\"');
           
           const tr = document.createElement('tr');
           tr.style.borderBottom = '1px solid var(--border)';
@@ -1564,6 +1599,11 @@ function loadAllUsersList() {
             <td style="padding:10px; color:var(--accent); font-weight:700; font-size:12px;">${u.referred_by || 'Direct'}</td>
             <td style="padding:10px; color:var(--text); font-weight:700;">₦${(u.balance || 0).toLocaleString()}</td>
             <td style="padding:10px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase;">${u.status || 'ACTIVE'}</td>
+            <td style="padding:10px; text-align:right;">
+              <button onclick="deleteUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer;" class="hover:underline">
+                <i class="fa-solid fa-trash-can"></i> Delete
+              </button>
+            </td>
           `;
           tbody.appendChild(tr);
         });

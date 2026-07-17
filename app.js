@@ -234,15 +234,16 @@ app.post('/api/verify-account', async (req, res) => {
 
 async function findJuniorAdminCode(referredBy) {
   if (!referredBy) return null;
+  const refClean = referredBy.trim().toUpperCase();
   try {
-    // 1. Check if referredBy is a junior admin referral code
-    const ja = await db.query('SELECT referral_code FROM junior_admins WHERE referral_code = ?', [referredBy]);
+    // 1. Check if referredBy is a junior admin referral code (case-insensitive)
+    const ja = await db.query('SELECT referral_code FROM junior_admins WHERE UPPER(referral_code) = ?', [refClean]);
     if (ja.length > 0) {
       return ja[0].referral_code;
     }
 
     // 2. Otherwise, check if referredBy is a regular user's phone number
-    const u = await db.query('SELECT referred_by, junior_admin_code FROM users WHERE phone = ?', [referredBy]);
+    const u = await db.query('SELECT referred_by, junior_admin_code FROM users WHERE phone = ?', [refClean]);
     if (u.length > 0) {
       if (u[0].junior_admin_code) {
         return u[0].junior_admin_code;
@@ -1138,6 +1139,23 @@ app.post('/api/admin/super/delete-junior', async (req, res) => {
     res.status(500).json({ status: false, error: 'Failed to delete junior admin' });
   }
 });
+
+// POST /api/admin/super/delete-user — Delete a regular user and all related records
+app.post('/api/admin/super/delete-user', async (req, res) => {
+  const { phone } = req.body || {};
+  if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
+  try {
+    await db.query('DELETE FROM user_notifications WHERE phone = ?', [phone]);
+    await db.query('DELETE FROM withdrawals WHERE phone = ?', [phone]);
+    await db.query('DELETE FROM receipts WHERE phone = ?', [phone]);
+    await db.query('DELETE FROM users WHERE phone = ?', [phone]);
+    res.json({ status: true, message: 'User and all related records deleted successfully' });
+  } catch (err) {
+    console.error('Delete user error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to delete user' });
+  }
+});
+
 
 // POST /api/admin/super/send-message — Send notification to all or a specific user
 app.post('/api/admin/super/send-message', async (req, res) => {
