@@ -906,40 +906,35 @@
       }
     .spin-ticker-wrap {
       position: fixed;
-      bottom: 48px; /* Right above the tier footer */
-      left: 0;
-      right: 0;
+      top: 75px; /* Under the header */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 320px;
+      height: 34px;
       background: rgba(18, 0, 5, 0.95);
-      border-top: 1.5px solid var(--primary-gold);
-      border-bottom: 1.5px solid var(--primary-gold);
-      padding: 6px 0;
+      border: 1.5px solid var(--primary-gold);
+      border-radius: 17px;
       z-index: 85;
       overflow: hidden;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
     }
-    .spin-ticker-track {
-      display: inline-block;
-      white-space: nowrap;
-      animation: spin-ticker-animation 35s linear infinite;
-    }
-    .spin-ticker-item {
+    .spin-ticker-item-vertical {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      margin-right: 40px;
+      justify-content: center;
+      gap: 8px;
       font-size: 11px;
       font-weight: 800;
       color: #ffd700;
       text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
       font-family: 'Orbitron', sans-serif;
-    }
-    .spin-ticker-item i {
-      font-size: 10px;
-    }
-    @keyframes spin-ticker-animation {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -1046,9 +1041,9 @@
     </div>
   </div>
 
-  <!-- Continuous Winning Ticker -->
+  <!-- Continuous Winning Ticker (Vertical Transaction Scroller) -->
   <div class="spin-ticker-wrap">
-    <div class="spin-ticker-track" id="spinTickerTrack"></div>
+    <div id="spinTickerContent" class="spin-ticker-item-vertical">Loading live feed...</div>
   </div>
 
   <!-- Bottom Casino Tier List Footer -->
@@ -1680,26 +1675,49 @@
     });
 
     function initSpinTicker() {
-      const track = document.getElementById('spinTickerTrack');
-      if (!track) return;
+      const contentEl = document.getElementById('spinTickerContent');
+      if (!contentEl) return;
 
       const names = ["Emeka", "Amina", "Chidi", "Fatima", "Tunde", "Blessing", "Musa", "Ngozi", "Ibrahim", "Yetunde", "Olumide", "Halima", "Chioma", "Kelechi", "Abubakar", "Funmi", "Uche", "Bose", "Damilola", "Efe"];
       const amounts = ["₦30,000", "₦50,000", "₦100,000", "₦200,000", "₦300,000", "₦500,000", "₦1,000,000"];
       const icons = ["fa-circle-check", "fa-fire", "fa-bolt", "fa-rocket", "fa-coins", "fa-trophy"];
       const colors = ["#10b981", "#f59e0b", "#6366f1", "#ec4899", "#10b981", "#f59e0b"];
 
-      let tickerHTML = "";
-      const items = [];
-      for (let i = 0; i < 20; i++) {
+      function getNextItem() {
         const name = names[Math.floor(Math.random() * names.length)];
         const amount = amounts[Math.floor(Math.random() * amounts.length)];
         const iconIdx = Math.floor(Math.random() * icons.length);
-        const icon = icons[iconIdx];
-        const color = colors[iconIdx];
-        items.push(`<span class="spin-ticker-item"><i class="fa-solid ${icon}" style="color: ${color};"></i> ${name} withdrew ${amount}</span>`);
+        return {
+          name,
+          amount,
+          icon: icons[iconIdx],
+          color: colors[iconIdx]
+        };
       }
-      
-      track.innerHTML = items.concat(items).join("");
+
+      function showNext() {
+        // Fade/slide out current item
+        contentEl.style.opacity = '0';
+        contentEl.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          const item = getNextItem();
+          // Update contents
+          contentEl.innerHTML = `<i class="fa-solid ${item.icon}" style="color: ${item.color};"></i> ${item.name} withdrew ${item.amount}`;
+          // Set to bottom position
+          contentEl.style.transform = 'translateY(20px)';
+          contentEl.offsetHeight; // Force reflow
+          
+          // Fade/slide in new item
+          contentEl.style.opacity = '1';
+          contentEl.style.transform = 'translateY(0)';
+        }, 500);
+
+        // Transition every 3.5 seconds
+        setTimeout(showNext, 3500);
+      }
+
+      showNext();
     }
 
     // Welcome sound trigger on first page click (backup gesture unlock)

@@ -391,7 +391,7 @@ body.dark-mode .redirect-overlay{background:linear-gradient(135deg,#0f172a 0%,#1
 <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
 
 <!-- LIVE WITHDRAWAL POPUP -->
-<div id="liveWithdrawalPopup" style="position: fixed; bottom: 85px; left: 20px; z-index: 10000; display: flex; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transform: translateY(150px); opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; max-width: 90%; width: 280px;">
+<div id="liveWithdrawalPopup" style="position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150px); z-index: 10000; display: flex; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; max-width: 90%; width: 280px; opacity: 0;">
   <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 18px; border: 1px solid rgba(16, 185, 129, 0.3); flex-shrink: 0;">
     <i class="fa-solid fa-circle-check"></i>
   </div>
@@ -1383,12 +1383,12 @@ function initLiveWithdrawalPopups() {
     document.getElementById('liveWithdrawalText').textContent = `${randomName} withdrew ${randomAmount}`;
     
     // Slide in
-    popup.style.transform = 'translateY(0)';
+    popup.style.transform = 'translate(-50%, 0)';
     popup.style.opacity = '1';
 
     // Slide out after 5 seconds
     setTimeout(() => {
-      popup.style.transform = 'translateY(150px)';
+      popup.style.transform = 'translate(-50%, -150px)';
       popup.style.opacity = '0';
     }, 5000);
 
