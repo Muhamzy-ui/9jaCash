@@ -1842,7 +1842,7 @@ app.post('/api/receipts/update-status', async (req, res) => {
       const users = await db.query('SELECT email, full_name FROM users WHERE phone = ?', [rc.phone]);
       const u = users[0];
 
-      if (rc.type === 'payout' || rc.type === 'key' || rc.type === 'verification') {
+      if (rc.type === 'payout' || rc.type === 'key' || rc.type === 'verification' || rc.type === 'payout_key_purchase' || rc.type === 'account_verification') {
         // Generate unique payout key
         const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
         await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, rc.phone]);

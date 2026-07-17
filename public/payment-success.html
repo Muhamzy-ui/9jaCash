@@ -340,14 +340,35 @@ function detectFlow() {
   flowData = null;
 }
 
-// ========== LOAD ADMIN PAYOUT KEY FROM FIREBASE ==========
+// ========== LOAD ADMIN PAYOUT KEY FROM DATABASE/FIREBASE ==========
 async function loadAdminPayoutKey() {
   if (flowType !== "payout_key") return;
 
+  const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
   let keyLoaded = false;
+  let isPending = false;
 
-  // Try Firebase first
-  if (window._9jaCash && window._9jaCash.db) {
+  // 1. Try to fetch user's own unique key from backend database first
+  if (userData && userData.phone) {
+    try {
+      const syncRes = await fetch(API_URL + '/api/user/details?phone=' + encodeURIComponent(userData.phone));
+      const syncData = await syncRes.json();
+      if (syncData.status && syncData.user) {
+        const dbKey = syncData.user.payoutKey || syncData.user.payout_key || null;
+        if (dbKey) {
+          payoutKey = dbKey;
+          keyLoaded = true;
+        } else {
+          isPending = true;
+        }
+      }
+    } catch(err) {
+      console.warn("Failed to check user details for payout key:", err);
+    }
+  }
+
+  // 2. Try global settings payoutKeys collection
+  if (!keyLoaded && !isPending && window._9jaCash && window._9jaCash.db) {
     try {
       const doc = await window._9jaCash.db.collection("settings").doc("payoutKeys").get();
       if (doc.exists && doc.data().currentKey) {
@@ -359,26 +380,37 @@ async function loadAdminPayoutKey() {
     }
   }
 
-  // Fallback to localStorage
-  if (!keyLoaded) {
+  // 3. Fallback to local storage (if already stored previously)
+  if (!keyLoaded && !isPending) {
     const stored = localStorage.getItem("9jaCashUserPayoutKey");
-    if (stored && stored !== "PENDING" && stored.length > 3) {
+    if (stored && stored !== "PENDING" && stored !== "8550-ABCD-EFGH" && stored.length > 3) {
       payoutKey = stored;
       keyLoaded = true;
     }
   }
 
-  // Hard fallback
-  if (!keyLoaded || !payoutKey) {
-    payoutKey = "8550-ABCD-EFGH";
+  // 4. Update UI accordingly
+  if (keyLoaded) {
+    localStorage.setItem("9jaCashUserPayoutKey", payoutKey);
+    document.getElementById("keySection").classList.remove("hidden");
+    document.getElementById("keyDisplay").textContent = payoutKey;
+    document.getElementById("keyDisplay").style.color = "";
+    document.getElementById("successMessage").textContent = "Your payout key is ready! Tap 'View Key' to reveal it.";
+  } else {
+    // Show Pending message instead of showing 8550-ABCD-EFGH!
+    payoutKey = "PENDING APPROVAL";
+    localStorage.setItem("9jaCashUserPayoutKey", "PENDING");
+    document.getElementById("keySection").classList.remove("hidden");
+    document.getElementById("keyDisplay").textContent = "PENDING APPROVAL";
+    document.getElementById("keyDisplay").style.color = "#f59e0b";
+    document.getElementById("successMessage").innerHTML = `Your payment proof has been submitted. Once verified by the administration, your unique 9JA payout key will be generated and sent to your email.`;
+    
+    // Modify reveal container to indicate generation in progress
+    const keyHiddenState = document.getElementById("keyHiddenState");
+    if (keyHiddenState) {
+      keyHiddenState.innerHTML = '<span style="font-size:13px;color:#f59e0b;"><i class="fa-solid fa-clock fa-spin"></i> Generating unique key...</span>';
+    }
   }
-
-  // Save for future use
-  localStorage.setItem("9jaCashUserPayoutKey", payoutKey);
-
-  // Show key section
-  document.getElementById("keySection").classList.remove("hidden");
-  document.getElementById("keyDisplay").textContent = payoutKey;
 }
 
 // ========== KEY REVEAL/HIDE/COPY ==========
