@@ -270,6 +270,7 @@ const mockAuth = {
 };
 
 window.firebase = {
+  initializeApp: () => ({}),
   app: () => ({}),
   auth: () => mockAuth,
   firestore: () => mockDb
