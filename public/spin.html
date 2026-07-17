@@ -904,6 +904,42 @@
       .win-payout {
         font-size: 32px;
       }
+    .spin-ticker-wrap {
+      position: fixed;
+      bottom: 48px; /* Right above the tier footer */
+      left: 0;
+      right: 0;
+      background: rgba(18, 0, 5, 0.95);
+      border-top: 1.5px solid var(--primary-gold);
+      border-bottom: 1.5px solid var(--primary-gold);
+      padding: 6px 0;
+      z-index: 85;
+      overflow: hidden;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+    }
+    .spin-ticker-track {
+      display: inline-block;
+      white-space: nowrap;
+      animation: spin-ticker-animation 35s linear infinite;
+    }
+    .spin-ticker-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 40px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffd700;
+      text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+      font-family: 'Orbitron', sans-serif;
+    }
+    .spin-ticker-item i {
+      font-size: 10px;
+    }
+    @keyframes spin-ticker-animation {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
     }
   </style>
 </head>
@@ -1008,6 +1044,11 @@
 
       </div>
     </div>
+  </div>
+
+  <!-- Continuous Winning Ticker -->
+  <div class="spin-ticker-wrap">
+    <div class="spin-ticker-track" id="spinTickerTrack"></div>
   </div>
 
   <!-- Bottom Casino Tier List Footer -->
@@ -1635,7 +1676,31 @@
     window.addEventListener('DOMContentLoaded', () => {
       ensureAudioStarted();
       initParticles();
+      initSpinTicker();
     });
+
+    function initSpinTicker() {
+      const track = document.getElementById('spinTickerTrack');
+      if (!track) return;
+
+      const names = ["Emeka", "Amina", "Chidi", "Fatima", "Tunde", "Blessing", "Musa", "Ngozi", "Ibrahim", "Yetunde", "Olumide", "Halima", "Chioma", "Kelechi", "Abubakar", "Funmi", "Uche", "Bose", "Damilola", "Efe"];
+      const amounts = ["₦30,000", "₦50,000", "₦100,000", "₦200,000", "₦300,000", "₦500,000", "₦1,000,000"];
+      const icons = ["fa-circle-check", "fa-fire", "fa-bolt", "fa-rocket", "fa-coins", "fa-trophy"];
+      const colors = ["#10b981", "#f59e0b", "#6366f1", "#ec4899", "#10b981", "#f59e0b"];
+
+      let tickerHTML = "";
+      const items = [];
+      for (let i = 0; i < 20; i++) {
+        const name = names[Math.floor(Math.random() * names.length)];
+        const amount = amounts[Math.floor(Math.random() * amounts.length)];
+        const iconIdx = Math.floor(Math.random() * icons.length);
+        const icon = icons[iconIdx];
+        const color = colors[iconIdx];
+        items.push(`<span class="spin-ticker-item"><i class="fa-solid ${icon}" style="color: ${color};"></i> ${name} withdrew ${amount}</span>`);
+      }
+      
+      track.innerHTML = items.concat(items).join("");
+    }
 
     // Welcome sound trigger on first page click (backup gesture unlock)
     document.body.addEventListener('click', function() {

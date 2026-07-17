@@ -588,24 +588,24 @@ app.post('/api/user/stake-spin', async (req, res) => {
 
     // 2. 18 Multiplier Wheel Segments with balanced weights
     const segments = [
-      { mult: 0, weight: 25.0 },   // 0x (Bomb/Lose)
-      { mult: 0.2, weight: 12.0 }, // 0.2x
-      { mult: 0.5, weight: 15.0 }, // 0.5x
-      { mult: 0.8, weight: 10.0 }, // 0.8x
-      { mult: 1, weight: 12.0 },   // 1x
-      { mult: 1.2, weight: 8.0 },  // 1.2x
-      { mult: 1.5, weight: 6.0 },  // 1.5x
+      { mult: 0, weight: 28.0 },   // 0x (Bomb/Lose) - slightly higher loss rate as requested
+      { mult: 0.2, weight: 10.0 }, // 0.2x
+      { mult: 0.5, weight: 12.0 }, // 0.5x
+      { mult: 0.8, weight: 8.0 },  // 0.8x
+      { mult: 1, weight: 10.0 },   // 1x
+      { mult: 1.2, weight: 6.0 },  // 1.2x
+      { mult: 1.5, weight: 5.0 },  // 1.5x
       { mult: 2, weight: 4.0 },    // 2x
       { mult: 2.5, weight: 3.0 },  // 2.5x
-      { mult: 3, weight: 2.0 },    // 3x
-      { mult: 3.5, weight: 1.2 },  // 3.5x
-      { mult: 4, weight: 0.8 },    // 4x
-      { mult: 5, weight: 0.5 },    // 5x
-      { mult: 6, weight: 0.3 },    // 6x
-      { mult: 8, weight: 0.2 },    // 8x
-      { mult: 10, weight: 0.15 },  // 10x
-      { mult: 20, weight: 0.05 },  // 20x
-      { mult: 100, weight: 0.01 }  // 100x
+      { mult: 3, weight: 2.5 },    // 3x
+      { mult: 3.5, weight: 2.0 },  // 3.5x
+      { mult: 4, weight: 1.5 },    // 4x
+      { mult: 5, weight: 1.2 },    // 5x
+      { mult: 6, weight: 1.0 },    // 6x
+      { mult: 8, weight: 0.8 },    // 8x - much more likely jackpot
+      { mult: 10, weight: 0.6 },   // 10x - much more likely
+      { mult: 20, weight: 0.4 },   // 20x - much more likely
+      { mult: 100, weight: 0.2 }   // 100x - much more likely jackpot!
     ];
 
     // 3. Roll the multiplier based on weight distribution
@@ -1153,6 +1153,38 @@ app.post('/api/admin/super/delete-user', async (req, res) => {
   } catch (err) {
     console.error('Delete user error:', err.message);
     res.status(500).json({ status: false, error: 'Failed to delete user' });
+  }
+});
+
+// POST /api/admin/super/credit-user — Credit a user's balance from the Super Admin console
+app.post('/api/admin/super/credit-user', async (req, res) => {
+  const { phone, amount } = req.body || {};
+  if (!phone || amount === undefined || isNaN(parseFloat(amount))) {
+    return res.status(400).json({ status: false, error: 'Phone and valid amount are required' });
+  }
+  const amtVal = parseFloat(amount);
+  if (amtVal <= 0) {
+    return res.status(400).json({ status: false, error: 'Amount must be greater than zero' });
+  }
+
+  try {
+    const users = await db.query('SELECT balance FROM users WHERE phone = ?', [phone]);
+    if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
+    
+    const newBalance = (parseFloat(users[0].balance) || 0) + amtVal;
+    await db.query('UPDATE users SET balance = ? WHERE phone = ?', [newBalance, phone]);
+    
+    // Add a notification alert for the user
+    const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+    await db.query(`
+      INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+      VALUES (?, ?, 'alert', 'Account Credited 🎉', ?, ?, ?)
+    `, [notifId, phone, `Your account has been credited with ₦${amtVal.toLocaleString()} by the administration.`, amtVal.toString(), new Date().toISOString()]);
+
+    res.json({ status: true, message: 'User credited successfully', newBalance });
+  } catch (err) {
+    console.error('Credit user error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to credit user' });
   }
 });
 
@@ -1711,12 +1743,12 @@ app.post('/api/receipts/purge', async (req, res) => {
   }
 });
 
-// GET /api/user/details — Get full user details including payout keys
+// GET /api/user/details — Get full user details including payout keys (supports phone or email search)
 app.get('/api/user/details', async (req, res) => {
   const { phone } = req.query;
   if (!phone) return res.status(400).json({ status: false, error: 'Phone is required' });
   try {
-    const users = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+    const users = await db.query('SELECT * FROM users WHERE phone = ? OR email = ?', [phone, phone]);
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
     const u = users[0];
     res.json({

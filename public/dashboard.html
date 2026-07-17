@@ -389,6 +389,18 @@ body.dark-mode .redirect-overlay{background:linear-gradient(135deg,#0f172a 0%,#1
 </div>
 </div>
 <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
+
+<!-- LIVE WITHDRAWAL POPUP -->
+<div id="liveWithdrawalPopup" style="position: fixed; bottom: 85px; left: 20px; z-index: 10000; display: flex; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transform: translateY(150px); opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; max-width: 90%; width: 280px;">
+  <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 18px; border: 1px solid rgba(16, 185, 129, 0.3); flex-shrink: 0;">
+    <i class="fa-solid fa-circle-check"></i>
+  </div>
+  <div>
+    <div style="font-size: 11px; font-weight: 500; color: #94a3b8; margin-bottom: 2px;">Recent Withdrawal</div>
+    <div style="font-size: 13px; font-weight: 800; color: #f8fafc;" id="liveWithdrawalText">Emeka withdrew ₦30,000</div>
+  </div>
+</div>
+
 <div class="bottom-nav">
   <button class="nav-item active" onclick="setNav(this)"><i class="fa-solid fa-house"></i>Home</button>
   <button class="nav-item" onclick="window.location.href='upgrade.html'"><i class="fa-solid fa-rocket"></i>Upgrade</button>
@@ -1290,7 +1302,7 @@ window.addEventListener("DOMContentLoaded", function() {
   document.getElementById("totalMined").textContent = "₦" + (userData.totalMined || 0).toLocaleString();
   document.getElementById("miningPower").textContent = (userData.miningPower || 1) + "x";
   updatePlanUI();
-  initCheckin(); initClaim(); syncFromBackend(); checkDailyReset(); initTutorial();
+  initCheckin(); initClaim(); syncFromBackend(); checkDailyReset(); initTutorial(); initLiveWithdrawalPopups();
 
   // Auto trigger startMining if navigated with ?mine=true
   const urlParams = new URLSearchParams(window.location.search);
@@ -1356,6 +1368,37 @@ function syncFromBackend() {
     console.warn("Backend SQL sync offline, using local data:", err);
     loadActivity();
   });
+}
+
+function initLiveWithdrawalPopups() {
+  const popup = document.getElementById('liveWithdrawalPopup');
+  if (!popup) return;
+
+  const names = ["Emeka", "Amina", "Chidi", "Fatima", "Tunde", "Blessing", "Musa", "Ngozi", "Ibrahim", "Yetunde", "Olumide", "Halima", "Chioma", "Kelechi", "Abubakar", "Funmi", "Uche", "Bose", "Damilola", "Efe"];
+  const amounts = ["₦30,000", "₦50,000", "₦100,000", "₦200,000", "₦300,000", "₦500,000", "₦1,000,000"];
+
+  function triggerPopup() {
+    const randomName = names[Math.floor(Math.random() * names.length)];
+    const randomAmount = amounts[Math.floor(Math.random() * amounts.length)];
+    document.getElementById('liveWithdrawalText').textContent = `${randomName} withdrew ${randomAmount}`;
+    
+    // Slide in
+    popup.style.transform = 'translateY(0)';
+    popup.style.opacity = '1';
+
+    // Slide out after 5 seconds
+    setTimeout(() => {
+      popup.style.transform = 'translateY(150px)';
+      popup.style.opacity = '0';
+    }, 5000);
+
+    // Schedule next popup (randomly between 30s and 60s)
+    const nextTime = (Math.random() * 30 + 30) * 1000;
+    setTimeout(triggerPopup, nextTime);
+  }
+
+  // Start the first popup after 10 seconds
+  setTimeout(triggerPopup, 10000);
 }
 
 function logoutUser() {

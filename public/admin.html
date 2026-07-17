@@ -1537,6 +1537,46 @@ function deleteJuniorAdmin(email) {
   });
 }
 
+function creditUser(phone, name) {
+  Swal.fire({
+    title: 'Credit User Account',
+    text: `Enter amount (₦) to add to the balance of ${name}:`,
+    input: 'number',
+    inputPlaceholder: 'e.g. 50000',
+    showCancelButton: true,
+    confirmButtonColor: '#6366f1',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Credit Balance',
+    background: '#0f1623',
+    color: '#c8d6e5',
+    inputValidator: (value) => {
+      if (!value || isNaN(parseFloat(value)) || parseFloat(value) <= 0) {
+        return 'Please enter a valid amount greater than zero!';
+      }
+    }
+  }).then(result => {
+    if (result.isConfirmed && result.value) {
+      const amount = parseFloat(result.value);
+      fetch(API_URL + '/api/admin/super/credit-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, amount })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          showToast(`Successfully credited ₦${amount.toLocaleString()} to ${name}!`, 'success');
+          loadAllUsersList();
+          loadSuperStats();
+        } else {
+          showToast(data.error || 'Failed to credit account', 'error');
+        }
+      })
+      .catch(err => showToast('Connection error', 'error'));
+    }
+  });
+}
+
 function deleteUser(phone, name) {
   Swal.fire({
     title: 'Delete User?',
@@ -1580,7 +1620,7 @@ function loadAllUsersList() {
       if (data.status && Array.isArray(data.users)) {
         countLabel.textContent = data.users.length;
         if (data.users.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" style="padding:15px; text-align:center; color:var(--text3);">No registered users found in SQL database</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" style="padding:15px; text-align:center; color:var(--text3);">No registered users found in SQL database</td></tr>';
           return;
         }
         tbody.innerHTML = '';
@@ -1600,9 +1640,14 @@ function loadAllUsersList() {
             <td style="padding:10px; color:var(--text); font-weight:700;">₦${(u.balance || 0).toLocaleString()}</td>
             <td style="padding:10px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase;">${u.status || 'ACTIVE'}</td>
             <td style="padding:10px; text-align:right;">
-              <button onclick="deleteUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer;" class="hover:underline">
-                <i class="fa-solid fa-trash-can"></i> Delete
-              </button>
+              <div style="display:flex; gap:12px; justify-content:flex-end;">
+                <button onclick="creditUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;" class="hover:underline">
+                  <i class="fa-solid fa-wallet"></i> Credit
+                </button>
+                <button onclick="deleteUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer;" class="hover:underline">
+                  <i class="fa-solid fa-trash-can"></i> Delete
+                </button>
+              </div>
             </td>
           `;
           tbody.appendChild(tr);
