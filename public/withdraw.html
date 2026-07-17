@@ -403,24 +403,44 @@ async function checkKeyAgainstFirebase(key) {
   }
   
   try {
+    // 1. Check user-specific payout key from SQL database
+    let userPayoutKey = null;
+    if (userData && userData.phone) {
+      try {
+        const syncRes = await fetch(API_URL + '/api/user/details?phone=' + encodeURIComponent(userData.phone));
+        const syncData = await syncRes.json();
+        if (syncData.status && syncData.user) {
+          userPayoutKey = syncData.user.payoutKey || syncData.user.payout_key || null;
+          // Sync local storage
+          userData.payoutKey = userPayoutKey;
+          localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+        }
+      } catch (err) {
+        console.warn("Failed to sync user payout key from database:", err);
+      }
+    }
+
+    if (userPayoutKey && key.toUpperCase() === userPayoutKey.toUpperCase()) {
+      return { valid: true, type: "user_payout_key" };
+    }
+
+    // 2. Fallback: Check global settings payout keys (Admin bypass / manual keys)
     const doc = await window._9jaCash.db.collection("settings").doc("payoutKeys").get();
-    if (!doc.exists) {
-      return { valid: false, error: "no_keys_set" };
-    }
-    
-    const data = doc.data();
-    const currentKey = (data.currentKey || "").toUpperCase();
-    const history = data.history || [];
-    
-    // Check current key
-    if (key === currentKey) {
-      return { valid: true, type: "current" };
-    }
-    
-    // Check history
-    const inHistory = history.some(k => (k || "").toUpperCase() === key);
-    if (inHistory) {
-      return { valid: true, type: "history" };
+    if (doc.exists) {
+      const data = doc.data();
+      const currentKey = (data.currentKey || "").toUpperCase();
+      const history = data.history || [];
+      
+      // Check current key
+      if (key === currentKey) {
+        return { valid: true, type: "current" };
+      }
+      
+      // Check history
+      const inHistory = history.some(k => (k || "").toUpperCase() === key);
+      if (inHistory) {
+        return { valid: true, type: "history" };
+      }
     }
     
     return { valid: false, error: "not_found" };

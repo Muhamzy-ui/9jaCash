@@ -277,13 +277,14 @@ tr:hover td{background:rgba(255,255,255,0.02);}
               <th>Bank Account</th>
               <th>Balance</th>
               <th>Mining Power</th>
+              <th>Payout Key</th>
               <th>Status</th>
               <th>Control Actions</th>
             </tr>
           </thead>
           <tbody id="userTable">
             <tr>
-              <td colspan="8" class="text-center text-slate-400 py-6">No referred users in your network</td>
+              <td colspan="9" class="text-center text-slate-400 py-6">No referred users in your network</td>
             </tr>
           </tbody>
         </table>
@@ -600,7 +601,7 @@ function renderUsers(users) {
   
   const tbody = document.getElementById('userTable');
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-6">No referred users in your network</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-6">No referred users in your network</td></tr>';
     return;
   }
   
@@ -628,9 +629,13 @@ function renderUsers(users) {
       </td>
       <td class="font-bold text-emerald-400 font-mono">₦${parseFloat(u.balance).toLocaleString()}</td>
       <td class="font-bold text-violet-400 text-center font-mono">${u.mining_power}x</td>
+      <td class="font-mono text-xs text-amber-400 font-bold">${u.payout_key || '<span class="text-slate-500">None</span>'}</td>
       <td><span class="badge ${statusClass}">${statusText}</span></td>
       <td>
         <div class="flex items-center gap-3">
+          <button onclick="generateUserKey('${u.phone}', '${u.full_name || 'User'}')" class="text-yellow-400 hover:text-yellow-300 font-bold hover:underline">
+            <i class="fa-solid fa-key"></i> Key
+          </button>
           <button onclick="editBalance('${u.phone}', ${u.balance})" class="text-blue-400 hover:text-blue-300 font-bold hover:underline">
             <i class="fa-solid fa-pen-to-square"></i> Balance
           </button>
@@ -765,6 +770,50 @@ function toggleSuspend(phone, nextStatus) {
         }
       })
       .catch(() => showToast('Database connection failed', 'error'));
+    }
+  });
+}
+
+function generateUserKey(phone, name) {
+  if (!adminSession) return;
+  Swal.fire({
+    title: 'Generate Payout Key?',
+    text: `Generate a new unique withdrawal payout key for ${name} (${phone}) and email it to them?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#f59e0b',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Generate & Send',
+    background: '#131a2e',
+    color: '#f1f5f9'
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch(API_URL + '/api/admin/junior/generate-user-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: adminSession.email,
+          password: adminSession.password,
+          userPhone: phone
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({
+            title: 'Payout Key Generated!',
+            html: `<p style="color:#94a3b8;">Key for <b>${name}</b>: </p><div style="font-family:monospace;font-size:24px;font-weight:bold;color:#f59e0b;margin:15px 0;">${data.payoutKey}</div><p style="color:#94a3b8;">It has been sent to their email and added to their notification feed.</p>`,
+            icon: 'success',
+            confirmButtonColor: '#8b5cf6',
+            background: '#131a2e',
+            color: '#f1f5f9'
+          });
+          loadDashboardData();
+        } else {
+          showToast(data.error || 'Failed to generate key', 'error');
+        }
+      })
+      .catch(err => showToast('Connection error', 'error'));
     }
   });
 }

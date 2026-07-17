@@ -813,6 +813,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Phone</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Email</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Referred By</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Payout Key</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Balance</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: right;">Actions</th>
@@ -820,7 +821,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         </thead>
         <tbody id="allUsersListTable">
           <tr>
-            <td colspan="8" style="padding: 15px; text-align: center; color: var(--text3);">Loading registered users...</td>
+            <td colspan="9" style="padding: 15px; text-align: center; color: var(--text3);">Loading registered users...</td>
           </tr>
         </tbody>
       </table>
@@ -1610,6 +1611,46 @@ function deleteUser(phone, name) {
   });
 }
 
+function generateUserKey(phone, name) {
+  Swal.fire({
+    title: 'Generate Payout Key?',
+    text: `Generate a new unique withdrawal payout key for ${name} (${phone}) and email it to them?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#f59e0b',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Generate & Send',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch(API_URL + '/api/admin/super/generate-user-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({
+            title: 'Payout Key Generated!',
+            html: `<p style="color:#94a3b8;">Key for <b>${name}</b>: </p><div style="font-family:monospace;font-size:24px;font-weight:bold;color:#f59e0b;margin:15px 0;">${data.payoutKey}</div><p style="color:#94a3b8;">It has been sent to their linked email and added to their notifications feed.</p>`,
+            icon: 'success',
+            confirmButtonColor: '#6366f1',
+            background: '#0f1623',
+            color: '#c8d6e5'
+          });
+          loadAllUsersList();
+          loadSuperStats();
+        } else {
+          showToast(data.error || 'Failed to generate key', 'error');
+        }
+      })
+      .catch(err => showToast('Connection error', 'error'));
+    }
+  });
+}
+
 // ========== REGISTERED USERS DIRECTORY ==========
 function loadAllUsersList() {
   fetch(API_URL + '/api/admin/super/users')
@@ -1620,7 +1661,7 @@ function loadAllUsersList() {
       if (data.status && Array.isArray(data.users)) {
         countLabel.textContent = data.users.length;
         if (data.users.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" style="padding:15px; text-align:center; color:var(--text3);">No registered users found in SQL database</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="9" style="padding:15px; text-align:center; color:var(--text3);">No registered users found in SQL database</td></tr>';
           return;
         }
         tbody.innerHTML = '';
@@ -1628,6 +1669,7 @@ function loadAllUsersList() {
           const joinedDate = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
           const uStatusColor = u.status === 'suspended' ? 'var(--danger)' : 'var(--accent)';
           const cleanName = (u.full_name || '9jaCash User').replace(/'/g, "\\'").replace(/"/g, '\\"');
+          const payoutKeyStr = u.payout_key || '<span style="color:var(--text3);">None</span>';
           
           const tr = document.createElement('tr');
           tr.style.borderBottom = '1px solid var(--border)';
@@ -1637,10 +1679,14 @@ function loadAllUsersList() {
             <td style="padding:10px; color:var(--text2); font-family:monospace; font-size:12px;">${u.phone || '—'}</td>
             <td style="padding:10px; color:var(--text2); font-size:12px;">${u.email || '—'}</td>
             <td style="padding:10px; color:var(--accent); font-weight:700; font-size:12px;">${u.referred_by || 'Direct'}</td>
+            <td style="padding:10px; color:var(--warning); font-family:monospace; font-size:12px; font-weight:700;">${payoutKeyStr}</td>
             <td style="padding:10px; color:var(--text); font-weight:700;">₦${(u.balance || 0).toLocaleString()}</td>
             <td style="padding:10px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase;">${u.status || 'ACTIVE'}</td>
             <td style="padding:10px; text-align:right;">
               <div style="display:flex; gap:12px; justify-content:flex-end;">
+                <button onclick="generateUserKey('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--warning); font-weight:700; cursor:pointer;" class="hover:underline">
+                  <i class="fa-solid fa-key"></i> Key
+                </button>
                 <button onclick="creditUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;" class="hover:underline">
                   <i class="fa-solid fa-wallet"></i> Credit
                 </button>
