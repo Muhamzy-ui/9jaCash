@@ -135,6 +135,8 @@ db.initDb();
 app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'public')));
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
@@ -1777,6 +1779,10 @@ app.post('/api/user/update-details', async (req, res) => {
   } catch (err) {
     res.status(500).json({ status: false, error: err.message });
   }
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 module.exports = app;
