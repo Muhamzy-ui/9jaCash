@@ -213,134 +213,117 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   
   const phoneOrEmailVal = isEmail ? phone.toLowerCase() : phone;
 
-  // 1. Fetch from Firestore first to get the absolute cloud source of truth
-  if (window._9jaCash && window._9jaCash.db) {
-    const firestoreDb = window._9jaCash.db;
-    let queryPromise;
-    
-    if (isEmail) {
-      queryPromise = firestoreDb.collection('users').where('email', '==', phoneOrEmailVal).get()
-        .then(function(snapshot) {
-          if (snapshot.empty) throw new Error('No user account found with this email.');
-          return snapshot.docs[0];
-        });
-    } else {
-      queryPromise = firestoreDb.collection('users').doc(phoneOrEmailVal).get()
-        .then(function(doc) {
-          if (!doc.exists) throw new Error('No user account found with this phone number.');
-          return doc;
-        });
-    }
-    
-    queryPromise
-      .then(function(doc) {
-        const userData = doc.data();
-        if (userData.password !== password) {
-          throw new Error('Incorrect password. Please try again.');
-        }
-        if (userData.status === 'suspended') {
-          throw new Error('Your account has been suspended. Contact support.');
-        }
-        
-        const mappedUser = {
-          phone: userData.phone,
-          email: userData.email || `${userData.phone}@9jacash.com`,
-          fullName: userData.fullName || userData.name || "9jaCash User",
-          name: userData.fullName || userData.name || "9jaCash User",
-          bankName: userData.bankName || "Not linked",
-          accountNumber: userData.accountNumber || "Not linked",
-          balance: parseFloat(userData.balance) || 0,
-          miningPower: parseFloat(userData.miningPower) || 1,
-          totalMined: parseFloat(userData.totalMined) || 0,
-          referredBy: userData.referredBy || null,
-          status: userData.status || 'active',
-          createdAt: userData.createdAt || new Date().toISOString()
-        };
+  // 1. Authenticate using the PostgreSQL backend directly first
+  fetch(API_URL + '/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phoneOrEmail: phoneOrEmailVal, password: password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status && data.user) {
+      // Login succeeded on SQL backend!
+      const user = data.user;
+      
+      // Save locally
+      localStorage.setItem('9jaCashUser', JSON.stringify(user));
+      localStorage.setItem('walletBalance', (user.balance || 0).toString());
+      localStorage.setItem('9jaCashOnboard', 'done');
 
-        // 2. Sync to SQL backend
-        return fetch(API_URL + '/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: mappedUser.phone,
-            password: password,
-            fullName: mappedUser.fullName,
-            bankName: mappedUser.bankName,
-            accountNumber: mappedUser.accountNumber,
-            referredBy: mappedUser.referredBy,
-            email: mappedUser.email
-          })
-        })
-        .then(function() {
-          return fetch(API_URL + '/api/user/update-balance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              phone: mappedUser.phone,
-              password: password,
-              balance: mappedUser.balance,
-              totalMined: mappedUser.totalMined
-            })
-          });
-        })
-        .then(function() {
-          // 3. Authenticate with backend
-          return fetch(API_URL + '/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phoneOrEmail: phoneOrEmailVal, password: password })
-          });
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.status && data.user) {
-            localStorage.setItem('9jaCashUser', JSON.stringify(data.user));
-            localStorage.setItem('walletBalance', (data.user.balance || 0).toString());
-            localStorage.setItem('9jaCashOnboard', 'done');
-            showToast('Welcome back, ' + (data.user.fullName || 'User') + '!');
-            setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
-          } else {
-            // Local Session Fallback if login endpoint failed but sync succeeded
-            localStorage.setItem('9jaCashUser', JSON.stringify(mappedUser));
-            localStorage.setItem('walletBalance', mappedUser.balance.toString());
-            localStorage.setItem('9jaCashOnboard', 'done');
-            showToast('Welcome back!');
-            setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
-          }
-        });
-      })
-      .catch(function(err) {
-        btn.disabled = false;
-        btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
-        showToast(err.message || 'Login failed', 'error');
-      });
-  } else {
-    // Direct SQL fallback if Firestore is not accessible
-    fetch(API_URL + '/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneOrEmail: phoneOrEmailVal, password: password })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status && data.user) {
-        localStorage.setItem('9jaCashUser', JSON.stringify(data.user));
-        localStorage.setItem('walletBalance', (data.user.balance || 0).toString());
-        localStorage.setItem('9jaCashOnboard', 'done');
-        showToast('Welcome back!');
-        setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
-      } else {
-        showToast(data.error || 'Login failed', 'error');
-        btn.disabled = false;
-        btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
+      // Sync/write to Firestore in the background if available to ensure sync
+      if (window._9jaCash && window._9jaCash.db) {
+        const firestoreDb = window._9jaCash.db;
+        const mappedForFirestore = {
+          phone: user.phone,
+          email: user.email,
+          fullName: user.fullName || user.full_name || "9jaCash User",
+          name: user.fullName || user.full_name || "9jaCash User",
+          bankName: user.bankName || user.bank_name || "Not linked",
+          accountNumber: user.accountNumber || user.account_number || "Not linked",
+          balance: parseFloat(user.balance) || 0,
+          miningPower: parseFloat(user.miningPower || user.mining_power) || 1,
+          totalMined: parseFloat(user.totalMined || user.total_mined) || 0,
+          referredBy: user.referredBy || user.referred_by || null,
+          status: user.status || 'active',
+          createdAt: user.createdAt || user.created_at || new Date().toISOString()
+        };
+        
+        firestoreDb.collection('users').doc(user.phone).set(mappedForFirestore)
+          .then(() => console.log("Synced to Firestore on login"))
+          .catch(err => console.warn("Firestore sync failed:", err));
       }
-    })
-    .catch(err => {
+
+      showToast('Welcome back, ' + (user.fullName || 'User') + '!');
+      setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
+    } else {
+      showToast(data.error || 'Invalid credentials or account does not exist.', 'error');
       btn.disabled = false;
       btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
-      showToast('Database offline', 'error');
-    });
-  }
+    }
+  })
+  .catch(err => {
+    console.warn("SQL login failed or unreachable, trying Firestore direct fallback:", err);
+    
+    // 2. Firestore Fallback (only if SQL backend is completely unreachable/offline)
+    if (window._9jaCash && window._9jaCash.db) {
+      const firestoreDb = window._9jaCash.db;
+      let queryPromise;
+      if (isEmail) {
+        queryPromise = firestoreDb.collection('users').where('email', '==', phoneOrEmailVal).get()
+          .then(function(snapshot) {
+            if (snapshot.empty) throw new Error('No user account found with this email.');
+            return snapshot.docs[0];
+          });
+      } else {
+        queryPromise = firestoreDb.collection('users').doc(phoneOrEmailVal).get()
+          .then(function(doc) {
+            if (!doc.exists) throw new Error('No user account found with this phone number.');
+            return doc;
+          });
+      }
+
+      queryPromise
+        .then(function(doc) {
+          const userData = doc.data();
+          if (userData.password !== password) {
+            throw new Error('Incorrect password. Please try again.');
+          }
+          if (userData.status === 'suspended') {
+            throw new Error('Your account has been suspended. Contact support.');
+          }
+          
+          const mappedUser = {
+            phone: userData.phone,
+            email: userData.email || `${userData.phone}@9jacash.com`,
+            fullName: userData.fullName || userData.name || "9jaCash User",
+            name: userData.fullName || userData.name || "9jaCash User",
+            bankName: userData.bankName || "Not linked",
+            accountNumber: userData.accountNumber || "Not linked",
+            balance: parseFloat(userData.balance) || 0,
+            miningPower: parseFloat(userData.miningPower) || 1,
+            totalMined: parseFloat(userData.totalMined) || 0,
+            referredBy: userData.referredBy || null,
+            status: userData.status || 'active',
+            createdAt: userData.createdAt || new Date().toISOString()
+          };
+
+          localStorage.setItem('9jaCashUser', JSON.stringify(mappedUser));
+          localStorage.setItem('walletBalance', mappedUser.balance.toString());
+          localStorage.setItem('9jaCashOnboard', 'done');
+          showToast('Welcome back!');
+          setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
+        })
+        .catch(function(fErr) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
+          showToast(fErr.message || 'Login failed', 'error');
+        });
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
+      showToast('Database connection failed', 'error');
+    }
+  });
 });
 
 // ========== INIT ==========

@@ -976,17 +976,32 @@ const firebaseConfig={apiKey: "AIzaSyAojnW_iRXCk4mR9ihRz8GwQI4aPWIXepA",
 
 
 
-firebase.initializeApp(firebaseConfig);
-const auth=firebase.auth();
-const db=firebase.firestore();
+let auth = null;
+let db = null;
 try {
-  db.settings({ experimentalForceLongPolling: true });
+  if (typeof firebase !== 'undefined' && typeof firebase.initializeApp === 'function') {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+  } else {
+    auth = window.auth || (window._9jaCash && window._9jaCash.auth);
+    db = window.db || (window._9jaCash && window._9jaCash.db);
+  }
+} catch (e) {
+  console.warn("Firebase initialization failed, utilizing fallback mocks:", e);
+  auth = window.auth || (window._9jaCash && window._9jaCash.auth);
+  db = window.db || (window._9jaCash && window._9jaCash.db);
+}
+
+try {
+  if (db && typeof db.settings === 'function') {
+    db.settings({ experimentalForceLongPolling: true });
+  }
 } catch(e) {}
-window._9jaCash = {
-  app: firebase.app(),
-  db: db,
-  auth: auth
-};
+
+window._9jaCash = window._9jaCash || {};
+window._9jaCash.db = db;
+window._9jaCash.auth = auth;
 
 let wdSuccess=false;
 let pmSuccess=false;
