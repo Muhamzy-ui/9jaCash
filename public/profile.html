@@ -164,6 +164,21 @@ body.dark-mode .field-value{color:#f8fafc;}
     </div>
   </div>
 
+  <!-- Video Testimony Challenge Card -->
+  <div class="profile-card cursor-pointer hover:border-violet-500/50 transition-all hidden" id="videoChallengeCard" onclick="window.location.href='video-challenge.html'">
+    <div class="flex justify-between items-center mb-4">
+      <h4 class="font-bold text-sm text-violet-400"><i class="fa-solid fa-video mr-2"></i> ₦500k Video Challenge</h4>
+      <span class="text-[10px] text-violet-400 font-bold hover:underline">Go to Challenge</span>
+    </div>
+    <div class="field-box">
+      <div class="field-info">
+        <div class="field-label">Campaign Reward</div>
+        <div class="field-value text-emerald-400 font-bold text-sm">₦500,000 Cash Prize</div>
+      </div>
+      <i class="fa-solid fa-gift text-slate-500"></i>
+    </div>
+  </div>
+
   <!-- Log Out Button -->
   <button onclick="logoutUser()" class="w-full py-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 mb-6">
     <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
@@ -218,6 +233,21 @@ function initProfile() {
   document.getElementById("profilePlanName").textContent = userData.planName || userData.plan || "Free Miner";
   document.getElementById("profileMultiplier").textContent = (userData.miningPower || 1) + "x";
   document.getElementById("profileTotalMined").textContent = "₦" + (userData.totalMined || 0).toLocaleString();
+
+  // Check if video challenge is active
+  fetch(API_URL + '/api/settings/videoChallenge')
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      const active = data.value ? (data.value.active !== false) : true;
+      if (active) {
+        document.getElementById("videoChallengeCard").classList.remove("hidden");
+      } else {
+        document.getElementById("videoChallengeCard").classList.add("hidden");
+      }
+    })
+    .catch(function(err) {
+      document.getElementById("videoChallengeCard").classList.remove("hidden");
+    });
 
   // Dark/Light Theme Matcher
   const isDark = localStorage.getItem("9jaCashDark") === "true" || localStorage.getItem("9jaCashDark") === null;

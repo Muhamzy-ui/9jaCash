@@ -260,10 +260,13 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
     <!-- Referred Users -->
     <div class="card">
-      <div class="card-header">
+      <div class="card-header flex justify-between items-center flex-wrap gap-4">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-users text-violet-400"></i>
           <h3 class="font-extrabold text-base">My Referred Users Network</h3>
+        </div>
+        <div>
+          <input type="text" id="userSearchInput" oninput="filterUsers()" placeholder="Search users by name, phone or email..." class="inp py-2 px-3 text-xs w-64 bg-slate-800 border-slate-700 text-slate-200 rounded-lg" style="margin-bottom:0; width:220px; font-size:12px; height: 36px;">
         </div>
       </div>
       
@@ -560,6 +563,8 @@ function savePaymentSettings() {
 }
 
 // ========== LOAD DASHBOARD DATA ==========
+let referredUsersCache = [];
+
 function loadDashboardData() {
   if (!adminSession) return;
   const refCode = adminSession.referral_code;
@@ -569,7 +574,8 @@ function loadDashboardData() {
     .then(res => res.json())
     .then(data => {
       if (data.status && Array.isArray(data.users)) {
-        renderUsers(data.users);
+        referredUsersCache = data.users;
+        renderUsers(data.users, false);
       }
     })
     .catch(err => console.error('Error fetching users:', err));
@@ -589,19 +595,19 @@ function loadDashboardData() {
 }
 
 // ========== RENDER DATA ==========
-function renderUsers(users) {
-  referredUserPhones = users.map(u => u.phone);
-  loadDashboardReceipts();
-  
-  document.getElementById('statUsers').textContent = users.length;
-  
-  let totalBal = 0;
-  users.forEach(u => totalBal += parseFloat(u.balance || 0));
-  document.getElementById('statBalances').textContent = '₦' + totalBal.toLocaleString();
+function renderUsers(users, isFiltering = false) {
+  if (!isFiltering) {
+    referredUserPhones = users.map(u => u.phone);
+    loadDashboardReceipts();
+    document.getElementById('statUsers').textContent = users.length;
+    let totalBal = 0;
+    users.forEach(u => totalBal += parseFloat(u.balance || 0));
+    document.getElementById('statBalances').textContent = '₦' + totalBal.toLocaleString();
+  }
   
   const tbody = document.getElementById('userTable');
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-6">No referred users in your network</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-6">No referred users found</td></tr>';
     return;
   }
   
@@ -647,6 +653,21 @@ function renderUsers(users) {
     `;
     tbody.appendChild(tr);
   });
+}
+
+function filterUsers() {
+  const query = document.getElementById('userSearchInput').value.toLowerCase().trim();
+  if (!query) {
+    renderUsers(referredUsersCache, true);
+    return;
+  }
+  const filtered = referredUsersCache.filter(u => {
+    const name = (u.full_name || '').toLowerCase();
+    const phone = (u.phone || '').toLowerCase();
+    const email = (u.email || '').toLowerCase();
+    return name.includes(query) || phone.includes(query) || email.includes(query);
+  });
+  renderUsers(filtered, true);
 }
 
 function renderWithdrawals(withdrawals) {

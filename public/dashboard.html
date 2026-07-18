@@ -1236,12 +1236,19 @@ function checkAndShowVideoChallengePopup() {
   const dismissedToday = localStorage.getItem("9jaCashVideoPromoDismissed") === new Date().toDateString();
   if (dismissedToday) return;
 
-  fetch(API_URL + '/api/user/video-submission?phone=' + userData.phone)
+  fetch(API_URL + '/api/settings/videoChallenge')
     .then(r => r.json())
-    .then(data => {
-      if (data.status && !data.submission) {
-        document.getElementById("videoChallengeModal").classList.remove("hidden");
-      }
+    .then(settingRes => {
+      const active = settingRes.value ? (settingRes.value.active !== false) : true;
+      if (!active) return;
+
+      return fetch(API_URL + '/api/user/video-submission?phone=' + userData.phone)
+        .then(r => r.json())
+        .then(data => {
+          if (data.status && !data.submission) {
+            document.getElementById("videoChallengeModal").classList.remove("hidden");
+          }
+        });
     })
     .catch(err => console.error('Error checking video challenge status:', err));
 }

@@ -623,6 +623,20 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       </div>
     </div>
   </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon green" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="fa-solid fa-circle-play"></i></div>
+      <div><div class="panel-title">Video Testimonial Challenge</div><div class="panel-sub">Configure user testimonial campaign status</div></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Video Challenge Status</label>
+      <select id="videoChallengeActive" class="form-input">
+        <option value="true">Active (Enabled)</option>
+        <option value="false">Inactive (Disabled)</option>
+      </select>
+    </div>
+  </div>
 </div>
 
 <!-- TASKS TAB -->
@@ -800,9 +814,14 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
   </div>
 
   <div class="panel">
-    <div class="panel-header">
-      <div class="panel-icon purple"><i class="fa-solid fa-users"></i></div>
-      <div><div class="panel-title">Users Directory</div><div class="panel-sub">Total: <span id="usersListCount">0</span> users</div></div>
+    <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="panel-icon purple"><i class="fa-solid fa-users"></i></div>
+        <div><div class="panel-title">Users Directory</div><div class="panel-sub">Total: <span id="usersListCount">0</span> users</div></div>
+      </div>
+      <div>
+        <input type="text" id="userSearchInput" oninput="filterUsers()" placeholder="Search users by name, phone or email..." class="form-input" style="width: 280px; margin-bottom: 0; padding: 8px 12px; font-size: 13px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
+      </div>
     </div>
     <div class="table-wrap overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
       <table class="w-full text-left" style="border-collapse: collapse; width:100%;">
@@ -1261,14 +1280,15 @@ function updateTaskBtn(){
 // ========== LOAD DATA (NO USERS) ==========
 async function loadData(){
   try{
-    const [payDoc,feeDoc,taskDoc,wdDoc,pmDoc,keyDoc,redirDoc]=await Promise.all([
+    const [payDoc,feeDoc,taskDoc,wdDoc,pmDoc,keyDoc,redirDoc,videoChallengeDoc]=await Promise.all([
       db.collection('settings').doc('payment').get(),
       db.collection('settings').doc('secondBilling').get(),
       db.collection('settings').doc('tasks').get(),
       db.collection('settings').doc('withdrawalStatus').get(),
       db.collection('settings').doc('paymentStatus').get(),
       db.collection('settings').doc('payoutKeys').get(),
-      db.collection('settings').doc('redirects').get()
+      db.collection('settings').doc('redirects').get(),
+      db.collection('settings').doc('videoChallenge').get()
     ]);
     
     const pay=payDoc.exists?payDoc.data():{};
@@ -1278,6 +1298,7 @@ async function loadData(){
     const pmData=pmDoc.exists?pmDoc.data():{};
     const keyData=keyDoc.exists?keyDoc.data():{};
     const redirData=redirDoc.exists?redirDoc.data():{};
+    const videoChallengeData=videoChallengeDoc.exists?videoChallengeDoc.data():{active:true};
     
     document.getElementById('telegramLink').value=pay.telegramLink||'';
     document.getElementById('accNumber').value=pay.accNumber||'';
@@ -1291,6 +1312,7 @@ async function loadData(){
     document.getElementById('feeBank').value=fee.bank||'';
     document.getElementById('feeAccName').value=fee.accName||'';
     document.getElementById('feeAmount').value=fee.amount||'12500';
+    document.getElementById('videoChallengeActive').value=videoChallengeData.active === false ? 'false' : 'true';
     
     wdSuccess=wdData.success===true;updateWdToggleUI();
     pmSuccess=pmData.success===true;updatePmToggleUI();
@@ -1385,6 +1407,7 @@ async function saveAll(){
   const pm={success:pmSuccess,updatedAt:new Date().toISOString()};
   const keyD={currentKey:payoutKey,history:keyHistory,updatedAt:new Date().toISOString()};
   const redir={successPrimaryRedirect:document.getElementById('successPrimary').value.trim()||'dashboard.html',successSecondaryRedirect:document.getElementById('successSecondary').value.trim()||'buy.html',successDelay:Number(document.getElementById('successDelay').value)||2000,successShowConfetti:true,successMessage:'Your payment has been confirmed',failedRetryRedirect:document.getElementById('failedRetry').value.trim()||'payment.html',failedDashboardRedirect:document.getElementById('failedDashboard').value.trim()||'dashboard.html',failedRetryLabel:'Retry Payment',failedDashboardLabel:'Back to Dashboard',failedMessage:'We could not confirm your payment. Please check your details and try again.',failedSupportHandle:document.getElementById('supportHandle').value.trim()||'@9jaCash_Support',failedShowSenderDetails:true,updatedAt:new Date().toISOString()};
+  const videoChallenge={active:document.getElementById('videoChallengeActive').value==='true',updatedAt:new Date().toISOString()};
   
   if(pay.accNumber&&pay.accNumber.length!==10){showToast('Main account: 10 digits','error');return;}
   if(fee.accNumber&&fee.accNumber.length!==10){showToast('Fee account: 10 digits','error');return;}
@@ -1398,7 +1421,8 @@ async function saveAll(){
       db.collection('settings').doc('withdrawalStatus').set(wd),
       db.collection('settings').doc('paymentStatus').set(pm),
       db.collection('settings').doc('payoutKeys').set(keyD),
-      db.collection('settings').doc('redirects').set(redir)
+      db.collection('settings').doc('redirects').set(redir),
+      db.collection('settings').doc('videoChallenge').set(videoChallenge)
     ]);
     updatePreview();showToast('All saved!','success');
   }catch(err){showToast('Failed: '+err.message,'error');}
@@ -1667,57 +1691,84 @@ function generateUserKey(phone, name) {
 }
 
 // ========== REGISTERED USERS DIRECTORY ==========
+let allUsersCache = [];
+
 function loadAllUsersList() {
   fetch(API_URL + '/api/admin/super/users')
     .then(res => res.json())
     .then(data => {
-      const tbody = document.getElementById('allUsersListTable');
-      const countLabel = document.getElementById('usersListCount');
       if (data.status && Array.isArray(data.users)) {
-        countLabel.textContent = data.users.length;
-        if (data.users.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="9" style="padding:15px; text-align:center; color:var(--text3);">No registered users found in SQL database</td></tr>';
-          return;
-        }
-        tbody.innerHTML = '';
-        data.users.forEach(u => {
-          const joinedDate = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
-          const uStatusColor = u.status === 'suspended' ? 'var(--danger)' : 'var(--accent)';
-          const cleanName = (u.full_name || '9jaCash User').replace(/'/g, "\\'").replace(/"/g, '\\"');
-          const payoutKeyStr = u.payout_key || '<span style="color:var(--text3);">None</span>';
-          
-          const tr = document.createElement('tr');
-          tr.style.borderBottom = '1px solid var(--border)';
-          tr.innerHTML = `
-            <td style="padding:10px; color:var(--text3); font-size:12px;">${joinedDate}</td>
-            <td style="padding:10px; color:var(--text); font-weight:600;">${u.full_name || '9jaCash User'}</td>
-            <td style="padding:10px; color:var(--text2); font-family:monospace; font-size:12px;">${u.phone || '—'}</td>
-            <td style="padding:10px; color:var(--text2); font-size:12px;">${u.email || '—'}</td>
-            <td style="padding:10px; color:var(--accent); font-weight:700; font-size:12px;">${u.referred_by || 'Direct'}</td>
-            <td style="padding:10px; color:var(--warning); font-family:monospace; font-size:12px; font-weight:700;">${payoutKeyStr}</td>
-            <td style="padding:10px; color:var(--text); font-weight:700;">₦${(u.balance || 0).toLocaleString()}</td>
-            <td style="padding:10px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase;">${u.status || 'ACTIVE'}</td>
-            <td style="padding:10px; text-align:right;">
-              <div style="display:flex; gap:12px; justify-content:flex-end;">
-                <button onclick="generateUserKey('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--warning); font-weight:700; cursor:pointer;" class="hover:underline">
-                  <i class="fa-solid fa-key"></i> Key
-                </button>
-                <button onclick="creditUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;" class="hover:underline">
-                  <i class="fa-solid fa-wallet"></i> Credit
-                </button>
-                <button onclick="deleteUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer;" class="hover:underline">
-                  <i class="fa-solid fa-trash-can"></i> Delete
-                </button>
-              </div>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
+        allUsersCache = data.users;
+        renderAllUsers(data.users, false);
       }
     })
     .catch(err => {
       console.error('Error fetching registered users list:', err);
     });
+}
+
+function renderAllUsers(users, isFiltering = false) {
+  const tbody = document.getElementById('allUsersListTable');
+  const countLabel = document.getElementById('usersListCount');
+  
+  if (!isFiltering) {
+    countLabel.textContent = users.length;
+  }
+  
+  if (users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:15px; text-align:center; color:var(--text3);">No registered users found in SQL database</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = '';
+  users.forEach(u => {
+    const joinedDate = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
+    const uStatusColor = u.status === 'suspended' ? 'var(--danger)' : 'var(--accent)';
+    const cleanName = (u.full_name || '9jaCash User').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    const payoutKeyStr = u.payout_key || '<span style="color:var(--text3);">None</span>';
+    
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    tr.innerHTML = `
+      <td style="padding:10px; color:var(--text3); font-size:12px;">${joinedDate}</td>
+      <td style="padding:10px; color:var(--text); font-weight:600;">${u.full_name || '9jaCash User'}</td>
+      <td style="padding:10px; color:var(--text2); font-family:monospace; font-size:12px;">${u.phone || '—'}</td>
+      <td style="padding:10px; color:var(--text2); font-size:12px;">${u.email || '—'}</td>
+      <td style="padding:10px; color:var(--accent); font-weight:700; font-size:12px;">${u.referred_by || 'Direct'}</td>
+      <td style="padding:10px; color:var(--warning); font-family:monospace; font-size:12px; font-weight:700;">${payoutKeyStr}</td>
+      <td style="padding:10px; color:var(--text); font-weight:700;">₦${(u.balance || 0).toLocaleString()}</td>
+      <td style="padding:10px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase;">${u.status || 'ACTIVE'}</td>
+      <td style="padding:10px; text-align:right;">
+        <div style="display:flex; gap:12px; justify-content:flex-end;">
+          <button onclick="generateUserKey('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--warning); font-weight:700; cursor:pointer;" class="hover:underline">
+            <i class="fa-solid fa-key"></i> Key
+          </button>
+          <button onclick="creditUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;" class="hover:underline">
+            <i class="fa-solid fa-wallet"></i> Credit
+          </button>
+          <button onclick="deleteUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer;" class="hover:underline">
+            <i class="fa-solid fa-trash-can"></i> Delete
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function filterUsers() {
+  const query = document.getElementById('userSearchInput').value.toLowerCase().trim();
+  if (!query) {
+    renderAllUsers(allUsersCache, true);
+    return;
+  }
+  const filtered = allUsersCache.filter(u => {
+    const name = (u.full_name || '').toLowerCase();
+    const phone = (u.phone || '').toLowerCase();
+    const email = (u.email || '').toLowerCase();
+    return name.includes(query) || phone.includes(query) || email.includes(query);
+  });
+  renderAllUsers(filtered, true);
 }
 
 // ========== STATS LOADER ==========

@@ -1740,6 +1740,7 @@ app.get('/api/settings/:key', async (req, res) => {
       tasks: { tasksList: [] },
       withdrawalStatus: { active: false },
       paymentStatus: { active: false },
+      videoChallenge: { active: true },
       payoutKeys: { price: 25000 },
       redirects: { payoutSuccess: 'success.html', payoutFailed: 'payment-failed.html' }
     };
