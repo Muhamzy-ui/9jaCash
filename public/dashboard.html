@@ -1322,7 +1322,7 @@ window.addEventListener("DOMContentLoaded", function() {
   setTimeout(checkAndShowVideoChallengePopup, 2000);
 });
 
-window.addEventListener("focus", function() {
+function runResumeChecks() {
   checkDailyReset(); 
   balance = parseFloat(localStorage.getItem("walletBalance")) || balance; 
   updateBalance(); 
@@ -1331,7 +1331,15 @@ window.addEventListener("focus", function() {
   syncFromBackend();
   checkPendingBounceOnLoad();
   checkAndShowVerifyButton();
+}
+
+window.addEventListener("focus", runResumeChecks);
+document.addEventListener("visibilitychange", function() {
+  if (document.visibilityState === "visible") {
+    runResumeChecks();
+  }
 });
+window.addEventListener("pageshow", runResumeChecks);
 
 // ========== REFERRAL LINK COPY ==========
 function copyReferralLink() {
