@@ -800,6 +800,26 @@ acctInput.addEventListener("input", function() {
 
 // ========== SUBMIT WITHDRAWAL — FIXED: 30 SECOND BOUNCE ==========
 function submitWithdrawal() {
+  const hasBouncedBefore = localStorage.getItem("9jaCashBouncedWithdrawal") === "true";
+  if (hasBouncedBefore) {
+    Swal.fire({
+      icon: "error",
+      title: "Verification Required",
+      html: '<p style="color:#64748b;">Your previous withdrawal bounced because your linked bank account is not verified.</p><p style="color:#64748b;margin-top:8px;">Please verify your account before initiating another withdrawal.</p>',
+      confirmButtonText: "Verify Account Now",
+      confirmButtonColor: "#ef4444",
+      showCancelButton: true,
+      cancelButtonText: "Cancel",
+      background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff",
+      color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
+    }).then(function(r) {
+      if (r.isConfirmed) {
+        window.location.href = "account-verification.html";
+      }
+    });
+    return;
+  }
+
   if (!payoutKeyVerified) { showToast("Verify your payout key first!"); return; }
 
   const rawAmt = document.getElementById("withdrawAmount").value.replace(/[^\d]/g, "");
@@ -922,6 +942,27 @@ window.addEventListener("DOMContentLoaded", function() {
   
   // AUTO-CHECK stored key on load
   autoCheckStoredKey();
+
+  const hasBouncedBefore = localStorage.getItem("9jaCashBouncedWithdrawal") === "true";
+  if (hasBouncedBefore) {
+    setTimeout(function() {
+      Swal.fire({
+        icon: "warning",
+        title: "Account Verification Needed",
+        text: "Please verify your linked account before withdrawing.",
+        confirmButtonText: "Verify Now",
+        confirmButtonColor: "#ef4444",
+        showCancelButton: true,
+        cancelButtonText: "Later",
+        background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff",
+        color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
+      }).then(function(r) {
+        if (r.isConfirmed) {
+          window.location.href = "account-verification.html";
+        }
+      });
+    }, 1000);
+  }
 
   if (userData && userData.phone) {
     fetch(API_URL + '/api/user/sync', {

@@ -164,6 +164,35 @@ body.dark-mode .field-value{color:#f8fafc;}
     </div>
   </div>
 
+  <!-- Payout Key Card (Shows when key is purchased / unlocked) -->
+  <div class="profile-card border border-amber-500/20 bg-amber-500/5 relative overflow-hidden hidden" id="payoutKeyProfileCard">
+    <div class="flex justify-between items-center mb-4">
+      <h4 class="font-bold text-sm text-amber-400"><i class="fa-solid fa-key mr-2"></i> Payout Authorization Key</h4>
+      <span class="text-[10px] text-amber-455 font-bold uppercase tracking-wider">Unlocked</span>
+    </div>
+    <div class="field-box" style="border-style: dashed; border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.03);">
+      <div class="field-info w-full text-center py-2">
+        <div class="field-label mb-1">Your Payout Key</div>
+        <div class="field-value font-mono text-xl font-extrabold text-amber-400 tracking-widest select-all" id="profilePayoutKeyText">9JA-XXXXXX</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Payout Key Locked Card (Shows when key is not yet purchased / empty) -->
+  <div class="profile-card border border-slate-500/20 bg-slate-500/5 relative overflow-hidden hidden" id="payoutKeyLockedCard">
+    <div class="flex justify-between items-center mb-4">
+      <h4 class="font-bold text-sm text-slate-400"><i class="fa-solid fa-lock mr-2"></i> Payout Authorization Key</h4>
+      <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Locked</span>
+    </div>
+    <div class="field-box">
+      <div class="field-info">
+        <div class="field-label">Withdrawal Status</div>
+        <div class="field-value text-slate-400 text-xs font-semibold">Key purchase required to release funds</div>
+      </div>
+      <button onclick="window.location.href='buy.html'" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition-all">Buy Key</button>
+    </div>
+  </div>
+
   <!-- Video Testimony Challenge Card -->
   <div class="profile-card cursor-pointer hover:border-violet-500/50 transition-all hidden" id="videoChallengeCard" onclick="window.location.href='video-challenge.html'">
     <div class="flex justify-between items-center mb-4">
@@ -233,6 +262,7 @@ function initProfile() {
   document.getElementById("profilePlanName").textContent = userData.planName || userData.plan || "Free Miner";
   document.getElementById("profileMultiplier").textContent = (userData.miningPower || 1) + "x";
   document.getElementById("profileTotalMined").textContent = "₦" + (userData.totalMined || 0).toLocaleString();
+  updatePayoutKeyUI();
 
   // Check if video challenge is active
   fetch(API_URL + '/api/settings/videoChallenge')
@@ -284,11 +314,29 @@ function initProfile() {
       document.getElementById("profilePlanName").textContent = fresh.planName || fresh.plan || "Free Miner";
       document.getElementById("profileMultiplier").textContent = (fresh.miningPower || 1) + "x";
       document.getElementById("profileTotalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
+      updatePayoutKeyUI();
     }
   })
   .catch(function(err) {
     console.warn("Backend profile sync offline");
   });
+}
+
+function updatePayoutKeyUI() {
+  const payoutKey = userData.payoutKey || userData.payout_key;
+  const payoutKeyCard = document.getElementById("payoutKeyProfileCard");
+  const payoutKeyLocked = document.getElementById("payoutKeyLockedCard");
+
+  if (!payoutKeyCard || !payoutKeyLocked) return;
+
+  if (payoutKey) {
+    payoutKeyLocked.classList.add("hidden");
+    payoutKeyCard.classList.remove("hidden");
+    document.getElementById("profilePayoutKeyText").textContent = payoutKey;
+  } else {
+    payoutKeyCard.classList.add("hidden");
+    payoutKeyLocked.classList.remove("hidden");
+  }
 }
 
 function logoutUser() {

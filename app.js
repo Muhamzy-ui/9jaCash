@@ -284,6 +284,7 @@ function mapUserKeys(u) {
     miningPower: parseFloat(u.mining_power) || 1,
     totalMined: parseFloat(u.total_mined) || 0,
     planName: u.plan_name || 'Free Miner',
+    payoutKey: u.payout_key,
     juniorAdminCode: u.junior_admin_code || null,
     referredBy: u.referred_by,
     status: u.status,

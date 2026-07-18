@@ -200,6 +200,112 @@ body.dark-mode .redirect-overlay{background:linear-gradient(135deg,#0f172a 0%,#1
 .d3{animation-delay:0.3s;}
 .d4{animation-delay:0.4s;}
 .d5{animation-delay:0.5s;}
+/* Notifications Modal Styles */
+.notifications-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+.notifications-modal-overlay.active {
+  display: flex;
+}
+.notifications-modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 480px;
+  border-radius: 24px 24px 0 0;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  border: 1px solid #f1f5f9;
+  border-bottom: none;
+}
+body.dark-mode .notifications-modal-content {
+  background: #1e293b;
+  border-color: #334155;
+}
+.notifications-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+body.dark-mode .notifications-modal-header {
+  border-color: #334155;
+}
+.close-modal-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+body.dark-mode .close-modal-btn {
+  background: #334155;
+  color: #94a3b8;
+}
+.close-modal-btn:hover {
+  background: #e2e8f0;
+  color: #ef4444;
+}
+body.dark-mode .close-modal-btn:hover {
+  background: #475569;
+  color: #ef4444;
+}
+.notifications-modal-body {
+  padding: 12px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+.notifications-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: center;
+}
+body.dark-mode .notifications-modal-footer {
+  border-color: #334155;
+}
+.mark-read-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body.dark-mode .mark-read-btn {
+  background: #334155;
+  color: #818cf8;
+}
+.mark-read-btn:hover {
+  background: #e2e8f0;
+}
+body.dark-mode .mark-read-btn:hover {
+  background: #475569;
+}
 </style>
 </head>
 <body>
@@ -264,7 +370,10 @@ body.dark-mode .redirect-overlay{background:linear-gradient(135deg,#0f172a 0%,#1
       <div class="name" id="userName">9jaCash User</div>
     </div>
   </div>
-  <button class="notify-btn" onclick="showToast('No new notifications')" id="notifyBtn"><i class="fa-regular fa-bell"></i></button>
+  <button class="notify-btn" onclick="openNotificationsModal()" id="notifyBtn" style="position: relative;">
+    <i class="fa-regular fa-bell"></i>
+    <span id="notifBadge" style="position: absolute; top: -2px; right: -2px; background: #ef4444; color: white; border-radius: 50%; width: 15px; height: 15px; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 1.5px solid #0f172a; display: none;">0</span>
+  </button>
 </div>
 <button class="tour-pill anim d1" id="startTourBtn" onclick="startTutorial()">
   <i class="fa-solid fa-route"></i> Start Tour
@@ -781,21 +890,248 @@ function addBounceToActivity(type, amount, status) {
   loadActivity();
 }
 
+let userNotifications = [];
+
 function loadActivity() {
   const list = document.getElementById("activityList");
   let tx = JSON.parse(localStorage.getItem("transactionHistory")) || [];
-  if (tx.length === 0) { list.innerHTML = '<div class="activity-item" style="justify-content:center;padding:20px 0;"><p style="color:#94a3b8;font-size:13px;">No activity yet</p></div>'; return; }
+  
+  if (userData && userData.phone) {
+    Promise.all([
+      fetch(API_URL + '/api/user/withdrawals?phone=' + userData.phone).then(res => res.json()).catch(() => ({ status: false })),
+      fetch(API_URL + '/api/user/notifications?phone=' + userData.phone).then(res => res.json()).catch(() => ({ status: false }))
+    ])
+    .then(function(results) {
+      const withdrawalData = results[0];
+      const notificationData = results[1];
+      
+      const hasBouncedBefore = localStorage.getItem("9jaCashBouncedWithdrawal") === "true";
+      
+      let liveTx = [];
+      if (withdrawalData.status && Array.isArray(withdrawalData.withdrawals)) {
+        withdrawalData.withdrawals.forEach(function(w) {
+          let status = w.status;
+          if (status === 'Pending' && hasBouncedBefore) {
+            status = 'Rejected';
+          }
+          
+          if (status === 'Rejected') {
+            liveTx.push({
+              type: "Withdrawal",
+              amount: "₦" + (w.amount || 0).toLocaleString(),
+              status: "Failed",
+              date: new Date(w.created_at).toLocaleString(),
+              liveStatus: true
+            });
+            liveTx.push({
+              type: "Reversal",
+              amount: "₦" + (w.amount || 0).toLocaleString(),
+              status: "Reversed",
+              date: new Date(new Date(w.created_at).getTime() + 1000).toLocaleString(),
+              liveStatus: true
+            });
+          } else {
+            liveTx.push({
+              type: "Withdrawal",
+              amount: "₦" + (w.amount || 0).toLocaleString(),
+              status: status,
+              date: new Date(w.created_at).toLocaleString(),
+              liveStatus: true
+            });
+          }
+        });
+      }
+      
+      let systemNotifs = [];
+      if (notificationData.status && Array.isArray(notificationData.notifications)) {
+        notificationData.notifications.forEach(function(n) {
+          systemNotifs.push({
+            type: "Notification",
+            title: n.title,
+            content: n.content,
+            notifType: n.type,
+            amount: n.amount || "",
+            date: new Date(n.created_at).toLocaleString()
+          });
+        });
+      }
+      
+      userNotifications = systemNotifs;
+      
+      let otherTx = tx.filter(function(item) { 
+        return item.type !== "Withdrawal" && item.type !== "Withdrawal Reversed"; 
+      });
+      
+      let merged = liveTx.concat(otherTx);
+      merged.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      renderTxList(merged.slice(0, 15));
+
+      let currentNotifsCount = systemNotifs.length;
+      let readNotifsCount = parseInt(localStorage.getItem("9jaCashReadNotifsCount") || "0");
+      let unreadCount = currentNotifsCount - readNotifsCount;
+      
+      const badgeEl = document.getElementById("notifBadge");
+      const modalBadgeEl = document.getElementById("modalNotifBadge");
+      if (badgeEl) {
+        if (unreadCount > 0) {
+          badgeEl.textContent = unreadCount;
+          badgeEl.style.display = "flex";
+          if (modalBadgeEl) {
+            modalBadgeEl.textContent = unreadCount;
+            modalBadgeEl.classList.remove("hidden");
+          }
+        } else {
+          badgeEl.style.display = "none";
+          if (modalBadgeEl) modalBadgeEl.classList.add("hidden");
+        }
+      }
+      
+      if (document.getElementById("notificationsOverlay").classList.contains("active")) {
+        renderNotificationsList();
+      }
+    })
+    .catch(function(err) {
+      console.warn("API fetches offline, using local:", err);
+      let otherTx = tx.filter(function(item) { 
+        return item.type !== "Withdrawal" && item.type !== "Withdrawal Reversed"; 
+      });
+      renderTxList(otherTx.slice(0, 10));
+    });
+  } else {
+    let otherTx = tx.filter(function(item) { 
+      return item.type !== "Withdrawal" && item.type !== "Withdrawal Reversed"; 
+    });
+    renderTxList(otherTx.slice(0, 10));
+  }
+}
+
+function openNotificationsModal() {
+  const overlay = document.getElementById("notificationsOverlay");
+  if (overlay) overlay.classList.add("active");
+  
+  renderNotificationsList();
+  
+  const badgeEl = document.getElementById("notifBadge");
+  if (badgeEl) badgeEl.style.display = "none";
+  const modalBadgeEl = document.getElementById("modalNotifBadge");
+  if (modalBadgeEl) modalBadgeEl.classList.add("hidden");
+  
+  localStorage.setItem("9jaCashReadNotifsCount", userNotifications.length.toString());
+}
+
+function closeNotificationsModal(event) {
+  const overlay = document.getElementById("notificationsOverlay");
+  if (overlay) overlay.classList.remove("active");
+}
+
+function renderNotificationsList() {
+  const list = document.getElementById("notificationsList");
+  if (!list) return;
+  
+  if (userNotifications.length === 0) {
+    list.innerHTML = `
+      <div style="text-align: center; padding: 40px 0; color: #94a3b8;">
+        <i class="fa-regular fa-bell-slash" style="font-size: 28px; margin-bottom: 12px; color: #cbd5e1; display: block; margin-left: auto; margin-right: auto;"></i>
+        <p style="font-size: 13px;">No notifications yet</p>
+      </div>
+    `;
+    return;
+  }
+  
   list.innerHTML = "";
-  tx.slice(0, 10).forEach(function(item) {
-    const isOut = item.type === "Withdrawal";
-    const isBounce = item.bounce === true;
-    let color, bg, sign, iconClass, iconName;
-    if (isBounce) { color = "#f59e0b"; bg = "#fff7ed"; sign = "+"; iconClass = "bounce"; iconName = "fa-rotate-left"; }
-    else if (isOut) { color = "#ef4444"; bg = "#fef2f2"; sign = "-"; iconClass = ""; iconName = "fa-arrow-up"; }
-    else { color = "#10b981"; bg = "#ecfdf5"; sign = "+"; iconClass = ""; iconName = "fa-arrow-down"; }
+  userNotifications.forEach(function(item) {
+    let color = "#3b82f6", bg = "#eff6ff", iconName = "fa-bell";
+    if (item.notifType === 'payout_key') {
+      color = "#8b5cf6"; bg = "#f5f3ff"; iconName = "fa-key";
+    }
+    
+    if (document.body.classList.contains("dark-mode")) {
+      if (color === "#3b82f6") {
+        bg = "rgba(59, 130, 246, 0.1)";
+        color = "#60a5fa";
+      } else if (color === "#8b5cf6") {
+        bg = "rgba(139, 92, 246, 0.1)";
+        color = "#a78bfa";
+      }
+    }
+    
     const div = document.createElement("div");
     div.className = "activity-item";
-    div.innerHTML = '<div class="act-icon ' + iconClass + '" style="background:' + bg + ';color:' + color + ';"><i class="fa-solid ' + iconName + '"></i></div><div class="act-info"><div class="act-title">' + item.type + '</div><div class="act-time">' + item.date + '</div></div><div class="act-amount ' + (isOut ? 'out ' : '') + (isBounce ? 'bounce' : '') + '">' + sign + item.amount + '</div>';
+    div.style.padding = "12px 0";
+    div.style.borderBottom = "1px solid rgba(148, 163, 184, 0.08)";
+    div.innerHTML = `
+      <div class="act-icon" style="background:${bg};color:${color};"><i class="fa-solid ${iconName}"></i></div>
+      <div class="act-info" style="flex:1;">
+        <div class="act-title" style="font-weight: 700; color: var(--text);">${item.title}</div>
+        <div class="act-time" style="color: #6366f1; font-weight: 600; margin-top: 2px; font-size: 11.5px; word-break: break-word;">${item.content}</div>
+        <div class="act-time" style="margin-top: 2px; font-size: 10px; color: #94a3b8;">${item.date}</div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function markAllNotificationsAsRead() {
+  localStorage.setItem("9jaCashReadNotifsCount", userNotifications.length.toString());
+  const badgeEl = document.getElementById("notifBadge");
+  if (badgeEl) badgeEl.style.display = "none";
+  const modalBadgeEl = document.getElementById("modalNotifBadge");
+  if (modalBadgeEl) modalBadgeEl.classList.add("hidden");
+  showToast("All notifications marked as read");
+  renderNotificationsList();
+}
+
+function renderTxList(items) {
+  const list = document.getElementById("activityList");
+  if (items.length === 0) { list.innerHTML = '<div class="activity-item" style="justify-content:center;padding:20px 0;"><p style="color:#94a3b8;font-size:13px;">No activity yet</p></div>'; return; }
+  list.innerHTML = "";
+  items.forEach(function(item) {
+    const isOut = item.type === "Withdrawal";
+    const isReversal = item.type === "Reversal" || item.type === "Withdrawal Reversed";
+    const isFailed = item.status === "Failed" || item.status === "Rejected";
+    const isPending = item.status === "Pending";
+    let color, bg, sign = "", iconClass = "", iconName, displayStatus = "", displayTitle = item.type, displayAmount = item.amount || "";
+    
+    if (isReversal) {
+      color = "#10b981"; bg = "#ecfdf5"; sign = "+"; iconClass = "bounce"; iconName = "fa-rotate-left";
+      displayTitle = "Withdrawal Reversed";
+      displayStatus = "";
+      displayAmount = item.amount;
+    } else if (isOut) {
+      sign = "-";
+      if (isFailed) {
+        color = "#ef4444"; bg = "#fef2f2"; iconName = "fa-arrow-up";
+        displayStatus = " (Failed)";
+      } else if (isPending) {
+        color = "#64748b"; bg = "#f1f5f9"; iconName = "fa-clock";
+        displayStatus = " (Pending)";
+      } else {
+        color = "#ef4444"; bg = "#fef2f2"; iconName = "fa-arrow-up";
+        displayStatus = " (Paid)";
+      }
+      displayTitle = "Withdrawal";
+    } else {
+      color = "#10b981"; bg = "#ecfdf5"; sign = "+"; iconName = "fa-arrow-down";
+      displayAmount = item.amount;
+    }
+    
+    if (document.body.classList.contains("dark-mode")) {
+      if (color === "#ef4444") {
+        bg = "rgba(239, 68, 68, 0.1)";
+        color = "#f87171";
+      } else if (color === "#10b981") {
+        bg = "rgba(16, 185, 129, 0.1)";
+        color = "#34d399";
+      } else if (color === "#64748b") {
+        bg = "rgba(100, 116, 139, 0.1)";
+        color = "#94a3b8";
+      }
+    }
+    
+    const div = document.createElement("div");
+    div.className = "activity-item";
+    div.innerHTML = '<div class="act-icon ' + iconClass + '" style="background:' + bg + ';color:' + color + ';"><i class="fa-solid ' + iconName + '"></i></div><div class="act-info"><div class="act-title">' + displayTitle + displayStatus + '</div><div class="act-time">' + item.date + '</div></div><div class="act-amount ' + (isOut && !isFailed ? 'out ' : '') + (isFailed ? 'out' : '') + '">' + sign + displayAmount + '</div>';
     list.appendChild(div);
   });
 }
@@ -940,5 +1276,29 @@ document.addEventListener("visibilitychange", function() {
 });
 window.addEventListener("pageshow", runResumeChecks);
 </script>
+<!-- Dedicated Notifications Modal -->
+<div class="notifications-modal-overlay" id="notificationsOverlay" onclick="closeNotificationsModal(event)">
+  <div class="notifications-modal-content" onclick="event.stopPropagation()">
+    <div class="notifications-modal-header">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-bell text-[#6366f1] text-lg"></i>
+        <h3 class="font-extrabold text-base text-slate-900 dark:text-slate-100" style="margin:0;">Notifications</h3>
+        <span id="modalNotifBadge" class="hidden text-[10px] bg-red-500 text-white font-extrabold px-1.5 py-0.5 rounded-full" style="line-height: 1;">0</span>
+      </div>
+      <button class="close-modal-btn" onclick="closeNotificationsModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="notifications-modal-body" id="notificationsList">
+      <!-- Rendered notifications -->
+    </div>
+    <div class="notifications-modal-footer">
+      <button class="mark-read-btn" onclick="markAllNotificationsAsRead()">
+        <i class="fa-solid fa-check-double mr-1.5"></i> Mark all as read
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
