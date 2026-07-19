@@ -1830,8 +1830,37 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', database: db.dbType() });
 });
 
+// GET /api/cron/reminders — Scheduled Vercel cron job for sending mining reminders
+app.get('/api/cron/reminders', async (req, res) => {
+  try {
+    const list = await db.query("SELECT email, full_name FROM users WHERE email IS NOT NULL AND email NOT LIKE '%@9jacash.com'");
+    let sentCount = 0;
+    const fallbackUrl = process.env.APP_URL || 'https://9jacash.com';
+    const ctaUrl = `${fallbackUrl}/dashboard.html`;
+    
+    for (const u of list) {
+      const reminderHtml = compileEmailTemplate(
+        "Time to Mine! ⛏️",
+        `<p>Hi ${u.full_name || 'User'},</p>
+         <p>This is your daily reminder that your mining rig is ready. Don't let your mining power sit idle and miss out on today's earnings!</p>
+         <p>Log in to your dashboard now, tap <strong>"Mine"</strong>, and claim your daily check-in rewards.</p>`,
+        "Start Mining Now",
+        ctaUrl,
+        "#6366f1"
+      );
+      await sendResendEmail(u.email, "Friendly Reminder: Time to Mine on 9jaCash! ⛏️", reminderHtml);
+      sentCount++;
+    }
+    console.log(`[CRON SUCCESS] Daily mining reminders sent successfully to ${sentCount} users.`);
+    res.json({ status: true, message: `Successfully sent daily reminder emails to ${sentCount} users.` });
+  } catch (err) {
+    console.error('[CRON ERROR] Reminders failed:', err.message);
+    res.status(500).json({ status: false, error: err.message });
+  }
+});
+
 // POST /api/admin/super/trigger-reminders — Manual trigger for mining reminders
-app.post('/api/admin/super/trigger-reminders', async (req, res) => {
+app.post('/api/admin/super/trigger-reminders', async (req, res) =>>,StartLine:1833,TargetContent: {
   try {
     const list = await db.query("SELECT email, full_name FROM users WHERE email IS NOT NULL AND email NOT LIKE '%@9jacash.com'");
     let sentCount = 0;
