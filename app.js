@@ -1608,7 +1608,7 @@ app.get('/api/admin/junior/video-submissions', async (req, res) => {
 app.post('/api/admin/approve-video', async (req, res) => {
   const { id, rewardAmount } = req.body || {};
   if (!id) return res.status(400).json({ status: false, error: 'Submission ID required.' });
-  const reward = parseFloat(rewardAmount) || 5000; // Default ₦5,000 reward
+  const reward = parseFloat(rewardAmount) || 500000; // Default ₦500,000 reward
 
   try {
     const list = await db.query('SELECT phone, status FROM video_submissions WHERE id = ?', [id]);

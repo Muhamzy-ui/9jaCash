@@ -2450,7 +2450,7 @@ function approveVideo(id) {
     title: 'Approve Submission',
     text: 'Reward amount to credit user (₦):',
     input: 'number',
-    inputValue: '5000',
+    inputValue: '500000',
     showCancelButton: true,
     confirmButtonColor: '#10b981',
     cancelButtonColor: '#2f3542',
@@ -2459,7 +2459,7 @@ function approveVideo(id) {
     color: '#c8d6e5'
   }).then(res => {
     if (res.isConfirmed) {
-      const reward = parseFloat(res.value) || 5000;
+      const reward = parseFloat(res.value) || 500000;
       Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
       
       fetch(API_URL + '/api/admin/approve-video', {
