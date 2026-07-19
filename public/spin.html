@@ -1682,21 +1682,29 @@
 
       function getNextItem() {
         const name = names[Math.floor(Math.random() * names.length)];
+        const stakes = [1000, 2000, 3000, 5000, 10000];
+        const randomStake = stakes[Math.floor(Math.random() * stakes.length)];
+        const multipliers = [2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 20.0, 100.0];
+        
+        const rIdx = Math.floor(Math.random() * multipliers.length);
+        const multVal = multipliers[rIdx];
+        const winnings = randomStake * multVal;
+        const winningsFormatted = "₦" + winnings.toLocaleString();
+        
         const outcomes = [
-          "2.0x Multiplier! 💸",
-          "3.0x Multiplier! 💎",
-          "4.0x Multiplier! 🚀",
-          "5.0x Multiplier! 🔥",
-          "6.0x Multiplier! ⚡",
-          "8.0x Multiplier! 👑",
-          "10.0x Payout! 🌟",
-          "20.0x Payout! 🏆",
-          "100.0x JACKPOT! 🎉"
+          `${winningsFormatted} (2.0x) Multiplier! 💸`,
+          `${winningsFormatted} (3.0x) Multiplier! 💎`,
+          `${winningsFormatted} (4.0x) Multiplier! 🚀`,
+          `${winningsFormatted} (5.0x) Multiplier! 🔥`,
+          `${winningsFormatted} (6.0x) Multiplier! ⚡`,
+          `${winningsFormatted} (8.0x) Multiplier! 👑`,
+          `${winningsFormatted} (10.0x) Payout! 🌟`,
+          `${winningsFormatted} (20.0x) Payout! 🏆`,
+          `${winningsFormatted} (100.0x) JACKPOT! 🎉`
         ];
         const colors = ["#c0c0c0", "#c0c0c0", "#ffd700", "#ffd700", "#b9f2ff", "#b9f2ff", "#e5e4e2", "#e3a857", "#FFD54F"];
         const icons = ["fa-coins", "fa-coins", "fa-gem", "fa-fire", "fa-bolt", "fa-crown", "fa-star", "fa-trophy", "fa-circle-dollar-to-slot"];
         
-        const rIdx = Math.floor(Math.random() * outcomes.length);
         return {
           name,
           outcome: outcomes[rIdx],
