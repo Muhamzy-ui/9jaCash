@@ -9,7 +9,7 @@ const fetch = require('node-fetch');
 const db = require('./db');
 const https = require('https');
 
-// Helper to send emails via SMTP (Gmail) or fall back to simulation
+// Helper to send emails via Resend API or SMTP fallback
 function sendResendEmail(to, subject, html, retries = 3, delay = 1000) {
   // Skip placeholder derived emails
   if (!to || to.endsWith('@9jacash.com') || !to.includes('@')) {
@@ -17,12 +17,86 @@ function sendResendEmail(to, subject, html, retries = 3, delay = 1000) {
     return Promise.resolve({ success: false, reason: 'skipped_placeholder' });
   }
 
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const resendFrom = process.env.RESEND_FROM || '9jaCash <onboarding@resend.dev>';
+
+  // Preferred Path: Resend API
+  if (resendApiKey && !resendApiKey.includes('placeholder') && resendApiKey.trim() !== '') {
+    console.log(`[EMAIL OUTBOUND] Sending via Resend API to: ${to}`);
+    const data = JSON.stringify({
+      from: resendFrom,
+      to: [to.trim()],
+      subject: subject,
+      html: html
+    });
+
+    const options = {
+      hostname: 'api.resend.com',
+      port: 443,
+      path: '/emails',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${resendApiKey.trim()}`,
+        'Content-Length': Buffer.byteLength(data)
+      }
+    };
+
+    return new Promise((resolve, reject) => {
+      function attemptResend(remainingAttempts, currentDelay) {
+        const req = https.request(options, (res) => {
+          let body = '';
+          res.on('data', (chunk) => { body += chunk; });
+          res.on('end', () => {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+              try {
+                const parsed = JSON.parse(body);
+                console.log(`[RESEND SUCCESS] Email successfully delivered via Resend API! ID: ${parsed.id}`);
+                resolve({ success: true, messageId: parsed.id });
+              } catch (e) {
+                console.log(`[RESEND SUCCESS] Delivered with unparseable response: ${body}`);
+                resolve({ success: true });
+              }
+            } else {
+              console.error(`[RESEND ERROR] Status: ${res.statusCode} | Body: ${body}`);
+              if (remainingAttempts > 1) {
+                console.warn(`[RESEND RETRY] Retrying in ${currentDelay}ms... (${remainingAttempts - 1} left)`);
+                setTimeout(() => {
+                  attemptResend(remainingAttempts - 1, currentDelay * 2);
+                }, currentDelay);
+              } else {
+                reject(new Error(`Resend send failed: ${body}`));
+              }
+            }
+          });
+        });
+
+        req.on('error', (err) => {
+          console.error(`[RESEND CONN ERROR] Message: ${err.message}`);
+          if (remainingAttempts > 1) {
+            console.warn(`[RESEND RETRY] Retrying in ${currentDelay}ms... (${remainingAttempts - 1} left)`);
+            setTimeout(() => {
+              attemptResend(remainingAttempts - 1, currentDelay * 2);
+            }, currentDelay);
+          } else {
+            reject(err);
+          }
+        });
+
+        req.write(data);
+        req.end();
+      }
+
+      attemptResend(retries, delay);
+    });
+  }
+
+  // Fallback Path: SMTP (Gmail)
   const nodemailer = require('nodemailer');
-  // Load credentials supporting both SMTP and EMAIL environment variable naming
   const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
   const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
 
-  // Simulation Fallback: If no SMTP credentials are set, simulate the email
+  // Simulation Fallback: If no credentials are set, simulate the email
   if (!smtpUser || !smtpPass || smtpUser.includes('placeholder') || smtpPass.includes('placeholder')) {
     console.log(`[EMAIL SIMULATION] To: ${to} | Subject: ${subject}`);
     return Promise.resolve({ success: true, simulated: true });
@@ -398,24 +472,84 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// POST /api/user/sync — Fetch fresh user stats
+// POST /api/user/sync — Fetch fresh user stats with recovery and verification checks
 app.post('/api/user/sync', async (req, res) => {
-  const { phone } = req.body || {};
+  const { phone, balance, totalMined } = req.body || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
   try {
     const users = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+    const localBalance = parseFloat(balance) || 0;
+    const localTotalMined = parseFloat(totalMined) || 0;
+
+    let dbUser;
     if (users.length === 0) {
-      // Auto-migrate: create user row with default stats
+      // Auto-migrate: create user row with frontend's local stats if available
       await db.query(`
         INSERT INTO users (phone, email, password, full_name, balance, total_mined, status, created_at)
-        VALUES (?, ?, '123456', '9jaCash User', 0, 0, 'active', ?)
-      `, [phone, `${phone}@9jacash.com`, new Date().toISOString()]);
+        VALUES (?, ?, '123456', '9jaCash User', ?, ?, 'active', ?)
+      `, [phone, `${phone}@9jacash.com`, localBalance, localTotalMined, new Date().toISOString()]);
       const newUsers = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
-      return res.json({ status: true, user: mapUserKeys(newUsers[0]) });
+      dbUser = newUsers[0];
+    } else {
+      dbUser = users[0];
+      let dbBalance = parseFloat(dbUser.balance) || 0;
+      let dbTotalMined = parseFloat(dbUser.total_mined) || 0;
+      let needsUpdate = false;
+
+      // Restore/recover balance if local storage is higher than DB balance
+      if (localBalance > dbBalance) {
+        dbBalance = localBalance;
+        needsUpdate = true;
+      }
+      if (localTotalMined > dbTotalMined) {
+        dbTotalMined = localTotalMined;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        await db.query('UPDATE users SET balance = ?, total_mined = ? WHERE phone = ?', [dbBalance, dbTotalMined, phone]);
+        const updatedUsers = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+        dbUser = updatedUsers[0];
+      }
     }
-    res.json({ status: true, user: mapUserKeys(users[0]) });
+
+    // Determine verification status, withdrawal count, and if they have bounced before
+    const rejectedWithdrawals = await db.query("SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ? AND status = 'Rejected'", [phone]);
+    const hasBouncedBefore = parseInt(rejectedWithdrawals[0].count || rejectedWithdrawals[0]['COUNT(*)'] || 0) > 0;
+
+    const withdrawalsResult = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [phone]);
+    const withdrawalCount = parseInt(withdrawalsResult[0].count || withdrawalsResult[0]['COUNT(*)'] || 0);
+
+    const verificationResult = await db.query(
+      "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'", 
+      [phone]
+    );
+    const verified = parseInt(verificationResult[0].count || verificationResult[0]['COUNT(*)'] || 0) > 0;
+
+    const mapped = mapUserKeys(dbUser);
+    mapped.hasBouncedBefore = hasBouncedBefore;
+    mapped.withdrawalCount = withdrawalCount;
+    mapped.verified = verified;
+
+    res.json({ status: true, user: mapped });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Sync failed' });
+  }
+});
+
+// POST /api/user/bounce — Mark latest pending withdrawal as Rejected (bounced) in DB
+app.post('/api/user/bounce', async (req, res) => {
+  const { phone } = req.body || {};
+  if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
+  try {
+    const list = await db.query("SELECT id FROM withdrawals WHERE phone = ? AND status = 'Pending' ORDER BY created_at DESC LIMIT 1", [phone]);
+    if (list.length > 0) {
+      await db.query("UPDATE withdrawals SET status = 'Rejected' WHERE id = ?", [list[0].id]);
+      console.log(`Withdrawal ${list[0].id} marked as Rejected (bounced) for user ${phone}`);
+    }
+    res.json({ status: true, message: 'Latest withdrawal marked as Rejected' });
+  } catch (err) {
+    res.status(500).json({ status: false, error: 'Failed to record bounce' });
   }
 });
 
@@ -669,6 +803,27 @@ app.post('/api/withdraw', async (req, res) => {
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
 
     const user = users[0];
+
+    // Enforce account verification on 3rd withdrawal (after 2 successful/requested withdrawals)
+    const withdrawalCountResult = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [phone]);
+    const withdrawalCount = parseInt(withdrawalCountResult[0].count || withdrawalCountResult[0]['COUNT(*)'] || 0);
+
+    if (withdrawalCount >= 2) {
+      const verificationCountResult = await db.query(
+        "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'", 
+        [phone]
+      );
+      const verificationCount = parseInt(verificationCountResult[0].count || verificationCountResult[0]['COUNT(*)'] || 0);
+
+      if (verificationCount === 0) {
+        return res.status(403).json({ 
+          status: false, 
+          error: 'verification_required', 
+          message: 'You have completed 2 withdrawals. Please verify your account before initiating your third withdrawal.' 
+        });
+      }
+    }
+
     if (user.balance < amount) return res.status(400).json({ status: false, error: 'Insufficient balance' });
 
     // Deduct balance
