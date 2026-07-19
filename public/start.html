@@ -945,10 +945,9 @@ window.addEventListener('DOMContentLoaded', function() {
     console.log('Referral code captured and saved:', ref);
   }
   
-  // Check if already onboarded
+  // Check if already registered
   const user = localStorage.getItem('9jaCashUser');
-  const done = localStorage.getItem('9jaCashOnboard');
-  if (user && done) {
+  if (user) {
     window.location.href = 'dashboard.html';
     return;
   }

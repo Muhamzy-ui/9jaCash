@@ -313,11 +313,20 @@ function initProfile() {
     document.getElementById("themeIcon").className = "fa-solid fa-sun";
   }
 
+  const localBalance = parseFloat(localStorage.getItem("walletBalance")) || 0;
+  const localTotalMined = userData.totalMined || 0;
+  const localWithdrawalCount = userData.withdrawalCount || 0;
+
   // Fetch updated records from Express SQL server
   fetch(API_URL + '/api/user/sync', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: userData.phone })
+    body: JSON.stringify({ 
+      phone: userData.phone,
+      balance: localBalance,
+      totalMined: localTotalMined,
+      withdrawalCount: localWithdrawalCount
+    })
   })
   .then(function(res) { return res.json(); })
   .then(function(data) {
@@ -542,7 +551,51 @@ function promptLinkBank() {
   });
 }
 
-window.addEventListener("DOMContentLoaded", initProfile);
+window.addEventListener("DOMContentLoaded", function() {
+  initProfile();
+  initLiveWithdrawalPopups();
+});
+</script>
+
+<!-- Live Withdrawal Popup Container -->
+<div id="liveWithdrawalPopup" style="position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150px); z-index: 10000; display: flex; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; max-width: 90%; width: 280px; opacity: 0;">
+  <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 12px #10b981; animation: pulse 1.5s infinite;"></div>
+  <div style="flex: 1;">
+    <div style="font-size: 10px; color: #6366f1; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Live Payout</div>
+    <div id="liveWithdrawalText" style="font-size: 12px; color: #f8fafc; font-weight: 700; margin-top: 1px;"></div>
+  </div>
+</div>
+
+<script>
+function initLiveWithdrawalPopups() {
+  const popup = document.getElementById('liveWithdrawalPopup');
+  if (!popup) return;
+
+  const names = ["Mustafa", "Emeka", "Amina", "Chidi", "Fatima", "Tunde", "Blessing", "Musa", "Ngozi", "Ibrahim", "Yetunde", "Olumide", "Halima", "Chioma", "Kelechi", "Abubakar", "Funmi", "Uche", "Bose", "Damilola", "Efe", "Ali", "Yusuf"];
+
+  function triggerPopup() {
+    const randomName = names[Math.floor(Math.random() * names.length)];
+    const randomK = Math.floor(Math.random() * (1000 - 50 + 1)) + 50;
+    const randomAmount = "₦" + (randomK * 1000).toLocaleString("en-NG");
+    document.getElementById('liveWithdrawalText').textContent = `${randomName} successfully withdrew ${randomAmount}`;
+    
+    // Slide in
+    popup.style.transform = 'translate(-50%, 0)';
+    popup.style.opacity = '1';
+
+    // Slide out after 5 seconds
+    setTimeout(() => {
+      popup.style.transform = 'translate(-50%, -150px)';
+      popup.style.opacity = '0';
+    }, 5000);
+
+    // Schedule next popup (every 10 seconds)
+    setTimeout(triggerPopup, 10000);
+  }
+
+  // Start the first popup after 10 seconds
+  setTimeout(triggerPopup, 10000);
+}
 </script>
 </body>
 </html>

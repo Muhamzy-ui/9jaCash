@@ -565,6 +565,13 @@ function registerServiceWorker() {
 
 // ========== INIT ==========
 window.addEventListener("DOMContentLoaded", function() {
+  // Auto-redirect if already logged in / registered
+  const user = localStorage.getItem('9jaCashUser');
+  if (user) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
   initAthBanner();
   
   // Capture referral code if present in URL

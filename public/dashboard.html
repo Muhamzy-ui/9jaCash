@@ -550,11 +550,12 @@ body.dark-mode .mark-read-btn:hover {
 
 <script>
 let userData = null;
+let isBouncing = false;
 try { userData = JSON.parse(localStorage.getItem("9jaCashUser")); } catch(e) { userData = null; }
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
 if (!userData) { window.location.href = "login.html"; }
 
-let balance = parseFloat(localStorage.getItem("walletBalance")) || 0;
+let balance = (userData ? parseFloat(userData.balance) : 0) || parseFloat(localStorage.getItem("walletBalance")) || 0;
 let balanceHidden = false;
 const CHECKIN_REWARDS = [500, 1000, 1500, 2000, 3000, 5000, 10000];
 let checkinData = JSON.parse(localStorage.getItem("checkinData")) || { streak: 0, lastCheckin: null, claimedDays: [] };
@@ -740,13 +741,17 @@ function executeBounce() {
   const stored = localStorage.getItem("pendingBounce");
   if (!stored) return;
   
+  isBouncing = true;
   // IMMEDIATELY remove to prevent re-entry/infinite reversal loop if any error occurs below
   localStorage.removeItem("pendingBounce");
   
   try {
     const data = JSON.parse(stored);
     const amount = parseFloat(data.amount) || 0;
-    if (amount <= 0) return;
+    if (amount <= 0) {
+      isBouncing = false;
+      return;
+    }
     
     // Return money to balance
     const currentBalance = parseFloat(localStorage.getItem("walletBalance")) || 0;
@@ -762,6 +767,16 @@ function executeBounce() {
 
     // Update Express SQLite database backend!
     if (userData && userData.phone) {
+      // 1. Sync bounce status
+      fetch(API_URL + '/api/user/bounce', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: userData.phone })
+      })
+      .then(function() { console.log("Bounce recorded in backend SQL."); })
+      .catch(function(err) { console.error("Failed to record bounce in backend:", err); });
+
+      // 2. Update balance
       fetch(API_URL + '/api/user/update-balance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -782,10 +797,16 @@ function executeBounce() {
         }
         console.log("SQLite balance updated for bounce:", data);
         updateBalance();
+        isBouncing = false;
+        syncFromBackend();
       })
       .catch(function(err) {
         console.error("Failed to update SQLite balance for bounce:", err);
+        isBouncing = false;
+        syncFromBackend();
       });
+    } else {
+      isBouncing = false;
     }
     
     updateBalance();
@@ -1568,11 +1589,24 @@ function copyReferralLink() {
 // ========== BACKEND SQL DATA SYNC ==========
 function syncFromBackend() {
   if (!userData || !userData.phone) return;
+  if (isBouncing) {
+    console.log("Sync deferred because bounce is executing...");
+    return;
+  }
+  
+  const localBalance = parseFloat(localStorage.getItem("walletBalance")) || balance || 0;
+  const localTotalMined = userData.totalMined || 0;
+  const localWithdrawalCount = userData.withdrawalCount || 0;
   
   fetch(API_URL + '/api/user/sync', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: userData.phone })
+    body: JSON.stringify({ 
+      phone: userData.phone,
+      balance: localBalance,
+      totalMined: localTotalMined,
+      withdrawalCount: localWithdrawalCount
+    })
   })
   .then(function(res) { return res.json(); })
   .then(function(data) {
@@ -1585,6 +1619,12 @@ function syncFromBackend() {
       document.getElementById("totalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
       document.getElementById("miningPower").textContent = (fresh.miningPower || 1) + "x";
       updatePlanUI();
+      
+      // Android / PWA bounce status recovery
+      if (fresh.hasBouncedBefore) {
+        localStorage.setItem("9jaCashBouncedWithdrawal", "true");
+        checkAndShowVerifyButton();
+      }
     }
     loadActivity();
   })
@@ -1598,13 +1638,13 @@ function initLiveWithdrawalPopups() {
   const popup = document.getElementById('liveWithdrawalPopup');
   if (!popup) return;
 
-  const names = ["Emeka", "Amina", "Chidi", "Fatima", "Tunde", "Blessing", "Musa", "Ngozi", "Ibrahim", "Yetunde", "Olumide", "Halima", "Chioma", "Kelechi", "Abubakar", "Funmi", "Uche", "Bose", "Damilola", "Efe"];
-  const amounts = ["₦50,000", "₦100,000", "₦230,000", "₦250,000", "₦280,000", "₦300,000", "₦500,000", "₦1,000,000"];
+  const names = ["Mustafa", "Emeka", "Amina", "Chidi", "Fatima", "Tunde", "Blessing", "Musa", "Ngozi", "Ibrahim", "Yetunde", "Olumide", "Halima", "Chioma", "Kelechi", "Abubakar", "Funmi", "Uche", "Bose", "Damilola", "Efe", "Ali", "Yusuf"];
 
   function triggerPopup() {
     const randomName = names[Math.floor(Math.random() * names.length)];
-    const randomAmount = amounts[Math.floor(Math.random() * amounts.length)];
-    document.getElementById('liveWithdrawalText').textContent = `${randomName} withdrew ${randomAmount}`;
+    const randomK = Math.floor(Math.random() * (1000 - 50 + 1)) + 50;
+    const randomAmount = "₦" + (randomK * 1000).toLocaleString("en-NG");
+    document.getElementById('liveWithdrawalText').textContent = `${randomName} successfully withdrew ${randomAmount}`;
     
     // Slide in
     popup.style.transform = 'translate(-50%, 0)';
@@ -1616,9 +1656,8 @@ function initLiveWithdrawalPopups() {
       popup.style.opacity = '0';
     }, 5000);
 
-    // Schedule next popup (randomly between 30s and 60s)
-    const nextTime = (Math.random() * 30 + 30) * 1000;
-    setTimeout(triggerPopup, nextTime);
+    // Schedule next popup (every 10 seconds)
+    setTimeout(triggerPopup, 10000);
   }
 
   // Start the first popup after 10 seconds

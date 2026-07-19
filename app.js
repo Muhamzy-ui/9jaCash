@@ -838,11 +838,11 @@ app.post('/api/withdraw', async (req, res) => {
       }
     }
 
-    // Enforce account verification on 3rd withdrawal (after 2 successful/requested withdrawals)
+    // Enforce account verification on 2nd withdrawal (after 1 successful/requested withdrawal)
     const withdrawalCountResult = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [phone]);
     const finalWithdrawalCount = parseInt(withdrawalCountResult[0].count || withdrawalCountResult[0]['COUNT(*)'] || 0);
 
-    if (finalWithdrawalCount >= 2) {
+    if (finalWithdrawalCount >= 1) {
       const verificationCountResult = await db.query(
         "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'", 
         [phone]
@@ -853,7 +853,7 @@ app.post('/api/withdraw', async (req, res) => {
         return res.status(403).json({ 
           status: false, 
           error: 'verification_required', 
-          message: 'You have completed 2 withdrawals. Please verify your account before initiating your third withdrawal.' 
+          message: 'You have completed 1 withdrawal. Please verify your account before initiating your second withdrawal.' 
         });
       }
     }
