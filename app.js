@@ -474,7 +474,7 @@ app.post('/api/login', async (req, res) => {
 
 // POST /api/user/sync — Fetch fresh user stats with recovery and verification checks
 app.post('/api/user/sync', async (req, res) => {
-  const { phone, balance, totalMined } = req.body || {};
+  const { phone, balance, totalMined, withdrawalCount } = req.body || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
   try {
     const users = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
@@ -513,12 +513,29 @@ app.post('/api/user/sync', async (req, res) => {
       }
     }
 
+    // Recover/restore withdrawalCount if database has reset (ephemeral SQLite)
+    const localWithdrawalCount = parseInt(withdrawalCount) || 0;
+    const countCheck = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [phone]);
+    let dbWithdrawalCount = parseInt(countCheck[0].count || countCheck[0]['COUNT(*)'] || 0);
+
+    if (localWithdrawalCount > dbWithdrawalCount) {
+      const missingCount = localWithdrawalCount - dbWithdrawalCount;
+      for (let i = 0; i < missingCount; i++) {
+        const dummyId = 'W_DUMMY_' + Date.now() + '_' + Math.floor(Math.random() * 1000) + '_' + i;
+        await db.query(`
+          INSERT INTO withdrawals (
+            id, phone, full_name, amount, bank_name, account_number, status, created_at
+          ) VALUES (?, ?, '9jaCash User', 0, 'Placeholder Bank', '0000000000', 'Approved', ?)
+        `, [dummyId, phone, new Date().toISOString()]);
+      }
+    }
+
     // Determine verification status, withdrawal count, and if they have bounced before
     const rejectedWithdrawals = await db.query("SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ? AND status = 'Rejected'", [phone]);
     const hasBouncedBefore = parseInt(rejectedWithdrawals[0].count || rejectedWithdrawals[0]['COUNT(*)'] || 0) > 0;
 
     const withdrawalsResult = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [phone]);
-    const withdrawalCount = parseInt(withdrawalsResult[0].count || withdrawalsResult[0]['COUNT(*)'] || 0);
+    const finalWithdrawalCount = parseInt(withdrawalsResult[0].count || withdrawalsResult[0]['COUNT(*)'] || 0);
 
     const verificationResult = await db.query(
       "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'", 
@@ -528,7 +545,7 @@ app.post('/api/user/sync', async (req, res) => {
 
     const mapped = mapUserKeys(dbUser);
     mapped.hasBouncedBefore = hasBouncedBefore;
-    mapped.withdrawalCount = withdrawalCount;
+    mapped.withdrawalCount = finalWithdrawalCount;
     mapped.verified = verified;
 
     res.json({ status: true, user: mapped });
@@ -792,7 +809,7 @@ app.post('/api/user/stake-spin', async (req, res) => {
 
 // POST /api/withdraw — Submit a withdrawal request
 app.post('/api/withdraw', async (req, res) => {
-  const { phone, amount, bankName, accountNumber, fullName } = req.body || {};
+  const { phone, amount, bankName, accountNumber, fullName, withdrawalCount } = req.body || {};
   if (!phone || !amount || !bankName || !accountNumber || !fullName) {
     return res.status(400).json({ status: false, error: 'Missing withdrawal parameters' });
   }
@@ -804,11 +821,28 @@ app.post('/api/withdraw', async (req, res) => {
 
     const user = users[0];
 
+    // Recover/restore withdrawalCount if database has reset (ephemeral SQLite)
+    const localWithdrawalCount = parseInt(withdrawalCount) || 0;
+    const countCheck = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [phone]);
+    let dbWithdrawalCount = parseInt(countCheck[0].count || countCheck[0]['COUNT(*)'] || 0);
+
+    if (localWithdrawalCount > dbWithdrawalCount) {
+      const missingCount = localWithdrawalCount - dbWithdrawalCount;
+      for (let i = 0; i < missingCount; i++) {
+        const dummyId = 'W_DUMMY_' + Date.now() + '_' + Math.floor(Math.random() * 1000) + '_' + i;
+        await db.query(`
+          INSERT INTO withdrawals (
+            id, phone, full_name, amount, bank_name, account_number, status, created_at
+          ) VALUES (?, ?, '9jaCash User', 0, 'Placeholder Bank', '0000000000', 'Approved', ?)
+        `, [dummyId, phone, new Date().toISOString()]);
+      }
+    }
+
     // Enforce account verification on 3rd withdrawal (after 2 successful/requested withdrawals)
     const withdrawalCountResult = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [phone]);
-    const withdrawalCount = parseInt(withdrawalCountResult[0].count || withdrawalCountResult[0]['COUNT(*)'] || 0);
+    const finalWithdrawalCount = parseInt(withdrawalCountResult[0].count || withdrawalCountResult[0]['COUNT(*)'] || 0);
 
-    if (withdrawalCount >= 2) {
+    if (finalWithdrawalCount >= 2) {
       const verificationCountResult = await db.query(
         "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'", 
         [phone]
@@ -1860,7 +1894,7 @@ app.get('/api/cron/reminders', async (req, res) => {
 });
 
 // POST /api/admin/super/trigger-reminders — Manual trigger for mining reminders
-app.post('/api/admin/super/trigger-reminders', async (req, res) =>>,StartLine:1833,TargetContent: {
+app.post('/api/admin/super/trigger-reminders', async (req, res) => {
   try {
     const list = await db.query("SELECT email, full_name FROM users WHERE email IS NOT NULL AND email NOT LIKE '%@9jacash.com'");
     let sentCount = 0;
