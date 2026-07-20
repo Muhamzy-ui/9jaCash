@@ -1704,18 +1704,18 @@ app.post('/api/user/submit-video', async (req, res) => {
       }
     }
 
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(__dirname, 'public', 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
     let videoUrl = '';
 
-    // If videoData is a direct web link (YouTube, TikTok, Telegram link, Google Drive, etc.)
+    // If videoData is a direct web link (YouTube, TikTok, Cloudinary link, etc.)
     if (typeof videoData === 'string' && (videoData.startsWith('http://') || videoData.startsWith('https://') || !videoData.includes(';base64,'))) {
       videoUrl = videoData.trim();
     } else {
+      // Ensure uploads directory exists (local fallback only)
+      const uploadsDir = path.join(__dirname, 'public', 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
       // Decode base64 video data
       const matches = videoData.match(/^data:(video\/\w+);base64,(.+)$/);
       if (!matches) {
@@ -1745,7 +1745,7 @@ app.post('/api/user/submit-video', async (req, res) => {
     res.json({ status: true, message: 'Video submission received successfully!', videoUrl });
   } catch (err) {
     console.error('Video upload and submission error:', err.message);
-    res.status(500).json({ status: false, error: 'Failed to upload video.' });
+    res.status(500).json({ status: false, error: 'Failed to upload video: ' + err.message });
   }
 });
 
