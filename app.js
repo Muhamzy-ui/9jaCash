@@ -973,6 +973,61 @@ app.get('/api/admin/junior/withdrawals', async (req, res) => {
   }
 });
 
+// GET /api/admin/junior/stats — Fetch statistics for Junior Admin's referred network
+app.get('/api/admin/junior/stats', async (req, res) => {
+  const { referralCode } = req.query || {};
+  if (!referralCode) return res.status(400).json({ status: false, error: 'Referral code required' });
+
+  try {
+    // 1. Get referred user phones
+    const referredUsers = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [referralCode, referralCode]);
+    const phones = referredUsers.map(u => u.phone);
+
+    if (phones.length === 0) {
+      return res.json({
+        status: true,
+        totalUsers: 0,
+        approvedReceiptsAmount: 0,
+        approvedWithdrawalsAmount: 0,
+        keysSold: 0
+      });
+    }
+
+    // Placeholders for IN query
+    let placeholders = phones.map(() => '?').join(',');
+
+    // 2. Total approved receipts amount
+    const approvedReceipts = await db.query(`
+      SELECT SUM(amount) AS total FROM receipts 
+      WHERE phone IN (${placeholders}) AND status = 'approved'
+    `, phones);
+
+    // 3. Total approved withdrawals amount
+    const approvedWithdrawals = await db.query(`
+      SELECT SUM(amount) AS total FROM withdrawals 
+      WHERE phone IN (${placeholders}) AND status = 'Approved'
+    `, phones);
+
+    // 4. Total keys sold (approved receipts of key type)
+    const keysCount = await db.query(`
+      SELECT COUNT(*) AS cnt FROM receipts 
+      WHERE phone IN (${placeholders}) AND status = 'approved' 
+      AND type IN ('verification', 'payout_key_purchase', 'account_verification', 'payout', 'key')
+    `, phones);
+
+    res.json({
+      status: true,
+      totalUsers: phones.length,
+      approvedReceiptsAmount: parseFloat(approvedReceipts[0].total || 0),
+      approvedWithdrawalsAmount: parseFloat(approvedWithdrawals[0].total || 0),
+      keysSold: parseInt(keysCount[0].cnt || keysCount[0]['COUNT(*)'] || 0)
+    });
+  } catch (err) {
+    console.error('Junior stats error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to fetch junior admin stats' });
+  }
+});
+
 // POST /api/admin/junior/approve-withdrawal — Approve payout
 app.post('/api/admin/junior/approve-withdrawal', async (req, res) => {
   const { id } = req.body || {};
@@ -1300,21 +1355,37 @@ app.get('/api/admin/super/users', async (req, res) => {
   }
 });
 
-// GET /api/admin/super/stats — Fetch platform stats (total users, etc.)
+// GET /api/admin/super/stats — Fetch platform stats (total users, approved amounts, keys sold)
 app.get('/api/admin/super/stats', async (req, res) => {
   try {
     const uCount = await db.query('SELECT COUNT(*) as cnt FROM users');
     const jCount = await db.query('SELECT COUNT(*) as cnt FROM junior_admins');
     const wCount = await db.query("SELECT COUNT(*) as cnt FROM withdrawals WHERE status = 'Pending'");
-    
+
+    // Platform-wide Approved Receipts Amount
+    const approvedReceipts = await db.query("SELECT SUM(amount) AS total FROM receipts WHERE status = 'approved'");
+
+    // Platform-wide Approved Withdrawals Amount
+    const approvedWithdrawals = await db.query("SELECT SUM(amount) AS total FROM withdrawals WHERE status = 'Approved'");
+
+    // Platform-wide Payout Keys Sold
+    const keysCount = await db.query(`
+      SELECT COUNT(*) AS cnt FROM receipts 
+      WHERE status = 'approved' 
+      AND type IN ('verification', 'payout_key_purchase', 'account_verification', 'payout', 'key')
+    `);
+
     res.json({
       status: true,
       totalUsers: uCount[0].cnt || 0,
       totalJuniors: jCount[0].cnt || 0,
-      totalPendingWithdrawals: wCount[0].cnt || 0
+      totalPendingWithdrawals: wCount[0].cnt || 0,
+      approvedReceiptsAmount: parseFloat(approvedReceipts[0].total || 0),
+      approvedWithdrawalsAmount: parseFloat(approvedWithdrawals[0].total || 0),
+      keysSold: parseInt(keysCount[0].cnt || keysCount[0]['COUNT(*)'] || 0)
     });
   } catch (err) {
-    res.status(500).json({ status: false, error: 'Failed to fetch stats' });
+    res.status(500).json({ status: false, error: 'Failed to fetch stats: ' + err.message });
   }
 });
 

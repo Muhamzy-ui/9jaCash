@@ -360,6 +360,23 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <div class="stat-icon red"><i class="fa-solid fa-bolt"></i></div>
       <div class="stat-num red" id="statStatus">OFF</div>
       <div class="stat-label">Withdrawal</div>
+  </div>
+
+  <div class="stats-row" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:24px;">
+    <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15);">
+      <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981;"><i class="fa-solid fa-vault"></i></div>
+      <div class="stat-num green" id="statApprovedReceipts" style="color: #10b981; font-family: 'JetBrains Mono', monospace;">₦0</div>
+      <div class="stat-label">Total Deposits Approved</div>
+    </div>
+    <div class="stat-card red" style="background: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.15);">
+      <div class="stat-icon red" style="background: rgba(239, 68, 68, 0.08); color: #ef4444;"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+      <div class="stat-num red" id="statApprovedWithdrawals" style="color: #ef4444; font-family: 'JetBrains Mono', monospace;">₦0</div>
+      <div class="stat-label">Total Withdrawals Approved</div>
+    </div>
+    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15);">
+      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6;"><i class="fa-solid fa-key"></i></div>
+      <div class="stat-num blue" id="statKeysSold" style="color: #3b82f6;">0</div>
+      <div class="stat-label">Total Keys Sold</div>
     </div>
   </div>
 
@@ -1788,6 +1805,11 @@ function loadSuperStats() {
           wdBadge.textContent = data.totalPendingWithdrawals;
           wdBadge.style.display = data.totalPendingWithdrawals > 0 ? 'inline-block' : 'none';
         }
+        
+        // Render new stats
+        document.getElementById('statApprovedReceipts').textContent = '₦' + data.approvedReceiptsAmount.toLocaleString();
+        document.getElementById('statApprovedWithdrawals').textContent = '₦' + data.approvedWithdrawalsAmount.toLocaleString();
+        document.getElementById('statKeysSold').textContent = data.keysSold;
       }
     })
     .catch(err => {
