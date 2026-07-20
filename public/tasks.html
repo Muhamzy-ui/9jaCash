@@ -373,10 +373,21 @@ function renderTasks() {
   const container = document.getElementById('taskList');
   container.innerHTML = '';
   
-  let filtered = allTasks;
-  if (currentFilter === 'hot') filtered = allTasks.filter(t => t.hot);
-  else if (currentFilter === 'social') filtered = allTasks.filter(t => ['tiktok','facebook','instagram','twitter','youtube'].includes(t.category));
-  else if (currentFilter === 'completed') filtered = allTasks.filter(t => completedTaskIds.includes(t.id));
+  let filtered = [...allTasks];
+  // Sort so that hot tasks come first
+  filtered.sort((a, b) => {
+    const aHot = a.hot === true || a.hot === 'true';
+    const bHot = b.hot === true || b.hot === 'true';
+    return (bHot ? 1 : 0) - (aHot ? 1 : 0);
+  });
+  
+  if (currentFilter === 'hot') {
+    filtered = filtered.filter(t => t.hot === true || t.hot === 'true');
+  } else if (currentFilter === 'social') {
+    filtered = filtered.filter(t => ['tiktok','facebook','instagram','twitter','youtube','social'].includes(t.cat || t.category));
+  } else if (currentFilter === 'completed') {
+    filtered = filtered.filter(t => completedTaskIds.includes(t.id));
+  }
   
   if (filtered.length === 0) {
     container.innerHTML = `
@@ -391,8 +402,9 @@ function renderTasks() {
   
   filtered.forEach((task) => {
     const isCompleted = completedTaskIds.includes(task.id);
-    const iconClass = CAT_ICONS[task.category] || CAT_ICONS.other;
-    const imgClass = CAT_CLASSES[task.category] || 'other';
+    const catName = task.cat || task.category || 'other';
+    const iconClass = CAT_ICONS[catName] || CAT_ICONS.other;
+    const imgClass = CAT_CLASSES[catName] || 'other';
     
     const div = document.createElement('div');
     div.className = `task-item ${isCompleted ? 'completed' : ''}`;
@@ -403,14 +415,14 @@ function renderTasks() {
           <div class="task-img ${imgClass}"><i class="${iconClass}"></i></div>
           <div class="task-main">
             <div class="task-name">${escapeHtml(task.name)}</div>
-            <div class="task-tag ${task.hot ? 'hot' : ''}"><i class="fa-solid fa-${task.hot ? 'fire' : 'tag'}"></i> ${task.category}</div>
-    <div class="task-reward"><i class="fa-solid fa-coins"></i> ₦${(task.amt || task.amount || 0).toLocaleString()}</div>
+            <div class="task-tag ${task.hot ? 'hot' : ''}"><i class="fa-solid fa-${task.hot ? 'fire' : 'tag'}"></i> ${catName}</div>
+    <div class="task-reward"><i class="fa-solid fa-coins"></i> ₦${Number(task.amt || task.amount || 0).toLocaleString()}</div>
           </div>
         </div>
-    <div class="task-desc">Complete this ${task.category} task to earn ₦${(task.amt || task.amount || 0).toLocaleString()}. Tap the link to start.</div>
+    <div class="task-desc">Complete this ${catName} task to earn ₦${Number(task.amt || task.amount || 0).toLocaleString()}. Tap the link to start.</div>
         ${task.link ? `<a href="${escapeHtml(task.link)}" target="_blank" class="task-link-btn" onclick="trackTask('${task.id}')"><i class="fa-solid fa-link"></i> ${escapeHtml(truncateLink(task.link))}</a>` : ''}
         <div class="task-actions">
-      ${!isCompleted ? `<button class="btn-start" onclick="startTask('${task.id}', '${escapeHtml(task.link || '')}', ${task.amt || task.amount || 0})"><i class="fa-solid fa-play"></i> Start Task</button>` : ''}
+      ${!isCompleted ? `<button class="btn-start" onclick="startTask('${task.id}', '${escapeHtml(task.link || '')}', Number(${task.amt || task.amount || 0}))"><i class="fa-solid fa-play"></i> Start Task</button>` : ''}
           ${!isCompleted ? `<button class="btn-skip" onclick="skipTask('${task.id}')"><i class="fa-solid fa-forward"></i></button>` : ''}
         </div>
       </div>
@@ -555,7 +567,7 @@ function skipTask(id) {
 function updateStats() {
   const completed = completedTaskIds.length;
   const total = allTasks.length;
-  const earned = allTasks.filter(t => completedTaskIds.includes(t.id)).reduce((sum, t) => sum + (t.amt || t.amount || 0), 0);
+  const earned = allTasks.filter(t => completedTaskIds.includes(t.id)).reduce((sum, t) => sum + Number(t.amt || t.amount || 0), 0);
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
   
   document.getElementById('totalEarned').textContent = '₦' + earned.toLocaleString();
