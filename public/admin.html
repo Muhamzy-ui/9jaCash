@@ -335,7 +335,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
     <div class="live-pill"><span class="live-dot"></span>System Online</div>
   </div>
 
-  <div class="stats-row" style="display:grid; gap:15px; margin-bottom:20px;">
+  <div class="stats-row">
     <div class="stat-card green">
       <div class="stat-icon green"><i class="fa-solid fa-list-check"></i></div>
       <div class="stat-num green" id="statTasks">0</div>
@@ -360,9 +360,10 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <div class="stat-icon red"><i class="fa-solid fa-bolt"></i></div>
       <div class="stat-num red" id="statStatus">OFF</div>
       <div class="stat-label">Withdrawal</div>
+    </div>
   </div>
 
-  <div class="stats-row" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:24px;">
+  <div class="stats-row" style="grid-template-columns: repeat(3, 1fr);">
     <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15);">
       <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981;"><i class="fa-solid fa-vault"></i></div>
       <div class="stat-num green" id="statApprovedReceipts" style="color: #10b981; font-family: 'JetBrains Mono', monospace;">₦0</div>
