@@ -939,7 +939,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
 
 <!-- Videos Panel -->
 <div class="tab-panel" id="tab-videos">
-  <div class="panel-card mb-4">
+  <div class="panel">
     <div class="panel-header">
       <div class="panel-icon purple" style="background:rgba(139,92,246,0.1); color:var(--accent);"><i class="fa-solid fa-video"></i></div>
       <div>
@@ -1042,7 +1042,6 @@ const DEFAULT_TASKS=[
   {id:'t10',name:'Download App',cat:'other',link:'',amt:500,hot:false}
 ];
 
-// ========== AUTH ==========
 function initAuth(){
   auth.onAuthStateChanged(user=>{
     if(user){
@@ -2440,8 +2439,9 @@ function renderVideoSubmissionsTable(subs) {
       <td style="padding: 12px 10px; text-align: right;">
         ${isPending ? `
           <button class="btn" onclick="approveVideo('${s.id}')" style="background:var(--success); color:#fff; border:none; padding:6px 12px; border-radius:8px; font-weight:700; font-size:11px; cursor:pointer; margin-right:5px;"><i class="fa-solid fa-circle-check"></i> Approve</button>
-          <button class="btn" onclick="declineVideo('${s.id}')" style="background:var(--danger); color:#fff; border:none; padding:6px 12px; border-radius:8px; font-weight:700; font-size:11px; cursor:pointer;"><i class="fa-solid fa-circle-xmark"></i> Decline</button>
-        ` : 'Processed'}
+          <button class="btn" onclick="declineVideo('${s.id}')" style="background:var(--danger); color:#fff; border:none; padding:6px 12px; border-radius:8px; font-weight:700; font-size:11px; cursor:pointer; margin-right:5px;"><i class="fa-solid fa-circle-xmark"></i> Decline</button>
+        ` : `<span style="font-weight: 500; font-size: 11px; margin-right:10px; color:var(--text3);">Processed</span>`}
+        <button class="btn" onclick="deleteVideo('${s.id}')" style="background:#57606f; color:#fff; border:none; padding:6px 12px; border-radius:8px; font-weight:700; font-size:11px; cursor:pointer;"><i class="fa-solid fa-trash-can"></i> Delete</button>
       </td>
     `;
     table.appendChild(tr);
@@ -2516,6 +2516,43 @@ function declineVideo(id) {
           loadAllVideoSubmissions();
         } else {
           Swal.fire({ icon: 'error', title: 'Operation Failed', text: data.error || 'Unable to decline video.', confirmButtonColor: '#6366f1' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue.', confirmButtonColor: '#6366f1' });
+      });
+    }
+  });
+}
+
+function deleteVideo(id) {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: 'This will permanently delete this video submission record.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Yes, delete it!',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Deleting...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      fetch(API_URL + '/api/admin/delete-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Deleted', text: 'Submission record successfully deleted.', confirmButtonColor: '#6366f1' });
+          loadAllVideoSubmissions();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Operation Failed', text: data.error || 'Unable to delete video record.', confirmButtonColor: '#6366f1' });
         }
       })
       .catch(err => {

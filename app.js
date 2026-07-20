@@ -1810,6 +1810,19 @@ app.get('/api/admin/video-submissions', async (req, res) => {
   }
 });
 
+// POST /api/admin/delete-video — Super Admin delete video submission record
+app.post('/api/admin/delete-video', async (req, res) => {
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ status: false, error: 'Submission ID required.' });
+
+  try {
+    await db.query('DELETE FROM video_submissions WHERE id = ?', [id]);
+    res.json({ status: true, message: 'Video submission deleted successfully.' });
+  } catch (err) {
+    res.status(500).json({ status: false, error: 'Failed to delete video submission: ' + err.message });
+  }
+});
+
 // GET /api/admin/junior/video-submissions — Junior Admin fetch submissions from their sub-network
 app.get('/api/admin/junior/video-submissions', async (req, res) => {
   const { referralCode } = req.query || {};
