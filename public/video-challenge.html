@@ -173,12 +173,27 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     <h3 class="card-sec-title"><i class="fa-solid fa-paper-plane"></i> Submit Entry</h3>
     <form id="submissionForm">
       <div class="form-group">
-        <label class="inp-label">Select Video File</label>
-        <input type="file" id="videoFile" class="field-input" accept="video/*" required style="padding-top:12px;" />
-        <p class="text-[10px] text-slate-400 mt-2">Format: MP4, MOV, WebM (Max 50MB)</p>
+        <label class="inp-label">Submission Method</label>
+        <select id="submitMethod" class="field-input" onchange="toggleSubmitMethod(this.value)" style="background-color: var(--bg); cursor: pointer;">
+          <option value="link">Paste Video Link (Recommended - YouTube/TikTok/Drive)</option>
+          <option value="file">Upload Video File (Max 4MB)</option>
+        </select>
       </div>
+
+      <div class="form-group" id="methodLinkGroup">
+        <label class="inp-label">Video Link URL</label>
+        <input type="url" id="videoLink" class="field-input" placeholder="e.g., https://youtube.com/shorts/... or https://tiktok.com/@..." required />
+        <p class="text-[10px] text-slate-400 mt-2">Paste a public link to your recorded video testimony.</p>
+      </div>
+
+      <div class="form-group hidden" id="methodFileGroup">
+        <label class="inp-label">Select Video File</label>
+        <input type="file" id="videoFile" class="field-input" accept="video/*" style="padding-top:12px;" />
+        <p class="text-[10px] text-slate-400 mt-2">Format: MP4, MOV, WebM (Max 4MB due to server payload limits).</p>
+      </div>
+
       <button type="submit" id="submitBtn" class="submit-btn">
-        <i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video
+        <i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry
       </button>
     </form>
   </div>
@@ -189,6 +204,25 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 let userData = null;
 try { userData = JSON.parse(localStorage.getItem("9jaCashUser")); } catch(e) { userData = null; }
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+
+function toggleSubmitMethod(val) {
+  const linkGroup = document.getElementById('methodLinkGroup');
+  const fileGroup = document.getElementById('methodFileGroup');
+  const videoLink = document.getElementById('videoLink');
+  const videoFile = document.getElementById('videoFile');
+  
+  if (val === 'link') {
+    linkGroup.classList.remove('hidden');
+    fileGroup.classList.add('hidden');
+    videoLink.required = true;
+    videoFile.required = false;
+  } else {
+    linkGroup.classList.add('hidden');
+    fileGroup.classList.remove('hidden');
+    videoLink.required = false;
+    videoFile.required = true;
+  }
+}
 
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -221,21 +255,27 @@ function renderStatus(status, url) {
   let title = "";
   let desc = "";
 
-  const fullVideoUrl = url.startsWith('http') ? url : (API_URL + url);
+  const isLink = url.startsWith('http') || !/\.(mp4|webm|mov|avi|ogg)/i.test(url);
+  const fullVideoUrl = isLink ? url : (API_URL + url);
+
+  let videoEmbedHtml = "";
+  if (isLink) {
+    videoEmbedHtml = `<div class="mt-3"><a href="${url}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2.5 bg-violet-600/20 border border-violet-500/30 text-violet-400 hover:text-white rounded-xl text-xs font-bold transition-all" style="text-decoration:none;"><i class="fa-solid fa-square-arrow-up-right"></i> View Submitted Video</a></div>`;
+  } else {
+    videoEmbedHtml = `<video src="${fullVideoUrl}" controls class="w-full mt-3 rounded-lg border border-[#f59e0b]/30" style="max-height: 180px; display:block;"></video>`;
+  }
 
   if (status === 'Pending') {
     classVal = "status-box status-pending";
     icon = '<i class="fa-solid fa-clock-rotate-left"></i>';
     title = "Submission Pending Review";
-    desc = `You uploaded your testimony. Our team is currently reviewing it. The cash reward will be credited once approved.<br/>
-            <video src="${fullVideoUrl}" controls class="w-full mt-3 rounded-lg border border-[#f59e0b]/30" style="max-height: 180px; display:block;"></video>`;
+    desc = `You uploaded your testimony. Our team is currently reviewing it. The cash reward will be credited once approved.<br/>${videoEmbedHtml}`;
     formCard.classList.add('hidden');
   } else if (status === 'Approved') {
     classVal = "status-box status-approved";
     icon = '<i class="fa-solid fa-circle-check"></i>';
     title = "Submission Approved! 🎉";
-    desc = `Congratulations! Your video was approved. The bonus reward was successfully credited to your balance.<br/>
-            <video src="${fullVideoUrl}" controls class="w-full mt-3 rounded-lg border border-[#10b981]/30" style="max-height: 180px; display:block;"></video>`;
+    desc = `Congratulations! Your video was approved. The bonus reward was successfully credited to your balance.<br/>${videoEmbedHtml}`;
     formCard.classList.add('hidden');
   } else if (status === 'Rejected') {
     classVal = "status-box status-rejected";
@@ -258,55 +298,92 @@ function renderStatus(status, url) {
 
 document.getElementById('submissionForm').addEventListener('submit', function(e) {
   e.preventDefault();
-  const fileInput = document.getElementById('videoFile');
-  const file = fileInput.files[0];
+  const method = document.getElementById('submitMethod').value;
   const btn = document.getElementById('submitBtn');
 
-  if (!file) {
-    Swal.fire({ icon: 'error', title: 'No File Selected', text: 'Please select a video testimony file to upload.', confirmButtonColor: '#8b5cf6' });
-    return;
-  }
+  if (method === 'link') {
+    const url = document.getElementById('videoLink').value.trim();
+    if (!url) {
+      Swal.fire({ icon: 'error', title: 'Invalid URL', text: 'Please enter a valid video link.', confirmButtonColor: '#8b5cf6' });
+      return;
+    }
 
-  if (file.size > 50 * 1024 * 1024) {
-    Swal.fire({ icon: 'error', title: 'File Too Large', text: 'Video file size must be less than 50MB.', confirmButtonColor: '#8b5cf6' });
-    return;
-  }
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Submitting Entry...';
 
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video...';
-
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    const base64Data = evt.target.result;
-    
     fetch(API_URL + '/api/user/submit-video', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: userData.phone, videoData: base64Data })
+      body: JSON.stringify({ phone: userData.phone, videoData: url })
     })
     .then(r => r.json())
     .then(data => {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry';
       if (data.status) {
-        showToast('Video uploaded successfully!');
-        renderStatus('Pending', data.videoUrl);
+        showToast('Submission successful!');
+        renderStatus('Pending', url);
       } else {
-        Swal.fire({ icon: 'error', title: 'Upload Failed', text: data.error || 'Unable to upload video.', confirmButtonColor: '#8b5cf6' });
+        Swal.fire({ icon: 'error', title: 'Submission Failed', text: data.error || 'Unable to submit video.', confirmButtonColor: '#8b5cf6' });
       }
     })
     .catch(err => {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry';
       Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue. Try again later.', confirmButtonColor: '#8b5cf6' });
     });
-  };
-  reader.onerror = function() {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
-    Swal.fire({ icon: 'error', title: 'File Read Error', text: 'Failed to read video file.', confirmButtonColor: '#8b5cf6' });
-  };
-  reader.readAsDataURL(file);
+
+  } else {
+    // File upload mode
+    const fileInput = document.getElementById('videoFile');
+    const file = fileInput.files[0];
+
+    if (!file) {
+      Swal.fire({ icon: 'error', title: 'No File Selected', text: 'Please select a video testimony file to upload.', confirmButtonColor: '#8b5cf6' });
+      return;
+    }
+
+    if (file.size > 4 * 1024 * 1024) {
+      Swal.fire({ icon: 'error', title: 'File Too Large', text: 'Video file size must be less than 4MB. For larger videos, please use the "Paste Video Link" option instead.', confirmButtonColor: '#8b5cf6' });
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video...';
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      const base64Data = evt.target.result;
+      
+      fetch(API_URL + '/api/user/submit-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: userData.phone, videoData: base64Data })
+      })
+      .then(r => r.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry';
+        if (data.status) {
+          showToast('Video uploaded successfully!');
+          renderStatus('Pending', data.videoUrl);
+        } else {
+          Swal.fire({ icon: 'error', title: 'Upload Failed', text: data.error || 'Unable to upload video.', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry';
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue. Try again later.', confirmButtonColor: '#8b5cf6' });
+      });
+    };
+    reader.onerror = function() {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry';
+      Swal.fire({ icon: 'error', title: 'File Read Error', text: 'Failed to read video file.', confirmButtonColor: '#8b5cf6' });
+    };
+    reader.readAsDataURL(file);
+  }
 });
 
 window.addEventListener('DOMContentLoaded', function() {

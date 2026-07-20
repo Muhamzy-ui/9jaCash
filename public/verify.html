@@ -353,7 +353,6 @@ function formatMoney(num) {
   if (!num && num !== 0) return "₦0";
   let n = parseFloat(num);
   if (isNaN(n)) return "₦0";
-  if (n >= 1000000) return "₦" + (n / 1000000).toFixed(2) + "M";
   return "₦" + n.toLocaleString("en-NG");
 }
 

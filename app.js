@@ -1710,25 +1710,31 @@ app.post('/api/user/submit-video', async (req, res) => {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    // Decode base64 video data
-    // Matches data:video/mp4;base64,... or similar
-    const matches = videoData.match(/^data:(video\/\w+);base64,(.+)$/);
-    if (!matches) {
-      return res.status(400).json({ status: false, error: 'Invalid video file format.' });
+    let videoUrl = '';
+
+    // If videoData is a direct web link (YouTube, TikTok, Telegram link, Google Drive, etc.)
+    if (typeof videoData === 'string' && (videoData.startsWith('http://') || videoData.startsWith('https://') || !videoData.includes(';base64,'))) {
+      videoUrl = videoData.trim();
+    } else {
+      // Decode base64 video data
+      const matches = videoData.match(/^data:(video\/\w+);base64,(.+)$/);
+      if (!matches) {
+        return res.status(400).json({ status: false, error: 'Invalid video file format.' });
+      }
+
+      const ext = matches[1].split('/')[1] || 'mp4';
+      const base64Content = matches[2];
+      const buffer = Buffer.from(base64Content, 'base64');
+
+      // Create unique filename
+      const uniqueName = `video_${Date.now()}_${phone}.${ext}`;
+      const filePath = path.join(uploadsDir, uniqueName);
+
+      // Save file
+      fs.writeFileSync(filePath, buffer);
+
+      videoUrl = `/uploads/${uniqueName}`;
     }
-
-    const ext = matches[1].split('/')[1] || 'mp4';
-    const base64Content = matches[2];
-    const buffer = Buffer.from(base64Content, 'base64');
-
-    // Create unique filename
-    const uniqueName = `video_${Date.now()}_${phone}.${ext}`;
-    const filePath = path.join(uploadsDir, uniqueName);
-
-    // Save file
-    fs.writeFileSync(filePath, buffer);
-
-    const videoUrl = `/uploads/${uniqueName}`;
 
     const id = 'vid_' + Math.random().toString(36).substr(2, 9);
     await db.query(`
@@ -1736,7 +1742,7 @@ app.post('/api/user/submit-video', async (req, res) => {
       VALUES (?, ?, ?, 'Pending', ?)
     `, [id, phone, videoUrl, new Date().toISOString()]);
 
-    res.json({ status: true, message: 'Video uploaded and submitted successfully!', videoUrl });
+    res.json({ status: true, message: 'Video submission received successfully!', videoUrl });
   } catch (err) {
     console.error('Video upload and submission error:', err.message);
     res.status(500).json({ status: false, error: 'Failed to upload video.' });

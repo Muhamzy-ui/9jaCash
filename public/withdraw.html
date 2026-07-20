@@ -377,8 +377,7 @@ const MIN_WITHDRAWAL = 50000;
 let payoutKeyVerified = false;
 
 function formatMoney(num) {
-  if (num >= 1000000) return "₦" + (num / 1000000).toFixed(2) + "M";
-  return "₦" + num.toLocaleString("en-NG");
+  return "₦" + Number(num || 0).toLocaleString("en-NG");
 }
 
 function updateBalanceDisplay() {

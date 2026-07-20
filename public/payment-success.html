@@ -566,10 +566,8 @@ function goSecondary() {
   }
 }
 
-// ========== HELPERS ==========
 function formatMoney(num) {
   if (!num) return "₦0";
-  if (num >= 1000000) return "₦" + (num / 1000000).toFixed(2) + "M";
   return "₦" + num.toLocaleString("en-NG");
 }
 

@@ -1015,7 +1015,7 @@ let keyHistory=[];
 let tasks=[];
 let selectedPlanData=null;
 let generatedKey='';
-const MAX_TASKS=10;
+const MAX_TASKS=100;
 const CATS=['tiktok','facebook','other'];
 const CAT_LABELS={tiktok:'TikTok',facebook:'Facebook',other:'Other'};
 const CAT_ICONS={tiktok:'fa-brands fa-tiktok',facebook:'fa-brands fa-facebook',other:'fa-solid fa-globe'};
@@ -1259,7 +1259,7 @@ function addNewTask(){
 }
 function updateTaskBtn(){
   const btn=document.getElementById('addTaskBtn');
-  if(tasks.length>=MAX_TASKS){btn.style.opacity='0.5';btn.style.pointerEvents='none';btn.innerHTML='<i class="fa-solid fa-lock"></i> Max 10';}
+  if(tasks.length>=MAX_TASKS){btn.style.opacity='0.5';btn.style.pointerEvents='none';btn.innerHTML='<i class="fa-solid fa-lock"></i> Max '+MAX_TASKS;}
   else{btn.style.opacity='1';btn.style.pointerEvents='auto';btn.innerHTML='<i class="fa-solid fa-plus"></i> Add ('+tasks.length+'/'+MAX_TASKS+')';}
 }
 

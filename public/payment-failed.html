@@ -222,12 +222,10 @@ function toggleTheme() {
   document.getElementById("themeIcon").className = isLight ? "fa-solid fa-moon" : "fa-solid fa-sun";
 }
 
-// ========== FORMAT MONEY ==========
 function formatMoney(num) {
   if (num === null || num === undefined || num === "") return "₦0";
   let n = parseFloat(num);
   if (isNaN(n)) return "₦0";
-  if (n >= 1000000) return "₦" + (n / 1000000).toFixed(2) + "M";
   return "₦" + n.toLocaleString("en-NG");
 }
 
