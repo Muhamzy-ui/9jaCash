@@ -278,7 +278,7 @@ function renderStatus(status, url) {
   `;
 }
 
-document.getElementById('submissionForm').addEventListener('submit', function(e) {
+document.getElementById('submissionForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const fileInput = document.getElementById('videoFile');
   const file = fileInput.files[0];
@@ -295,28 +295,42 @@ document.getElementById('submissionForm').addEventListener('submit', function(e)
   }
 
   btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video (0%)...';
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Initializing upload...';
 
-  // If Cloudinary settings are not set, warn the user
-  if (!cloudinaryCloudName || !cloudinaryUploadPreset) {
+  // 1. Fetch Cloudinary signed parameters from the server
+  let signatureData = null;
+  try {
+    const sigRes = await fetch(API_URL + '/api/cloudinary-signature');
+    signatureData = await sigRes.json();
+    if (!signatureData || !signatureData.status) {
+      throw new Error(signatureData ? signatureData.error : "Failed to load signature");
+    }
+  } catch (err) {
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
     Swal.fire({ 
       icon: 'error', 
-      title: 'Configuration Needed', 
-      text: 'Cloudinary Cloud Name and Upload Preset must be configured in the Admin Panel before uploading videos.', 
+      title: 'Upload Initialization Failed', 
+      text: 'Could not contact server to sign the upload: ' + err.message, 
       confirmButtonColor: '#8b5cf6' 
     });
     return;
   }
 
-  // Upload to Cloudinary using FormData and XHR (for progress tracking)
+  const { signature, timestamp, apiKey, cloudName } = signatureData;
+
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video (0%)...';
+
+  // 2. Upload to Cloudinary using FormData and XHR (for progress tracking)
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('upload_preset', cloudinaryUploadPreset);
+  formData.append('folder', 'video_challenges');
+  formData.append('timestamp', timestamp);
+  formData.append('api_key', apiKey);
+  formData.append('signature', signature);
 
   const xhr = new XMLHttpRequest();
-  xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/video/upload`, true);
+  xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, true);
 
   xhr.upload.onprogress = function(evt) {
     if (evt.lengthComputable) {
@@ -336,7 +350,7 @@ document.getElementById('submissionForm').addEventListener('submit', function(e)
       }
     } else {
       console.error("Cloudinary response error:", xhr.responseText);
-      uploadFailed("Cloudinary upload failed. Check your credentials.");
+      uploadFailed("Cloudinary upload failed. Check your API credentials.");
     }
   };
 
@@ -377,9 +391,8 @@ document.getElementById('submissionForm').addEventListener('submit', function(e)
   }
 });
 
-window.addEventListener('DOMContentLoaded', async function() {
+window.addEventListener('DOMContentLoaded', function() {
   if (!userData) { window.location.href = "login.html"; return; }
-  await loadCloudinarySettings();
   checkSubmissionStatus();
 });
 </script>

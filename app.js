@@ -1765,6 +1765,36 @@ app.get('/api/user/video-submission', async (req, res) => {
   }
 });
 
+// GET /api/cloudinary-signature — Generate signature for direct Cloudinary uploads
+app.get('/api/cloudinary-signature', (req, res) => {
+  try {
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dyinhcicj';
+    const apiKey = process.env.CLOUDINARY_API_KEY || '713329398677614';
+    const apiSecret = process.env.CLOUDINARY_API_SECRET || '6b7mEQNHwSLhXPXxCEwcwwTMllg';
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      return res.status(500).json({ status: false, error: 'Cloudinary credentials are not configured on the server.' });
+    }
+
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const crypto = require('crypto');
+    
+    // Sign parameters: folder and timestamp sorted alphabetically
+    const stringToSign = `folder=video_challenges&timestamp=${timestamp}${apiSecret}`;
+    const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
+
+    res.json({
+      status: true,
+      signature,
+      timestamp,
+      apiKey,
+      cloudName
+    });
+  } catch (err) {
+    res.status(500).json({ status: false, error: err.message });
+  }
+});
+
 // GET /api/admin/video-submissions — Super Admin fetch all submissions
 app.get('/api/admin/video-submissions', async (req, res) => {
   try {
