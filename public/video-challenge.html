@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
 <style>
 :root{
@@ -173,27 +175,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     <h3 class="card-sec-title"><i class="fa-solid fa-paper-plane"></i> Submit Entry</h3>
     <form id="submissionForm">
       <div class="form-group">
-        <label class="inp-label">Submission Method</label>
-        <select id="submitMethod" class="field-input" onchange="toggleSubmitMethod(this.value)" style="background-color: var(--bg); cursor: pointer;">
-          <option value="link">Paste Video Link (Recommended - YouTube/TikTok/Drive)</option>
-          <option value="file">Upload Video File (Max 4MB)</option>
-        </select>
-      </div>
-
-      <div class="form-group" id="methodLinkGroup">
-        <label class="inp-label">Video Link URL</label>
-        <input type="url" id="videoLink" class="field-input" placeholder="e.g., https://youtube.com/shorts/... or https://tiktok.com/@..." required />
-        <p class="text-[10px] text-slate-400 mt-2">Paste a public link to your recorded video testimony.</p>
-      </div>
-
-      <div class="form-group hidden" id="methodFileGroup">
         <label class="inp-label">Select Video File</label>
-        <input type="file" id="videoFile" class="field-input" accept="video/*" style="padding-top:12px;" />
-        <p class="text-[10px] text-slate-400 mt-2">Format: MP4, MOV, WebM (Max 4MB due to server payload limits).</p>
+        <input type="file" id="videoFile" class="field-input" accept="video/*" required style="padding-top:12px;" />
+        <p class="text-[10px] text-slate-400 mt-2">Format: MP4, MOV, WebM (Max 100MB)</p>
       </div>
-
       <button type="submit" id="submitBtn" class="submit-btn">
-        <i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry
+        <i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video
       </button>
     </form>
   </div>
@@ -205,23 +192,24 @@ let userData = null;
 try { userData = JSON.parse(localStorage.getItem("9jaCashUser")); } catch(e) { userData = null; }
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
 
-function toggleSubmitMethod(val) {
-  const linkGroup = document.getElementById('methodLinkGroup');
-  const fileGroup = document.getElementById('methodFileGroup');
-  const videoLink = document.getElementById('videoLink');
-  const videoFile = document.getElementById('videoFile');
-  
-  if (val === 'link') {
-    linkGroup.classList.remove('hidden');
-    fileGroup.classList.add('hidden');
-    videoLink.required = true;
-    videoFile.required = false;
-  } else {
-    linkGroup.classList.add('hidden');
-    fileGroup.classList.remove('hidden');
-    videoLink.required = false;
-    videoFile.required = true;
-  }
+// Initialize real Firebase for client-side uploads to bypass Vercel limits
+const firebaseConfig = {
+  apiKey: "AIzaSyAojnW_iRXCk4mR9ihRz8GwQI4aPWIXepA",
+  authDomain: "jacash-51c97.firebaseapp.com",
+  databaseURL: "https://jacash-51c97-default-rtdb.firebaseio.com",
+  projectId: "jacash-51c97",
+  storageBucket: "jacash-51c97.firebasestorage.app",
+  messagingSenderId: "662540432833",
+  appId: "1:662540432833:web:244b7af8ea02ab56b76b40",
+  measurementId: "G-CEN430143Z"
+};
+
+let storage = null;
+try {
+  const uploadApp = firebase.initializeApp(firebaseConfig, "videoUploadApp");
+  storage = uploadApp.storage();
+} catch (e) {
+  console.error("Firebase Storage init failed:", e);
 }
 
 function showToast(msg) {
@@ -298,91 +286,90 @@ function renderStatus(status, url) {
 
 document.getElementById('submissionForm').addEventListener('submit', function(e) {
   e.preventDefault();
-  const method = document.getElementById('submitMethod').value;
+  const fileInput = document.getElementById('videoFile');
+  const file = fileInput.files[0];
   const btn = document.getElementById('submitBtn');
 
-  if (method === 'link') {
-    const url = document.getElementById('videoLink').value.trim();
-    if (!url) {
-      Swal.fire({ icon: 'error', title: 'Invalid URL', text: 'Please enter a valid video link.', confirmButtonColor: '#8b5cf6' });
+  if (!file) {
+    Swal.fire({ icon: 'error', title: 'No File Selected', text: 'Please select a video testimony file to upload.', confirmButtonColor: '#8b5cf6' });
+    return;
+  }
+
+  if (file.size > 100 * 1024 * 1024) {
+    Swal.fire({ icon: 'error', title: 'File Too Large', text: 'Video file size must be less than 100MB.', confirmButtonColor: '#8b5cf6' });
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video (0%)...';
+
+  // If storage is initialized successfully, upload directly to Firebase storage to bypass Vercel limits!
+  if (storage) {
+    const filename = 'video_' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, "_");
+    const ref = storage.ref().child('video_challenges/' + filename);
+    const uploadTask = ref.put(file);
+
+    uploadTask.on('state_changed', 
+      function(snapshot) {
+        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video (' + progress + '%)...';
+      }, 
+      function(error) {
+        console.error("Firebase upload error:", error);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
+        Swal.fire({ icon: 'error', title: 'Upload Failed', text: 'Unable to upload video file to storage. Please check Firebase storage rules.', confirmButtonColor: '#8b5cf6' });
+      }, 
+      function() {
+        uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+          // Submit the Firebase Storage URL to the SQL backend database
+          submitToBackend(downloadURL);
+        });
+      }
+    );
+  } else {
+    // Fallback: If Firebase storage is not working/initialized, try standard base64 upload (< 4MB)
+    if (file.size > 4 * 1024 * 1024) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
+      Swal.fire({ icon: 'error', title: 'File Too Large', text: 'Video file size must be less than 4MB when Firebase Storage is not initialized.', confirmButtonColor: '#8b5cf6' });
       return;
     }
 
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Submitting Entry...';
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      submitToBackend(evt.target.result);
+    };
+    reader.onerror = function() {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
+      Swal.fire({ icon: 'error', title: 'File Read Error', text: 'Failed to read video file.', confirmButtonColor: '#8b5cf6' });
+    };
+    reader.readAsDataURL(file);
+  }
 
+  function submitToBackend(videoDataVal) {
     fetch(API_URL + '/api/user/submit-video', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: userData.phone, videoData: url })
+      body: JSON.stringify({ phone: userData.phone, videoData: videoDataVal })
     })
     .then(r => r.json())
     .then(data => {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry';
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
       if (data.status) {
-        showToast('Submission successful!');
-        renderStatus('Pending', url);
+        showToast('Video submitted successfully!');
+        renderStatus('Pending', videoDataVal);
       } else {
         Swal.fire({ icon: 'error', title: 'Submission Failed', text: data.error || 'Unable to submit video.', confirmButtonColor: '#8b5cf6' });
       }
     })
     .catch(err => {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry';
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
       Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue. Try again later.', confirmButtonColor: '#8b5cf6' });
     });
-
-  } else {
-    // File upload mode
-    const fileInput = document.getElementById('videoFile');
-    const file = fileInput.files[0];
-
-    if (!file) {
-      Swal.fire({ icon: 'error', title: 'No File Selected', text: 'Please select a video testimony file to upload.', confirmButtonColor: '#8b5cf6' });
-      return;
-    }
-
-    if (file.size > 4 * 1024 * 1024) {
-      Swal.fire({ icon: 'error', title: 'File Too Large', text: 'Video file size must be less than 4MB. For larger videos, please use the "Paste Video Link" option instead.', confirmButtonColor: '#8b5cf6' });
-      return;
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video...';
-
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      const base64Data = evt.target.result;
-      
-      fetch(API_URL + '/api/user/submit-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: userData.phone, videoData: base64Data })
-      })
-      .then(r => r.json())
-      .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry';
-        if (data.status) {
-          showToast('Video uploaded successfully!');
-          renderStatus('Pending', data.videoUrl);
-        } else {
-          Swal.fire({ icon: 'error', title: 'Upload Failed', text: data.error || 'Unable to upload video.', confirmButtonColor: '#8b5cf6' });
-        }
-      })
-      .catch(err => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry';
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue. Try again later.', confirmButtonColor: '#8b5cf6' });
-      });
-    };
-    reader.onerror = function() {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Entry';
-      Swal.fire({ icon: 'error', title: 'File Read Error', text: 'Failed to read video file.', confirmButtonColor: '#8b5cf6' });
-    };
-    reader.readAsDataURL(file);
   }
 });
 
