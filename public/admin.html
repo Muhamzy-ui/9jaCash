@@ -627,14 +627,24 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
   <div class="panel">
     <div class="panel-header">
       <div class="panel-icon green" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="fa-solid fa-circle-play"></i></div>
-      <div><div class="panel-title">Video Testimonial Challenge</div><div class="panel-sub">Configure user testimonial campaign status</div></div>
+      <div><div class="panel-title">Video Testimonial Challenge</div><div class="panel-sub">Configure user campaign and Cloudinary settings</div></div>
     </div>
     <div class="form-group">
       <label class="form-label">Video Challenge Status</label>
-      <select id="videoChallengeActive" class="form-input">
+      <select id="videoChallengeActive" class="form-input" style="margin-bottom:12px;">
         <option value="true">Active (Enabled)</option>
         <option value="false">Inactive (Disabled)</option>
       </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Cloudinary Cloud Name</label>
+        <input type="text" id="cloudinaryCloudName" class="form-input" placeholder="e.g. dxpxxxxx">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Cloudinary Upload Preset (Unsigned)</label>
+        <input type="text" id="cloudinaryUploadPreset" class="form-input" placeholder="e.g. video_unsigned">
+      </div>
     </div>
   </div>
 </div>
@@ -1299,6 +1309,8 @@ async function loadData(){
     document.getElementById('feeAccName').value=fee.accName||'';
     document.getElementById('feeAmount').value=fee.amount||'12500';
     document.getElementById('videoChallengeActive').value=videoChallengeData.active === false ? 'false' : 'true';
+    document.getElementById('cloudinaryCloudName').value=videoChallengeData.cloudinaryCloudName||'';
+    document.getElementById('cloudinaryUploadPreset').value=videoChallengeData.cloudinaryUploadPreset||'';
     
     wdSuccess=wdData.success===true;updateWdToggleUI();
     pmSuccess=pmData.success===true;updatePmToggleUI();
@@ -1393,7 +1405,12 @@ async function saveAll(){
   const pm={success:pmSuccess,updatedAt:new Date().toISOString()};
   const keyD={currentKey:payoutKey,history:keyHistory,updatedAt:new Date().toISOString()};
   const redir={successPrimaryRedirect:document.getElementById('successPrimary').value.trim()||'dashboard.html',successSecondaryRedirect:document.getElementById('successSecondary').value.trim()||'buy.html',successDelay:Number(document.getElementById('successDelay').value)||2000,successShowConfetti:true,successMessage:'Your payment has been confirmed',failedRetryRedirect:document.getElementById('failedRetry').value.trim()||'payment.html',failedDashboardRedirect:document.getElementById('failedDashboard').value.trim()||'dashboard.html',failedRetryLabel:'Retry Payment',failedDashboardLabel:'Back to Dashboard',failedMessage:'We could not confirm your payment. Please check your details and try again.',failedSupportHandle:document.getElementById('supportHandle').value.trim()||'@9jaCash_Support',failedShowSenderDetails:true,updatedAt:new Date().toISOString()};
-  const videoChallenge={active:document.getElementById('videoChallengeActive').value==='true',updatedAt:new Date().toISOString()};
+  const videoChallenge={
+    active:document.getElementById('videoChallengeActive').value==='true',
+    cloudinaryCloudName:document.getElementById('cloudinaryCloudName').value.trim(),
+    cloudinaryUploadPreset:document.getElementById('cloudinaryUploadPreset').value.trim(),
+    updatedAt:new Date().toISOString()
+  };
   
   if(pay.accNumber&&pay.accNumber.length!==10){showToast('Main account: 10 digits','error');return;}
   if(fee.accNumber&&fee.accNumber.length!==10){showToast('Fee account: 10 digits','error');return;}

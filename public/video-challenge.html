@@ -8,8 +8,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
 <style>
 :root{
@@ -192,24 +190,20 @@ let userData = null;
 try { userData = JSON.parse(localStorage.getItem("9jaCashUser")); } catch(e) { userData = null; }
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
 
-// Initialize real Firebase for client-side uploads to bypass Vercel limits
-const firebaseConfig = {
-  apiKey: "AIzaSyAojnW_iRXCk4mR9ihRz8GwQI4aPWIXepA",
-  authDomain: "jacash-51c97.firebaseapp.com",
-  databaseURL: "https://jacash-51c97-default-rtdb.firebaseio.com",
-  projectId: "jacash-51c97",
-  storageBucket: "jacash-51c97.firebasestorage.app",
-  messagingSenderId: "662540432833",
-  appId: "1:662540432833:web:244b7af8ea02ab56b76b40",
-  measurementId: "G-CEN430143Z"
-};
+let cloudinaryCloudName = "";
+let cloudinaryUploadPreset = "";
 
-let storage = null;
-try {
-  const uploadApp = firebase.initializeApp(firebaseConfig, "videoUploadApp");
-  storage = uploadApp.storage();
-} catch (e) {
-  console.error("Firebase Storage init failed:", e);
+async function loadCloudinarySettings() {
+  try {
+    const res = await fetch(API_URL + '/api/settings/videoChallenge');
+    const data = await res.json();
+    if (data.status && data.value) {
+      cloudinaryCloudName = data.value.cloudinaryCloudName || '';
+      cloudinaryUploadPreset = data.value.cloudinaryUploadPreset || '';
+    }
+  } catch(err) {
+    console.error("Failed to load Cloudinary settings:", err);
+  }
 }
 
 function showToast(msg) {
@@ -303,49 +297,59 @@ document.getElementById('submissionForm').addEventListener('submit', function(e)
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video (0%)...';
 
-  // If storage is initialized successfully, upload directly to Firebase storage to bypass Vercel limits!
-  if (storage) {
-    const filename = 'video_' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, "_");
-    const ref = storage.ref().child('video_challenges/' + filename);
-    const uploadTask = ref.put(file);
+  // If Cloudinary settings are not set, warn the user
+  if (!cloudinaryCloudName || !cloudinaryUploadPreset) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
+    Swal.fire({ 
+      icon: 'error', 
+      title: 'Configuration Needed', 
+      text: 'Cloudinary Cloud Name and Upload Preset must be configured in the Admin Panel before uploading videos.', 
+      confirmButtonColor: '#8b5cf6' 
+    });
+    return;
+  }
 
-    uploadTask.on('state_changed', 
-      function(snapshot) {
-        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video (' + progress + '%)...';
-      }, 
-      function(error) {
-        console.error("Firebase upload error:", error);
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
-        Swal.fire({ icon: 'error', title: 'Upload Failed', text: 'Unable to upload video file to storage. Please check Firebase storage rules.', confirmButtonColor: '#8b5cf6' });
-      }, 
-      function() {
-        uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
-          // Submit the Firebase Storage URL to the SQL backend database
-          submitToBackend(downloadURL);
-        });
-      }
-    );
-  } else {
-    // Fallback: If Firebase storage is not working/initialized, try standard base64 upload (< 4MB)
-    if (file.size > 4 * 1024 * 1024) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
-      Swal.fire({ icon: 'error', title: 'File Too Large', text: 'Video file size must be less than 4MB when Firebase Storage is not initialized.', confirmButtonColor: '#8b5cf6' });
-      return;
+  // Upload to Cloudinary using FormData and XHR (for progress tracking)
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', cloudinaryUploadPreset);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/video/upload`, true);
+
+  xhr.upload.onprogress = function(evt) {
+    if (evt.lengthComputable) {
+      const progress = Math.round((evt.loaded / evt.total) * 100);
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading Video (' + progress + '%)...';
     }
+  };
 
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      submitToBackend(evt.target.result);
-    };
-    reader.onerror = function() {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
-      Swal.fire({ icon: 'error', title: 'File Read Error', text: 'Failed to read video file.', confirmButtonColor: '#8b5cf6' });
-    };
-    reader.readAsDataURL(file);
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      try {
+        const response = JSON.parse(xhr.responseText);
+        const downloadURL = response.secure_url || response.url;
+        submitToBackend(downloadURL);
+      } catch(err) {
+        uploadFailed("Response parsing failed.");
+      }
+    } else {
+      console.error("Cloudinary response error:", xhr.responseText);
+      uploadFailed("Cloudinary upload failed. Check your credentials.");
+    }
+  };
+
+  xhr.onerror = function() {
+    uploadFailed("Network error occurred during upload.");
+  };
+
+  xhr.send(formData);
+
+  function uploadFailed(reason) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Submit Video';
+    Swal.fire({ icon: 'error', title: 'Upload Failed', text: reason, confirmButtonColor: '#8b5cf6' });
   }
 
   function submitToBackend(videoDataVal) {
@@ -373,8 +377,9 @@ document.getElementById('submissionForm').addEventListener('submit', function(e)
   }
 });
 
-window.addEventListener('DOMContentLoaded', function() {
+window.addEventListener('DOMContentLoaded', async function() {
   if (!userData) { window.location.href = "login.html"; return; }
+  await loadCloudinarySettings();
   checkSubmissionStatus();
 });
 </script>
