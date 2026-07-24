@@ -19,10 +19,12 @@ try {
 // Initialize Postgres if DATABASE_URL is supplied
 if (process.env.DATABASE_URL) {
   try {
+    let rawUrl = process.env.DATABASE_URL.trim();
+    let cleanUrl = rawUrl.replace(/([?&])channel_binding=[^&]*&?/g, '$1').replace(/[?&]$/, '');
     pgPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: cleanUrl,
       ssl: { rejectUnauthorized: false },
-      connectionTimeoutMillis: 5000
+      connectionTimeoutMillis: 10000
     });
     dbType = 'postgres';
     console.log('🔌 Database: Configured for PostgreSQL (production)');
