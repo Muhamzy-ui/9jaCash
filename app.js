@@ -1412,8 +1412,8 @@ app.get('/api/admin/super/stats', async (req, res) => {
     const uCount = await db.query('SELECT COUNT(*) as cnt FROM users');
     const jCount = await db.query('SELECT COUNT(*) as cnt FROM junior_admins');
     const wCount = await db.query("SELECT COUNT(*) as cnt FROM withdrawals WHERE status = 'Pending'");
-    const approvedReceipts = await db.query("SELECT SUM(amount) AS total FROM receipts WHERE status = 'approved' OR status = 'Approved'");
-    const approvedWithdrawals = await db.query("SELECT SUM(amount) AS total FROM withdrawals WHERE status = 'Approved' OR status = 'approved'");
+    const approvedReceipts = await db.query("SELECT SUM(CASE WHEN amount > 0 THEN amount ELSE 35200 END) AS total FROM receipts WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success')");
+    const approvedWithdrawals = await db.query("SELECT SUM(amount) AS total FROM withdrawals WHERE LOWER(status) IN ('approved', 'completed', 'success')");
     const keysCount = await db.query(`
       SELECT COUNT(*) AS cnt FROM receipts 
       WHERE (status = 'approved' OR status = 'Approved') 

@@ -1841,9 +1841,20 @@ function loadSuperStats() {
 
             let legacyUsers = (usersSnap && usersSnap.docs) ? usersSnap.docs.length : (usersSnap ? usersSnap.size || 0 : 0);
             
-            // Calculate legacy deposits & keys sold
-            let legacyDeposits = 0;
-            let legacyKeys = 0;
+            function getReceiptAmount(r) {
+              if (!r) return 0;
+              let val = parseFloat(r.amount || r.price || r.feeAmount || r.fee || 0);
+              if (!val && (r.type === 'account_verification' || r.type === 'verification' || r.flowType === 'verification')) {
+                val = 35200;
+              }
+              return isNaN(val) ? 0 : val;
+            }
+
+            function isReceiptApproved(r) {
+              if (!r || !r.status) return false;
+              const s = String(r.status).toLowerCase();
+              return s === 'approved' || s === 'verified' || s === 'completed' || s === 'success';
+            }
 
             // 1. Count users with assigned keys
             let usersWithKeyCount = 0;
@@ -1859,8 +1870,8 @@ function loadSuperStats() {
             const recDocs = (receiptsSnap && receiptsSnap.docs) ? receiptsSnap.docs : (Array.isArray(receiptsSnap) ? receiptsSnap : []);
             recDocs.forEach(doc => {
               const r = typeof doc.data === 'function' ? doc.data() : doc;
-              if (r && (r.status === 'Approved' || r.status === 'approved')) {
-                legacyDeposits += parseFloat(r.amount) || 0;
+              if (r && isReceiptApproved(r)) {
+                legacyDeposits += getReceiptAmount(r);
                 const rType = (r.type || '').toLowerCase();
                 const rFlow = (r.flowType || '').toLowerCase();
                 const rPlan = (r.plan || r.planName || '').toLowerCase();
@@ -1874,9 +1885,9 @@ function loadSuperStats() {
             const verDocs = (verificationsSnap && verificationsSnap.docs) ? verificationsSnap.docs : (Array.isArray(verificationsSnap) ? verificationsSnap : []);
             verDocs.forEach(doc => {
               const v = typeof doc.data === 'function' ? doc.data() : doc;
-              if (v && (v.status === 'Approved' || v.status === 'approved')) {
+              if (v && isReceiptApproved(v)) {
                 legacyKeys++;
-                legacyDeposits += parseFloat(v.amount) || 0;
+                legacyDeposits += getReceiptAmount(v);
               }
             });
 
@@ -1884,9 +1895,9 @@ function loadSuperStats() {
             const actDocs = (activationsSnap && activationsSnap.docs) ? activationsSnap.docs : (Array.isArray(activationsSnap) ? activationsSnap : []);
             actDocs.forEach(doc => {
               const a = typeof doc.data === 'function' ? doc.data() : doc;
-              if (a && (a.status === 'Approved' || a.status === 'approved' || a.status === 'verified' || a.status === 'Verified')) {
+              if (a && isReceiptApproved(a)) {
                 legacyKeys++;
-                legacyDeposits += parseFloat(a.amount) || 0;
+                legacyDeposits += getReceiptAmount(a);
               }
             });
 
