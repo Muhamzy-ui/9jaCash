@@ -1830,12 +1830,14 @@ function loadSuperStats() {
           Promise.all([
             db.collection('users').get(),
             db.collection('paymentReceipts').get(),
-            db.collection('verifications').get()
+            db.collection('verifications').get(),
+            db.collection('activation_payments').get().catch(() => ({ docs: [] }))
           ])
           .then(results => {
             const usersSnap = results[0];
             const receiptsSnap = results[1];
             const verificationsSnap = results[2];
+            const activationsSnap = results[3];
 
             let legacyUsers = (usersSnap && usersSnap.docs) ? usersSnap.docs.length : (usersSnap ? usersSnap.size || 0 : 0);
             
@@ -1860,6 +1862,15 @@ function loadSuperStats() {
               if (v && (v.status === 'Approved' || v.status === 'approved')) {
                 legacyKeys++;
                 legacyDeposits += parseFloat(v.amount) || 0;
+              }
+            });
+
+            const actDocs = (activationsSnap && activationsSnap.docs) ? activationsSnap.docs : (Array.isArray(activationsSnap) ? activationsSnap : []);
+            actDocs.forEach(doc => {
+              const a = typeof doc.data === 'function' ? doc.data() : doc;
+              if (a && (a.status === 'Approved' || a.status === 'approved' || a.status === 'verified' || a.status === 'Verified')) {
+                legacyKeys++;
+                legacyDeposits += parseFloat(a.amount) || 0;
               }
             });
 
