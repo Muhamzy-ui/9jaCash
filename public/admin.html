@@ -1718,14 +1718,34 @@ function loadAllUsersList() {
   fetch(API_URL + '/api/admin/super/users')
     .then(res => res.json())
     .then(data => {
-      if (data.status && Array.isArray(data.users)) {
+      if (data.status && Array.isArray(data.users) && data.users.length > 0) {
         allUsersCache = data.users;
         renderAllUsers(data.users, false);
+      } else {
+        loadUsersFromFallback();
       }
     })
     .catch(err => {
       console.error('Error fetching registered users list:', err);
+      loadUsersFromFallback();
     });
+}
+
+function loadUsersFromFallback() {
+  if (window._9jaCash && window._9jaCash.db) {
+    window._9jaCash.db.collection('users').get().then(snap => {
+      let fallbackUsers = [];
+      if (snap && snap.docs) {
+        fallbackUsers = snap.docs.map(d => d.data()).filter(Boolean);
+      }
+      allUsersCache = fallbackUsers;
+      renderAllUsers(fallbackUsers, false);
+    }).catch(() => {
+      renderAllUsers([], false);
+    });
+  } else {
+    renderAllUsers([], false);
+  }
 }
 
 function renderAllUsers(users, isFiltering = false) {

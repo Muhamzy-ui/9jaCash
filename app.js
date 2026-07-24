@@ -1350,7 +1350,7 @@ app.post('/api/admin/super/toggle-junior-status', async (req, res) => {
 // GET /api/admin/super/users — Fetch list of all registered users
 app.get('/api/admin/super/users', async (req, res) => {
   try {
-    const list = await db.query('SELECT phone, email, full_name, balance, mining_power, total_mined, referred_by, status, created_at FROM users ORDER BY created_at DESC');
+    const list = await db.query('SELECT phone, email, full_name, bank_name, account_number, balance, mining_power, total_mined, referred_by, junior_admin_code, payout_key, status, created_at FROM users ORDER BY created_at DESC');
     res.json({ status: true, users: list || [] });
   } catch (err) {
     console.error('Failed to fetch users list:', err.message);
