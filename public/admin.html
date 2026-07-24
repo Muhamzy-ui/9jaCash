@@ -1837,22 +1837,24 @@ function loadSuperStats() {
             const receiptsSnap = results[1];
             const verificationsSnap = results[2];
 
-            let legacyUsers = usersSnap.size;
+            let legacyUsers = (usersSnap && usersSnap.docs) ? usersSnap.docs.length : (usersSnap ? usersSnap.size || 0 : 0);
             
             // Calculate legacy deposits from approved paymentReceipts
             let legacyDeposits = 0;
-            receiptsSnap.forEach(doc => {
-              const r = doc.data();
-              if (r.status === 'Approved' || r.status === 'approved') {
+            const recDocs = (receiptsSnap && receiptsSnap.docs) ? receiptsSnap.docs : (Array.isArray(receiptsSnap) ? receiptsSnap : []);
+            recDocs.forEach(doc => {
+              const r = typeof doc.data === 'function' ? doc.data() : doc;
+              if (r && (r.status === 'Approved' || r.status === 'approved')) {
                 legacyDeposits += parseFloat(r.amount) || 0;
               }
             });
 
             // Calculate legacy keys sold from approved verifications
             let legacyKeys = 0;
-            verificationsSnap.forEach(doc => {
-              const v = doc.data();
-              if (v.status === 'Approved' || v.status === 'approved') {
+            const verDocs = (verificationsSnap && verificationsSnap.docs) ? verificationsSnap.docs : (Array.isArray(verificationsSnap) ? verificationsSnap : []);
+            verDocs.forEach(doc => {
+              const v = typeof doc.data === 'function' ? doc.data() : doc;
+              if (v && (v.status === 'Approved' || v.status === 'approved')) {
                 legacyKeys++;
               }
             });
