@@ -1818,24 +1818,78 @@ function loadSuperStats() {
     .then(res => res.json())
     .then(data => {
       if (data.status) {
-        document.getElementById('statUsers').textContent = data.totalUsers;
-        document.getElementById('usersBadge').textContent = data.totalUsers;
-        document.getElementById('statPending').textContent = data.totalPendingWithdrawals;
-        const wdBadge = document.getElementById('withdrawalsBadge');
-        if (wdBadge) {
-          wdBadge.textContent = data.totalPendingWithdrawals;
-          wdBadge.style.display = data.totalPendingWithdrawals > 0 ? 'inline-block' : 'none';
+        let sqlUsers = data.totalUsers;
+        let sqlPending = data.totalPendingWithdrawals;
+        let sqlApprovedReceipts = data.approvedReceiptsAmount;
+        let sqlApprovedWithdrawals = data.approvedWithdrawalsAmount;
+        let sqlKeysSold = data.keysSold;
+
+        // Fetch fallback/legacy stats from Firestore in parallel to combine them
+        if (window._9jaCash && window._9jaCash.db) {
+          const db = window._9jaCash.db;
+          Promise.all([
+            db.collection('users').get(),
+            db.collection('paymentReceipts').get(),
+            db.collection('verifications').get()
+          ])
+          .then(results => {
+            const usersSnap = results[0];
+            const receiptsSnap = results[1];
+            const verificationsSnap = results[2];
+
+            let legacyUsers = usersSnap.size;
+            
+            // Calculate legacy deposits from approved paymentReceipts
+            let legacyDeposits = 0;
+            receiptsSnap.forEach(doc => {
+              const r = doc.data();
+              if (r.status === 'Approved' || r.status === 'approved') {
+                legacyDeposits += parseFloat(r.amount) || 0;
+              }
+            });
+
+            // Calculate legacy keys sold from approved verifications
+            let legacyKeys = 0;
+            verificationsSnap.forEach(doc => {
+              const v = doc.data();
+              if (v.status === 'Approved' || v.status === 'approved') {
+                legacyKeys++;
+              }
+            });
+
+            // Combine stats safely
+            const combinedUsers = Math.max(sqlUsers, legacyUsers);
+            const combinedDeposits = sqlApprovedReceipts + legacyDeposits;
+            const combinedKeys = sqlKeysSold + legacyKeys;
+
+            renderStatsOnPage(combinedUsers, sqlPending, combinedDeposits, sqlApprovedWithdrawals, combinedKeys);
+          })
+          .catch(err => {
+            console.warn('Failed to calculate legacy stats:', err);
+            renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold);
+          });
+        } else {
+          renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold);
         }
-        
-        // Render new stats
-        document.getElementById('statApprovedReceipts').textContent = '₦' + data.approvedReceiptsAmount.toLocaleString();
-        document.getElementById('statApprovedWithdrawals').textContent = '₦' + data.approvedWithdrawalsAmount.toLocaleString();
-        document.getElementById('statKeysSold').textContent = data.keysSold;
       }
     })
     .catch(err => {
       console.warn('Failed to load SQL database stats:', err);
     });
+}
+
+function renderStatsOnPage(users, pending, receipts, withdrawals, keys) {
+  document.getElementById('statUsers').textContent = users;
+  document.getElementById('usersBadge').textContent = users;
+  document.getElementById('statPending').textContent = pending;
+  const wdBadge = document.getElementById('withdrawalsBadge');
+  if (wdBadge) {
+    wdBadge.textContent = pending;
+    wdBadge.style.display = pending > 0 ? 'inline-block' : 'none';
+  }
+  document.getElementById('statApprovedReceipts').textContent = '₦' + receipts.toLocaleString();
+  document.getElementById('statApprovedWithdrawals').textContent = '₦' + withdrawals.toLocaleString();
+  document.getElementById('statKeysSold').textContent = keys;
 }
 
 function parseLocaleDate(dateStr) {
