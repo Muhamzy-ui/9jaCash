@@ -437,6 +437,15 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+function normalizePhone(p) {
+  if (!p) return '';
+  let digits = p.toString().replace(/\D/g, '');
+  if (digits.startsWith('234') && digits.length === 13) {
+    digits = '0' + digits.substring(3);
+  }
+  return digits;
+}
+
 // POST /api/login — User login (supports Phone OR Email)
 app.post('/api/login', async (req, res) => {
   const { phoneOrEmail, password } = req.body || {};
@@ -446,6 +455,7 @@ app.post('/api/login', async (req, res) => {
 
   const cleanInput = phoneOrEmail.trim();
   const cleanLower = cleanInput.toLowerCase();
+  const normPhone = normalizePhone(cleanInput);
   const cleanPass = password.trim();
 
   try {
@@ -466,16 +476,16 @@ app.post('/api/login', async (req, res) => {
 
     const users = await db.query(`
       SELECT * FROM users 
-      WHERE (phone = ? OR LOWER(phone) = ? OR LOWER(email) = ?) 
+      WHERE (phone = ? OR phone = ? OR LOWER(phone) = ? OR LOWER(email) = ?) 
       AND password = ?
-    `, [cleanInput, cleanLower, cleanLower, cleanPass]);
+    `, [cleanInput, normPhone, cleanLower, cleanLower, cleanPass]);
 
     if (!users || users.length === 0) {
       // Check if user exists to give precise feedback
       const checkUser = await db.query(`
         SELECT * FROM users 
-        WHERE phone = ? OR LOWER(phone) = ? OR LOWER(email) = ?
-      `, [cleanInput, cleanLower, cleanLower]);
+        WHERE phone = ? OR phone = ? OR LOWER(phone) = ? OR LOWER(email) = ?
+      `, [cleanInput, normPhone, cleanLower, cleanLower]);
 
       if (checkUser && checkUser.length > 0) {
         return res.status(401).json({ status: false, error: 'Incorrect password. Please try again.' });

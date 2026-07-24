@@ -256,58 +256,77 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
       showToast('Welcome back, ' + (user.fullName || 'User') + '!');
       setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
     } else {
-      showToast(data.error || 'Invalid credentials or account does not exist.', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
+      attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, data.error);
     }
   })
   .catch(err => {
-    console.warn("SQL login failed or unreachable, trying Firestore direct fallback:", err);
-    
-    // 2. Firestore Fallback (only if SQL backend is completely unreachable/offline)
-    if (window._9jaCash && window._9jaCash.db) {
-      const firestoreDb = window._9jaCash.db;
-      let queryPromise;
-      if (isEmail) {
-        queryPromise = firestoreDb.collection('users').where('email', '==', phoneOrEmailVal).get()
-          .then(function(snapshot) {
-            if (snapshot.empty) throw new Error('No user account found with this email.');
-            return snapshot.docs[0];
-          });
-      } else {
-        queryPromise = firestoreDb.collection('users').doc(phoneOrEmailVal).get()
-          .then(function(doc) {
-            if (!doc.exists) throw new Error('No user account found with this phone number.');
-            return doc;
-          });
-      }
+    console.warn("SQL login error, trying fallback:", err);
+    attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, null);
+  });
+});
 
-      queryPromise
+function attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, apiError) {
+  if (window._9jaCash && window._9jaCash.db) {
+    const firestoreDb = window._9jaCash.db;
+    let queryPromise;
+    if (isEmail) {
+      queryPromise = firestoreDb.collection('users').where('email', '==', phoneOrEmailVal).get()
+        .then(function(snapshot) {
+          if (!snapshot || snapshot.empty) throw new Error(apiError || 'Account not found. Please check your phone or email.');
+          return snapshot.docs[0];
+        });
+    } else {
+      queryPromise = firestoreDb.collection('users').doc(phoneOrEmailVal).get()
         .then(function(doc) {
-          const userData = doc.data();
-          if (userData.password !== password) {
-            throw new Error('Incorrect password. Please try again.');
-          }
-          if (userData.status === 'suspended') {
-            throw new Error('Your account has been suspended. Contact support.');
-          }
-          
-          const mappedUser = {
-            phone: userData.phone,
-            email: userData.email || `${userData.phone}@9jacash.com`,
-            fullName: userData.fullName || userData.name || "9jaCash User",
-            name: userData.fullName || userData.name || "9jaCash User",
-            bankName: userData.bankName || "Not linked",
-            accountNumber: userData.accountNumber || "Not linked",
-            balance: parseFloat(userData.balance) || 0,
-            miningPower: parseFloat(userData.miningPower) || 1,
-            totalMined: parseFloat(userData.totalMined) || 0,
-            referredBy: userData.referredBy || null,
-            status: userData.status || 'active',
-            createdAt: userData.createdAt || new Date().toISOString()
-          };
+          if (!doc || !doc.exists) throw new Error(apiError || 'Account not found. Please check your phone or email.');
+          return doc;
+        });
+    }
 
-          localStorage.setItem('9jaCashUser', JSON.stringify(mappedUser));
+    queryPromise
+      .then(function(doc) {
+        const userData = typeof doc.data === 'function' ? doc.data() : doc;
+        if (!userData) throw new Error(apiError || 'Account not found.');
+        if (userData.password && userData.password.trim() !== password.trim()) {
+          throw new Error('Incorrect password. Please try again.');
+        }
+        if (userData.status === 'suspended') {
+          throw new Error('Your account has been suspended. Contact support.');
+        }
+        
+        const mappedUser = {
+          phone: userData.phone || phoneOrEmailVal,
+          email: userData.email || `${phoneOrEmailVal}@9jacash.com`,
+          fullName: userData.fullName || userData.name || "9jaCash User",
+          name: userData.fullName || userData.name || "9jaCash User",
+          bankName: userData.bankName || "Not linked",
+          accountNumber: userData.accountNumber || "Not linked",
+          balance: parseFloat(userData.balance) || 0,
+          miningPower: parseFloat(userData.miningPower) || 1,
+          totalMined: parseFloat(userData.totalMined) || 0,
+          referredBy: userData.referredBy || null,
+          status: userData.status || 'active',
+          createdAt: userData.createdAt || new Date().toISOString()
+        };
+
+        localStorage.setItem('9jaCashUser', JSON.stringify(mappedUser));
+        localStorage.setItem('walletBalance', mappedUser.balance.toString());
+        localStorage.setItem('9jaCashOnboard', 'done');
+        
+        showToast('Welcome back, ' + mappedUser.fullName + '!');
+        setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
+      })
+      .catch(function(err) {
+        showToast(err.message || apiError || 'Login failed.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
+      });
+  } else {
+    showToast(apiError || 'Invalid credentials or account does not exist.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
+  }
+}
           localStorage.setItem('walletBalance', mappedUser.balance.toString());
           localStorage.setItem('9jaCashOnboard', 'done');
           showToast('Welcome back!');
