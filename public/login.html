@@ -327,23 +327,6 @@ function attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, apiError)
     btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
   }
 }
-          localStorage.setItem('walletBalance', mappedUser.balance.toString());
-          localStorage.setItem('9jaCashOnboard', 'done');
-          showToast('Welcome back!');
-          setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
-        })
-        .catch(function(fErr) {
-          btn.disabled = false;
-          btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
-          showToast(fErr.message || 'Login failed', 'error');
-        });
-    } else {
-      btn.disabled = false;
-      btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
-      showToast('Database connection failed', 'error');
-    }
-  });
-});
 
 // ========== INIT ==========
 window.addEventListener('DOMContentLoaded', function() {
