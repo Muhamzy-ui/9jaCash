@@ -948,13 +948,6 @@ window.addEventListener('DOMContentLoaded', function() {
     console.log('Referral code captured and saved:', ref);
   }
   
-  // Check if already registered
-  const user = localStorage.getItem('9jaCashUser');
-  if (user) {
-    window.location.href = 'dashboard.html';
-    return;
-  }
-  
   // Start at step 1
   showStep(1);
 });
