@@ -461,7 +461,7 @@ app.post('/api/login', async (req, res) => {
   const cleanPass = password.trim();
 
   try {
-    const adminPass = process.env.ADMIN_PASSWORD || '9jaCashAdminMasterSecretCode1083';
+    const adminPass = process.env.ADMIN_PASSWORD || 'admin1083';
     if (cleanLower === 'admin@9jacash.com' && cleanPass === adminPass) {
       return res.json({
         status: true,
@@ -511,20 +511,22 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/user/sync', async (req, res) => {
   const { phone, balance, totalMined, withdrawalCount } = req.body || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
+  
+  const cleanPhone = normalizePhone(phone);
   try {
-    const users = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+    const users = await db.query('SELECT * FROM users WHERE phone = ?', [cleanPhone]);
     const localBalance = parseFloat(balance) || 0;
     const localTotalMined = parseFloat(totalMined) || 0;
 
-    let dbUser;
-    if (users.length === 0) {
+    let dbUser = null;
+    if (!users || users.length === 0) {
       // Auto-migrate: create user row with frontend's local stats if available
       await db.query(`
         INSERT INTO users (phone, email, password, full_name, balance, total_mined, status, created_at)
         VALUES (?, ?, '123456', '9jaCash User', ?, ?, 'active', ?)
-      `, [phone, `${phone}@9jacash.com`, localBalance, localTotalMined, new Date().toISOString()]);
-      const newUsers = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
-      dbUser = newUsers[0];
+      `, [cleanPhone, `${cleanPhone}@9jacash.com`, localBalance, localTotalMined, new Date().toISOString()]);
+      const newUsers = await db.query('SELECT * FROM users WHERE phone = ?', [cleanPhone]);
+      dbUser = newUsers && newUsers.length > 0 ? newUsers[0] : null;
     } else {
       dbUser = users[0];
       let dbBalance = parseFloat(dbUser.balance) || 0;
@@ -542,16 +544,17 @@ app.post('/api/user/sync', async (req, res) => {
       }
 
       if (needsUpdate) {
-        await db.query('UPDATE users SET balance = ?, total_mined = ? WHERE phone = ?', [dbBalance, dbTotalMined, phone]);
-        const updatedUsers = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
-        dbUser = updatedUsers[0];
+        await db.query('UPDATE users SET balance = ?, total_mined = ? WHERE phone = ?', [dbBalance, dbTotalMined, cleanPhone]);
+        const updatedUsers = await db.query('SELECT * FROM users WHERE phone = ?', [cleanPhone]);
+        dbUser = updatedUsers && updatedUsers.length > 0 ? updatedUsers[0] : dbUser;
       }
     }
 
     // Recover/restore withdrawalCount if database has reset (ephemeral SQLite)
     const localWithdrawalCount = parseInt(withdrawalCount) || 0;
-    const countCheck = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [phone]);
-    let dbWithdrawalCount = parseInt(countCheck[0].count || countCheck[0]['COUNT(*)'] || 0);
+    const countCheck = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [cleanPhone]);
+    const getCnt = (arr) => (arr && arr[0]) ? (arr[0].count || arr[0]['count'] || arr[0]['COUNT(*)'] || 0) : 0;
+    let dbWithdrawalCount = parseInt(getCnt(countCheck));
 
     if (localWithdrawalCount > dbWithdrawalCount) {
       const missingCount = localWithdrawalCount - dbWithdrawalCount;
@@ -561,31 +564,41 @@ app.post('/api/user/sync', async (req, res) => {
           INSERT INTO withdrawals (
             id, phone, full_name, amount, bank_name, account_number, status, created_at
           ) VALUES (?, ?, '9jaCash User', 0, 'Placeholder Bank', '0000000000', 'Approved', ?)
-        `, [dummyId, phone, new Date().toISOString()]);
+        `, [dummyId, cleanPhone, new Date().toISOString()]);
       }
     }
 
     // Determine verification status, withdrawal count, and if they have bounced before
-    const rejectedWithdrawals = await db.query("SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ? AND status = 'Rejected'", [phone]);
-    const hasBouncedBefore = parseInt(rejectedWithdrawals[0].count || rejectedWithdrawals[0]['COUNT(*)'] || 0) > 0;
+    const rejectedWithdrawals = await db.query("SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ? AND status = 'Rejected'", [cleanPhone]);
+    const hasBouncedBefore = parseInt(getCnt(rejectedWithdrawals)) > 0;
 
-    const withdrawalsResult = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [phone]);
-    const finalWithdrawalCount = parseInt(withdrawalsResult[0].count || withdrawalsResult[0]['COUNT(*)'] || 0);
+    const withdrawalsResult = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [cleanPhone]);
+    const finalWithdrawalCount = parseInt(getCnt(withdrawalsResult));
 
     const verificationResult = await db.query(
       "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'", 
-      [phone]
+      [cleanPhone]
     );
-    const verified = parseInt(verificationResult[0].count || verificationResult[0]['COUNT(*)'] || 0) > 0;
+    const verified = parseInt(getCnt(verificationResult)) > 0;
 
-    const mapped = mapUserKeys(dbUser);
+    const mapped = mapUserKeys(dbUser) || {
+      phone: cleanPhone,
+      email: `${cleanPhone}@9jacash.com`,
+      fullName: '9jaCash User',
+      balance: localBalance,
+      miningPower: 1,
+      totalMined: localTotalMined,
+      planName: 'Free Miner',
+      status: 'active'
+    };
     mapped.hasBouncedBefore = hasBouncedBefore;
     mapped.withdrawalCount = finalWithdrawalCount;
     mapped.verified = verified;
 
     res.json({ status: true, user: mapped });
   } catch (err) {
-    res.status(500).json({ status: false, error: 'Sync failed' });
+    console.error('Sync failed:', err.message);
+    res.status(500).json({ status: false, error: 'Sync failed: ' + err.message });
   }
 });
 
