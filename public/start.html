@@ -705,7 +705,10 @@ document.getElementById('promoCode').addEventListener('blur', function() {
 document.getElementById('bankForm').addEventListener('submit', function(e) {
   e.preventDefault();
   
-  const phone = document.getElementById('phone').value.trim();
+  let phone = document.getElementById('phone').value.replace(/\D/g, '');
+  if (phone.startsWith('234') && phone.length === 13) {
+    phone = '0' + phone.substring(3);
+  }
   const email = document.getElementById('email').value.trim();
   const fullName = document.getElementById('fullName').value.trim();
   
@@ -719,7 +722,7 @@ document.getElementById('bankForm').addEventListener('submit', function(e) {
   
   // Validate all
   if (phone.length !== 11 || !/^\d{11}$/.test(phone)) {
-    showToast('Phone must be 11 digits', 'error');
+    showToast('Phone must be 11 digits (e.g. 08012345678)', 'error');
     return;
   }
   if (!email || !email.includes('@') || !email.includes('.')) {
@@ -782,7 +785,7 @@ document.getElementById('bankForm').addEventListener('submit', function(e) {
   })
   .then(function(res) { return res.json(); })
   .then(function(data) {
-    if (data.status) {
+    if (data.status && data.user) {
       console.log('User registered in SQL database successfully:', data.user);
       localStorage.setItem('9jaCashUser', JSON.stringify(data.user));
     } else {

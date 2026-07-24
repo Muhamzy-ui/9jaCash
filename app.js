@@ -370,8 +370,9 @@ function mapUserKeys(u) {
 app.post('/api/register', async (req, res) => {
   const { phone, email, password, fullName, bankName, accountNumber, promoCode, promoBonus, referredBy } = req.body || {};
   
-  if (!phone || phone.trim().length !== 11) {
-    return res.status(400).json({ status: false, error: 'Phone must be 11 digits' });
+  const cleanPhone = normalizePhone(phone);
+  if (!cleanPhone || cleanPhone.length !== 11) {
+    return res.status(400).json({ status: false, error: 'Phone must be 11 digits (e.g. 08012345678)' });
   }
   if (!password || password.trim().length < 6) {
     return res.status(400).json({ status: false, error: 'Password must be at least 6 characters' });
@@ -380,10 +381,11 @@ app.post('/api/register', async (req, res) => {
     return res.status(400).json({ status: false, error: 'Full name is required' });
   }
 
-  const cleanPhone = phone.trim();
   const cleanEmail = (email && email.trim()) ? email.trim().toLowerCase() : `${cleanPhone}@9jacash.com`;
   const cleanPassword = password.trim();
   const cleanFullName = fullName.trim();
+  const cleanAccount = (accountNumber || '').toString().trim();
+  const cleanBank = (bankName || '').trim();
 
   try {
     const createdAt = new Date().toISOString();
@@ -398,7 +400,7 @@ app.post('/api/register', async (req, res) => {
         UPDATE users 
         SET password = ?, full_name = ?, bank_name = ?, account_number = ?, email = ?
         WHERE phone = ? OR LOWER(email) = ?
-      `, [cleanPassword, cleanFullName, bankName || null, accountNumber || null, cleanEmail, cleanPhone, cleanEmail]);
+      `, [cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, cleanEmail, cleanPhone, cleanEmail]);
     } else {
       // Insert new user record
       await db.query(`
@@ -406,7 +408,7 @@ app.post('/api/register', async (req, res) => {
           phone, email, password, full_name, bank_name, account_number, 
           balance, mining_power, total_mined, referred_by, junior_admin_code, status, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [cleanPhone, cleanEmail, cleanPassword, cleanFullName, bankName || null, accountNumber || null, 0, 1, 0, referredBy || null, juniorAdminCode, 'active', createdAt]);
+      `, [cleanPhone, cleanEmail, cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, 0, 1, 0, referredBy || null, juniorAdminCode, 'active', createdAt]);
     }
 
     // Fetch user record
