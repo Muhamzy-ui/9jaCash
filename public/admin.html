@@ -1845,17 +1845,32 @@ function loadSuperStats() {
             let legacyDeposits = 0;
             let legacyKeys = 0;
 
+            // 1. Count users with assigned keys
+            let usersWithKeyCount = 0;
+            const uDocs = (usersSnap && usersSnap.docs) ? usersSnap.docs : (Array.isArray(usersSnap) ? usersSnap : []);
+            uDocs.forEach(doc => {
+              const u = typeof doc.data === 'function' ? doc.data() : doc;
+              if (u && (u.payoutKey || u.payout_key) && u.payoutKey !== 'None' && u.payout_key !== 'None') {
+                usersWithKeyCount++;
+              }
+            });
+
+            // 2. Count from paymentReceipts
             const recDocs = (receiptsSnap && receiptsSnap.docs) ? receiptsSnap.docs : (Array.isArray(receiptsSnap) ? receiptsSnap : []);
             recDocs.forEach(doc => {
               const r = typeof doc.data === 'function' ? doc.data() : doc;
               if (r && (r.status === 'Approved' || r.status === 'approved')) {
                 legacyDeposits += parseFloat(r.amount) || 0;
-                if (r.type === 'payout_key_purchase' || r.type === 'key' || r.type === 'verification') {
+                const rType = (r.type || '').toLowerCase();
+                const rFlow = (r.flowType || '').toLowerCase();
+                const rPlan = (r.plan || r.planName || '').toLowerCase();
+                if (rType.includes('key') || rFlow.includes('key') || rPlan.includes('key') || rType === 'verification' || rType === 'payout_key_purchase') {
                   legacyKeys++;
                 }
               }
             });
 
+            // 3. Count from verifications
             const verDocs = (verificationsSnap && verificationsSnap.docs) ? verificationsSnap.docs : (Array.isArray(verificationsSnap) ? verificationsSnap : []);
             verDocs.forEach(doc => {
               const v = typeof doc.data === 'function' ? doc.data() : doc;
@@ -1865,6 +1880,7 @@ function loadSuperStats() {
               }
             });
 
+            // 4. Count from activation_payments
             const actDocs = (activationsSnap && activationsSnap.docs) ? activationsSnap.docs : (Array.isArray(activationsSnap) ? activationsSnap : []);
             actDocs.forEach(doc => {
               const a = typeof doc.data === 'function' ? doc.data() : doc;
@@ -1874,10 +1890,12 @@ function loadSuperStats() {
               }
             });
 
+            legacyKeys = Math.max(legacyKeys, usersWithKeyCount);
+
             // Combine stats safely
             const combinedUsers = Math.max(sqlUsers, legacyUsers);
             const combinedDeposits = sqlApprovedReceipts + legacyDeposits;
-            const combinedKeys = sqlKeysSold + legacyKeys;
+            const combinedKeys = Math.max(sqlKeysSold, legacyKeys);
 
             renderStatsOnPage(combinedUsers, sqlPending, combinedDeposits, sqlApprovedWithdrawals, combinedKeys);
           })

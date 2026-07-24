@@ -1412,16 +1412,25 @@ app.get('/api/admin/super/stats', async (req, res) => {
     const uCount = await db.query('SELECT COUNT(*) as cnt FROM users');
     const jCount = await db.query('SELECT COUNT(*) as cnt FROM junior_admins');
     const wCount = await db.query("SELECT COUNT(*) as cnt FROM withdrawals WHERE status = 'Pending'");
-    const approvedReceipts = await db.query("SELECT SUM(amount) AS total FROM receipts WHERE status = 'approved'");
-    const approvedWithdrawals = await db.query("SELECT SUM(amount) AS total FROM withdrawals WHERE status = 'Approved'");
+    const approvedReceipts = await db.query("SELECT SUM(amount) AS total FROM receipts WHERE status = 'approved' OR status = 'Approved'");
+    const approvedWithdrawals = await db.query("SELECT SUM(amount) AS total FROM withdrawals WHERE status = 'Approved' OR status = 'approved'");
     const keysCount = await db.query(`
       SELECT COUNT(*) AS cnt FROM receipts 
-      WHERE status = 'approved' 
-      AND type IN ('verification', 'payout_key_purchase', 'account_verification', 'payout', 'key')
+      WHERE (status = 'approved' OR status = 'Approved') 
+      AND (
+        type IN ('verification', 'payout_key_purchase', 'account_verification', 'payout', 'key', 'payoutKey')
+        OR LOWER(plan_name) LIKE '%key%'
+      )
+    `);
+    const usersWithKeys = await db.query(`
+      SELECT COUNT(*) AS cnt FROM users 
+      WHERE payout_key IS NOT NULL AND payout_key != '' AND payout_key != 'None'
     `);
 
     const getCnt = (arr) => (arr && arr[0]) ? (arr[0].cnt || arr[0]['cnt'] || arr[0]['COUNT(*)'] || 0) : 0;
     const getTotal = (arr) => (arr && arr[0]) ? parseFloat(arr[0].total || arr[0]['SUM(amount)'] || 0) : 0;
+
+    const totalKeysSold = Math.max(parseInt(getCnt(keysCount)), parseInt(getCnt(usersWithKeys)));
 
     res.json({
       status: true,
@@ -1430,7 +1439,7 @@ app.get('/api/admin/super/stats', async (req, res) => {
       totalPendingWithdrawals: parseInt(getCnt(wCount)),
       approvedReceiptsAmount: getTotal(approvedReceipts),
       approvedWithdrawalsAmount: getTotal(approvedWithdrawals),
-      keysSold: parseInt(getCnt(keysCount))
+      keysSold: totalKeysSold
     });
   } catch (err) {
     console.error('Failed to fetch stats:', err.message);
