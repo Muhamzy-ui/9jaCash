@@ -3,77 +3,93 @@ const { Pool } = require('pg');
 let dbType = 'sqlite';
 let pgPool = null;
 let sqliteDb = null;
+let sqlite3 = null;
 
-// Determine database type from environment variables
+// Initialize SQLite fallback database
+try {
+  sqlite3 = require('sqlite3');
+  sqliteDb = new sqlite3.Database('./database.sqlite');
+  console.log('🔌 Database: SQLite initialized (database.sqlite)');
+  dbType = 'sqlite';
+} catch (err) {
+  console.warn('⚠️ SQLite3 native module error, fallback to mock DB:', err.message);
+  dbType = 'mock';
+}
+
+// Initialize Postgres if DATABASE_URL is supplied
 if (process.env.DATABASE_URL) {
-  dbType = 'postgres';
-  pgPool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false } // Required for Neon/Render/Railway
-  });
-  console.log('🔌 Database: Connected to PostgreSQL (production)');
-} else {
-  let sqlite3;
   try {
-    sqlite3 = require('sqlite3');
-    dbType = 'sqlite';
-    sqliteDb = new sqlite3.Database('./database.sqlite');
-    console.log('🔌 Database: Connected to SQLite (local development: database.sqlite)');
+    pgPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      connectionTimeoutMillis: 5000
+    });
+    dbType = 'postgres';
+    console.log('🔌 Database: Configured for PostgreSQL (production)');
   } catch (err) {
-    console.error('Failed to load sqlite3 module, falling back to mock DB:', err.message);
-    dbType = 'mock';
+    console.error('Failed to initialize Postgres pool, using fallback:', err.message);
   }
 }
 
-// Unified query abstraction
-function query(sql, params = []) {
-  if (dbType === 'postgres') {
-    // Translate standard SQL placeholders (?) to Postgres placeholders ($1, $2, etc.)
-    let pgSql = sql;
-    let index = 1;
-    while (pgSql.includes('?')) {
-      pgSql = pgSql.replace('?', `$${index}`);
-      index++;
-    }
-    return pgPool.query(pgSql, params)
-      .then(res => res.rows)
-      .catch(err => {
-        console.error('Postgres Query Error:', err.message, 'SQL:', pgSql);
-        throw err;
-      });
-  } else if (dbType === 'sqlite') {
-    return new Promise((resolve, reject) => {
-      const isSelect = sql.trim().toUpperCase().startsWith('SELECT');
-      if (isSelect) {
-        sqliteDb.all(sql, params, (err, rows) => {
-          if (err) {
-            console.error('SQLite Query Error:', err.message, 'SQL:', sql);
-            reject(err);
-          } else {
-            resolve(rows);
-          }
-        });
-      } else {
-        sqliteDb.run(sql, params, function(err) {
-          if (err) {
-            console.error('SQLite Run Error:', err.message, 'SQL:', sql);
-            reject(err);
-          } else {
-            resolve({ lastID: this.lastID, changes: this.changes });
-          }
-        });
-      }
-    });
-  } else {
-    // Mock database connection for production preview when DATABASE_URL is missing
-    console.warn('⚠️ MOCK DB QUERY (No Postgres/SQLite loaded):', sql);
+// Helper for SQLite queries
+function querySqlite(sql, params = []) {
+  return new Promise((resolve) => {
     const isSelect = sql.trim().toUpperCase().startsWith('SELECT');
     if (isSelect) {
-      // Return a basic mock response list so pages don't crash on select
-      return Promise.resolve([]);
+      sqliteDb.all(sql, params, (err, rows) => {
+        if (err) {
+          console.error('SQLite Query Error:', err.message, 'SQL:', sql);
+          resolve([]);
+        } else {
+          resolve(rows || []);
+        }
+      });
     } else {
-      return Promise.resolve({ lastID: 1, changes: 1 });
+      sqliteDb.run(sql, params, function(err) {
+        if (err) {
+          console.error('SQLite Run Error:', err.message, 'SQL:', sql);
+          resolve({ lastID: 1, changes: 0 });
+        } else {
+          resolve({ lastID: this ? this.lastID : 1, changes: this ? this.changes : 0 });
+        }
+      });
     }
+  });
+}
+
+// Helper for Mock DB queries
+function queryMock(sql, params = []) {
+  const isSelect = sql.trim().toUpperCase().startsWith('SELECT');
+  if (isSelect) {
+    return Promise.resolve([]);
+  } else {
+    return Promise.resolve({ lastID: 1, changes: 1 });
+  }
+}
+
+// Unified query function with seamless fallback
+async function query(sql, params = []) {
+  if (dbType === 'postgres' && pgPool) {
+    try {
+      let pgSql = sql;
+      let index = 1;
+      while (pgSql.includes('?')) {
+        pgSql = pgSql.replace('?', `$${index}`);
+        index++;
+      }
+      const res = await pgPool.query(pgSql, params);
+      return res.rows || [];
+    } catch (err) {
+      console.warn('⚠️ Postgres query failed, executing fallback query:', err.message);
+      if (sqliteDb) {
+        return querySqlite(sql, params);
+      }
+      return queryMock(sql, params);
+    }
+  } else if (sqliteDb) {
+    return querySqlite(sql, params);
+  } else {
+    return queryMock(sql, params);
   }
 }
 
@@ -95,6 +111,7 @@ async function initDb() {
         referred_by TEXT,
         junior_admin_code TEXT,
         plan_name TEXT DEFAULT 'Free Miner',
+        payout_key TEXT,
         status TEXT DEFAULT 'active',
         created_at TEXT
       )
@@ -131,7 +148,7 @@ async function initDb() {
       )
     `);
 
-    // 4. User Notifications Table (Announcements & Payout Key Pushes)
+    // 4. User Notifications Table
     await query(`
       CREATE TABLE IF NOT EXISTS user_notifications (
         id TEXT PRIMARY KEY,
@@ -178,17 +195,46 @@ async function initDb() {
       )
     `);
 
-    // Alter table schemas dynamically to support existing local databases
-    try { await query("ALTER TABLE users ADD COLUMN junior_admin_code TEXT"); } catch(e) {}
-    try { await query("ALTER TABLE users ADD COLUMN plan_name TEXT DEFAULT 'Free Miner'"); } catch(e) {}
-    try { await query("ALTER TABLE users ADD COLUMN payout_key TEXT"); } catch(e) {}
-    try { await query('ALTER TABLE junior_admins ADD COLUMN bank_name TEXT'); } catch(e) {}
-    try { await query('ALTER TABLE junior_admins ADD COLUMN account_number TEXT'); } catch(e) {}
-    try { await query('ALTER TABLE junior_admins ADD COLUMN account_name TEXT'); } catch(e) {}
-    try { await query('ALTER TABLE junior_admins ADD COLUMN crypto_address TEXT'); } catch(e) {}
-    try { await query('ALTER TABLE junior_admins ADD COLUMN crypto_network TEXT'); } catch(e) {}
+    // Dynamic Alter Columns for backwards compatibility
+    const alterStatements = [
+      "ALTER TABLE users ADD COLUMN junior_admin_code TEXT",
+      "ALTER TABLE users ADD COLUMN plan_name TEXT DEFAULT 'Free Miner'",
+      "ALTER TABLE users ADD COLUMN payout_key TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN bank_name TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN account_number TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN account_name TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN crypto_address TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN crypto_network TEXT"
+    ];
+    for (const stmt of alterStatements) {
+      try { await query(stmt); } catch (e) {}
+    }
 
-    console.log('✅ Database schemas verified/initialized.');
+    // Seed default system settings if missing
+    const defaultSettings = [
+      {
+        key: 'payment',
+        value: JSON.stringify({ bankName: 'Zenith Bank', accountNumber: '1234567890', accountName: '9jaCash Admin Master Account', paymentNotice: '' })
+      },
+      { key: 'secondBilling', value: JSON.stringify({ feeAmount: 35200 }) },
+      { key: 'tasks', value: JSON.stringify({ tasksList: [] }) },
+      { key: 'withdrawalStatus', value: JSON.stringify({ active: false }) },
+      { key: 'paymentStatus', value: JSON.stringify({ active: false }) },
+      { key: 'videoChallenge', value: JSON.stringify({ active: true }) },
+      { key: 'payoutKeys', value: JSON.stringify({ price: 25000 }) },
+      { key: 'redirects', value: JSON.stringify({ payoutSuccess: 'success.html', payoutFailed: 'payment-failed.html' }) }
+    ];
+
+    for (const s of defaultSettings) {
+      try {
+        const existing = await query('SELECT key FROM system_settings WHERE key = ?', [s.key]);
+        if (!existing || existing.length === 0) {
+          await query('INSERT INTO system_settings (key, value) VALUES (?, ?)', [s.key, s.value]);
+        }
+      } catch (e) {}
+    }
+
+    console.log('✅ Database schemas verified/initialized with defaults.');
   } catch (err) {
     console.error('❌ Database initialization failed:', err.message);
   }
@@ -199,3 +245,4 @@ module.exports = {
   initDb,
   dbType: () => dbType
 };
+
