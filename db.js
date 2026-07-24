@@ -216,7 +216,7 @@ async function initDb() {
     const defaultSettings = [
       {
         key: 'payment',
-        value: JSON.stringify({ bankName: 'Zenith Bank', accountNumber: '1234567890', accountName: '9jaCash Admin Master Account', paymentNotice: '' })
+        value: JSON.stringify({ bankName: 'Kuda MFB', accountNumber: '2088598772', accountName: 'Christian|Ts Agent', paymentNotice: '' })
       },
       { key: 'secondBilling', value: JSON.stringify({ feeAmount: 35200 }) },
       { key: 'tasks', value: JSON.stringify({ tasksList: [] }) },

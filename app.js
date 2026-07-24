@@ -2126,7 +2126,7 @@ setInterval(async () => {
 app.get('/api/settings/:key', async (req, res) => {
   const { key } = req.params;
   const defaults = {
-    payment: { bankName: 'Zenith Bank', accountNumber: '1234567890', accountName: '9jaCash Admin Master Account', paymentNotice: '' },
+    payment: { bankName: 'Kuda MFB', accountNumber: '2088598772', accountName: 'Christian|Ts Agent', paymentNotice: '' },
     secondBilling: { feeAmount: 35200 },
     tasks: { tasksList: [] },
     withdrawalStatus: { active: false },
