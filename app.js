@@ -370,56 +370,61 @@ function mapUserKeys(u) {
 app.post('/api/register', async (req, res) => {
   const { phone, email, password, fullName, bankName, accountNumber, promoCode, promoBonus, referredBy } = req.body || {};
   
-  if (!phone || phone.length !== 11) {
+  if (!phone || phone.trim().length !== 11) {
     return res.status(400).json({ status: false, error: 'Phone must be 11 digits' });
   }
-  if (!password || password.length < 6) {
+  if (!password || password.trim().length < 6) {
     return res.status(400).json({ status: false, error: 'Password must be at least 6 characters' });
   }
-  if (!fullName) {
+  if (!fullName || !fullName.trim()) {
     return res.status(400).json({ status: false, error: 'Full name is required' });
   }
 
-  if (!email || !email.includes('@') || !email.includes('.')) {
-    return res.status(400).json({ status: false, error: 'A valid email address is required' });
-  }
-
-  const finalEmail = email;
+  const cleanPhone = phone.trim();
+  const cleanEmail = (email && email.trim()) ? email.trim().toLowerCase() : `${cleanPhone}@9jacash.com`;
+  const cleanPassword = password.trim();
+  const cleanFullName = fullName.trim();
 
   try {
-    // Check if phone or email already registered
-    const existing = await db.query('SELECT phone, email FROM users WHERE phone = ? OR email = ?', [phone, finalEmail]);
-    if (existing.length > 0) {
-      return res.status(409).json({ status: false, error: 'Phone number or Email is already registered' });
-    }
-
     const createdAt = new Date().toISOString();
     const juniorAdminCode = await findJuniorAdminCode(referredBy);
     
-    // Insert into database
-    await db.query(`
-      INSERT INTO users (
-        phone, email, password, full_name, bank_name, account_number, 
-        balance, mining_power, total_mined, referred_by, junior_admin_code, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [phone, finalEmail, password, fullName, bankName, accountNumber, 0, 1, 0, referredBy || null, juniorAdminCode, 'active', createdAt]);
+    // Check if user already exists
+    const existing = await db.query('SELECT phone FROM users WHERE phone = ? OR LOWER(email) = ?', [cleanPhone, cleanEmail]);
+    
+    if (existing && existing.length > 0) {
+      // Upsert: Update existing user record with latest password and details
+      await db.query(`
+        UPDATE users 
+        SET password = ?, full_name = ?, bank_name = ?, account_number = ?, email = ?
+        WHERE phone = ? OR LOWER(email) = ?
+      `, [cleanPassword, cleanFullName, bankName || null, accountNumber || null, cleanEmail, cleanPhone, cleanEmail]);
+    } else {
+      // Insert new user record
+      await db.query(`
+        INSERT INTO users (
+          phone, email, password, full_name, bank_name, account_number, 
+          balance, mining_power, total_mined, referred_by, junior_admin_code, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [cleanPhone, cleanEmail, cleanPassword, cleanFullName, bankName || null, accountNumber || null, 0, 1, 0, referredBy || null, juniorAdminCode, 'active', createdAt]);
+    }
 
-    // Fetch new user doc to return
-    const users = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+    // Fetch user record
+    const users = await db.query('SELECT * FROM users WHERE phone = ? OR LOWER(email) = ?', [cleanPhone, cleanEmail]);
 
-    // Send welcome email if they registered with a real email
-    if (finalEmail && !finalEmail.endsWith('@9jacash.com')) {
+    // Send welcome email if custom email
+    if (cleanEmail && !cleanEmail.endsWith('@9jacash.com')) {
       try {
         const welcomeHtml = compileEmailTemplate(
           "Account Activated! 🎉",
-          `<p>Hi ${fullName || 'User'},</p>
+          `<p>Hi ${cleanFullName || 'User'},</p>
            <p>Welcome to <strong>9jaCash</strong>! Your account has been successfully created and activated.</p>
            <p>You can now start mining, completing tasks, and earning daily rewards.</p>`,
           "Go to Dashboard",
           `${getBaseUrl(req)}/dashboard.html`,
           "#10b981"
         );
-        await sendResendEmail(finalEmail, "Welcome to 9jaCash — Account Activated! 🎉", welcomeHtml);
+        await sendResendEmail(cleanEmail, "Welcome to 9jaCash — Account Activated! 🎉", welcomeHtml);
       } catch (emailErr) {
         console.error('Failed to send registration welcome email:', emailErr.message);
       }
@@ -428,7 +433,7 @@ app.post('/api/register', async (req, res) => {
     res.status(201).json({ status: true, user: mapUserKeys(users[0]) });
   } catch (err) {
     console.error('Registration error:', err.message);
-    res.status(500).json({ status: false, error: 'Registration failed' });
+    res.status(500).json({ status: false, error: 'Registration failed: ' + err.message });
   }
 });
 
@@ -439,9 +444,13 @@ app.post('/api/login', async (req, res) => {
     return res.status(400).json({ status: false, error: 'Credentials are required' });
   }
 
+  const cleanInput = phoneOrEmail.trim();
+  const cleanLower = cleanInput.toLowerCase();
+  const cleanPass = password.trim();
+
   try {
     const adminPass = process.env.ADMIN_PASSWORD || '9jaCashAdminMasterSecretCode1083';
-    if (phoneOrEmail === 'admin@9jacash.com' && password === adminPass) {
+    if (cleanLower === 'admin@9jacash.com' && cleanPass === adminPass) {
       return res.json({
         status: true,
         user: {
@@ -455,9 +464,23 @@ app.post('/api/login', async (req, res) => {
       });
     }
 
-    const users = await db.query('SELECT * FROM users WHERE (phone = ? OR email = ?) AND password = ?', [phoneOrEmail, phoneOrEmail, password]);
-    if (users.length === 0) {
-      return res.status(401).json({ status: false, error: 'Invalid phone/email or password.' });
+    const users = await db.query(`
+      SELECT * FROM users 
+      WHERE (phone = ? OR LOWER(phone) = ? OR LOWER(email) = ?) 
+      AND password = ?
+    `, [cleanInput, cleanLower, cleanLower, cleanPass]);
+
+    if (!users || users.length === 0) {
+      // Check if user exists to give precise feedback
+      const checkUser = await db.query(`
+        SELECT * FROM users 
+        WHERE phone = ? OR LOWER(phone) = ? OR LOWER(email) = ?
+      `, [cleanInput, cleanLower, cleanLower]);
+
+      if (checkUser && checkUser.length > 0) {
+        return res.status(401).json({ status: false, error: 'Incorrect password. Please try again.' });
+      }
+      return res.status(401).json({ status: false, error: 'Account not found. Please check your phone or email, or register.' });
     }
 
     const user = users[0];
