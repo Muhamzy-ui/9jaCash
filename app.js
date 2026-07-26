@@ -20,37 +20,72 @@ const https = require('https');
 function safeParseDate(dateStr) {
   if (!dateStr) return new Date(0);
   if (dateStr instanceof Date) return dateStr;
+  
+  // Try standard parse first
   let d = new Date(dateStr);
   if (!isNaN(d.getTime())) return d;
+  
   try {
-    const parts = dateStr.toString().split(',');
+    const cleanStr = dateStr.toString().replace(/,/g, ' ').trim();
+    // Try splitting by space to separate date and time
+    const parts = cleanStr.split(/\s+/);
     if (parts.length >= 1) {
-      const dateParts = parts[0].trim().split('/');
-      if (dateParts.length === 3) {
-        let month = parseInt(dateParts[0]);
-        let day = parseInt(dateParts[1]);
-        const year = parseInt(dateParts[2]);
-        if (month > 12) {
-          const temp = month;
-          month = day;
-          day = temp;
-        }
-        let hours = 0, minutes = 0, seconds = 0;
-        if (parts.length >= 2) {
-          const timeParts = parts[1].trim().split(' ');
-          const hms = timeParts[0].split(':');
-          hours = parseInt(hms[0] || 0);
-          minutes = parseInt(hms[1] || 0);
-          seconds = parseInt(hms[2] || 0);
-          if (timeParts.length >= 2 && timeParts[1].toLowerCase() === 'pm' && hours < 12) {
-            hours += 12;
+      // Try parsing date part. It could be split by '/' or '-'
+      const datePart = parts[0];
+      const sep = datePart.includes('/') ? '/' : (datePart.includes('-') ? '-' : null);
+      if (sep) {
+        const dateParts = datePart.split(sep);
+        if (dateParts.length === 3) {
+          let p1 = parseInt(dateParts[0]);
+          let p2 = parseInt(dateParts[1]);
+          let p3 = parseInt(dateParts[2]);
+          
+          let year, month, day;
+          if (p1 > 1000) {
+            // YYYY-MM-DD
+            year = p1;
+            month = p2;
+            day = p3;
+          } else if (p3 > 1000) {
+            // DD/MM/YYYY or MM/DD/YYYY
+            year = p3;
+            if (p1 > 12) {
+              // DD/MM/YYYY
+              day = p1;
+              month = p2;
+            } else if (p2 > 12) {
+              // MM/DD/YYYY
+              month = p1;
+              day = p2;
+            } else {
+              // Default to standard Nigerian style DD/MM/YYYY first
+              day = p1;
+              month = p2;
+            }
+          } else {
+            // Two digit year
+            year = 2000 + p3;
+            day = p1;
+            month = p2;
           }
-          if (timeParts.length >= 2 && timeParts[1].toLowerCase() === 'am' && hours === 12) {
-            hours = 0;
+          
+          let hours = 0, minutes = 0, seconds = 0;
+          if (parts.length >= 2) {
+            const timeStr = parts[1];
+            const timeParts = timeStr.split(':');
+            hours = parseInt(timeParts[0] || 0);
+            minutes = parseInt(timeParts[1] || 0);
+            seconds = parseInt(timeParts[2] || 0);
+            
+            // Check AM/PM
+            const ampm = cleanStr.toLowerCase();
+            if (ampm.includes('pm') && hours < 12) hours += 12;
+            if (ampm.includes('am') && hours === 12) hours = 0;
           }
+          
+          d = new Date(year, month - 1, day, hours, minutes, seconds);
+          if (!isNaN(d.getTime())) return d;
         }
-        d = new Date(year, month - 1, day, hours, minutes, seconds);
-        if (!isNaN(d.getTime())) return d;
       }
     }
   } catch (e) {
@@ -58,6 +93,7 @@ function safeParseDate(dateStr) {
   }
   return new Date(0);
 }
+
 
 // Helper to send emails via Resend API or SMTP fallback
 function sendResendEmail(to, subject, html, retries = 3, delay = 1000) {
@@ -1612,7 +1648,7 @@ app.get('/api/admin/super/stats', async (req, res) => {
     
     // Fetch all approved receipts for time-window calculations
     const receipts = await db.query(`
-      SELECT amount, created_at FROM receipts 
+      SELECT amount, type, created_at FROM receipts 
       WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success')
     `);
 
@@ -1634,13 +1670,19 @@ app.get('/api/admin/super/stats', async (req, res) => {
 
     const getCnt = (arr) => (arr && arr[0]) ? (arr[0].cnt || arr[0]['cnt'] || arr[0]['COUNT(*)'] || 0) : 0;
     
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    // Align timezone with WAT (UTC+1, Nigeria Time)
+    const nowUtc = new Date();
+    const nowWat = new Date(nowUtc.getTime() + 1 * 60 * 60 * 1000);
+    const startOfTodayWat = new Date(nowWat.getFullYear(), nowWat.getMonth(), nowWat.getDate());
+    const startOfToday = startOfTodayWat.getTime() - 1 * 60 * 60 * 1000;
     const startOfSevenDays = startOfToday - (6 * 24 * 60 * 60 * 1000);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+    const startOfMonth = new Date(nowWat.getFullYear(), nowWat.getMonth(), 1).getTime() - 1 * 60 * 60 * 1000;
+    const startOfYear = new Date(nowWat.getFullYear(), 0, 1).getTime() - 1 * 60 * 60 * 1000;
 
     let today = 0, sevenDays = 0, month = 0, year = 0, total = 0;
+    let keysRevenue = 0;
+    let verificationRevenue = 0;
+    let upgradeRevenue = 0;
 
     (receipts || []).forEach(r => {
       let amt = parseFloat(r.amount);
@@ -1653,6 +1695,15 @@ app.get('/api/admin/super/stats', async (req, res) => {
       if (rTime >= startOfSevenDays) sevenDays += amt;
       if (rTime >= startOfMonth) month += amt;
       if (rTime >= startOfYear) year += amt;
+
+      const rType = (r.type || '').toLowerCase();
+      if (rType === 'verification' || rType === 'account_verification') {
+        verificationRevenue += amt;
+      } else if (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key') {
+        keysRevenue += amt;
+      } else if (rType === 'upgrade') {
+        upgradeRevenue += amt;
+      }
     });
 
     const totalKeysSold = Math.max(parseInt(getCnt(keysCount)), parseInt(getCnt(usersWithKeys)));
@@ -1667,6 +1718,9 @@ app.get('/api/admin/super/stats', async (req, res) => {
       sevenDays,
       month,
       year,
+      keysRevenue,
+      verificationRevenue,
+      upgradeRevenue,
       approvedWithdrawalsAmount: (approvedWithdrawals && approvedWithdrawals[0] && parseFloat(approvedWithdrawals[0].total || 0)) || 0,
       keysSold: totalKeysSold
     });
@@ -1682,6 +1736,9 @@ app.get('/api/admin/super/stats', async (req, res) => {
       sevenDays: 0,
       month: 0,
       year: 0,
+      keysRevenue: 0,
+      verificationRevenue: 0,
+      upgradeRevenue: 0,
       approvedWithdrawalsAmount: 0,
       keysSold: 0
     });
@@ -2775,7 +2832,7 @@ app.post('/api/admin/receipts/approve', async (req, res) => {
     // 2. Payout Key Purchase Flow
     else if (rc.type === 'payout' || rc.type === 'key' || rc.type === 'payout_key_purchase' || rc.type === 'payout_key') {
       const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
-      await db.query('UPDATE users SET payout_key = ?, is_verified = 1 WHERE phone = ?', [keyStr, rc.phone]);
+      await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, rc.phone]);
 
       // Notification
       const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
@@ -2811,7 +2868,7 @@ app.post('/api/admin/receipts/approve', async (req, res) => {
       else if (plan.includes('Gold')) power = 10;
       else if (plan.includes('Diamond')) power = 25;
 
-      await db.query('UPDATE users SET plan_name = ?, mining_power = ?, is_verified = 1 WHERE phone = ?', [plan, power, rc.phone]);
+      await db.query('UPDATE users SET plan_name = ?, mining_power = ? WHERE phone = ?', [plan, power, rc.phone]);
 
       // Notification
       const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);

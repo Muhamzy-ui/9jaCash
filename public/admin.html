@@ -369,11 +369,11 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
         <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px;"><i class="fa-solid fa-vault"></i></div>
         <select id="depositTimeframeSelect" onchange="updateDepositTimeframeDisplay()" style="background: #1e293b; color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer; outline: none; font-family: inherit;">
-          <option value="today">Today</option>
+          <option value="today" selected>Today</option>
           <option value="sevenDays">Past 7 Days</option>
           <option value="month">This Month</option>
           <option value="year">This Year</option>
-          <option value="total" selected>All Time</option>
+          <option value="total">All Time</option>
         </select>
       </div>
       <div class="stat-num green" id="statDepositsDisplay" style="color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">₦0</div>
@@ -392,6 +392,29 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-key"></i></div>
       <div class="stat-num blue" id="statKeysSold" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">0</div>
       <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Total Payout Keys Sold</div>
+    </div>
+  </div>
+
+  <div class="stats-row" style="grid-template-columns: repeat(3, 1fr); display: grid; gap: 16px; margin-bottom: 24px;">
+    <!-- Payout Keys Revenue Card -->
+    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15); padding: 16px;">
+      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-key"></i></div>
+      <div class="stat-num blue" id="statKeysRevenue" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Payout Keys Revenue</div>
+    </div>
+
+    <!-- Verification Revenue Card -->
+    <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15); padding: 16px;">
+      <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-user-check"></i></div>
+      <div class="stat-num green" id="statVerificationRevenue" style="color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Verification Revenue</div>
+    </div>
+
+    <!-- Plan Upgrade Revenue Card -->
+    <div class="stat-card purple" style="background: rgba(139, 92, 246, 0.03); border: 1px solid rgba(139, 92, 246, 0.15); padding: 16px;">
+      <div class="stat-icon purple" style="background: rgba(139, 92, 246, 0.08); color: #8b5cf6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-circle-up"></i></div>
+      <div class="stat-num purple" id="statUpgradeRevenue" style="color: #8b5cf6; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Plan Upgrades Revenue</div>
     </div>
   </div>
 
@@ -1421,6 +1444,11 @@ async function loadData(){
     
     tasks=taskData.tasks||DEFAULT_TASKS;renderTasks();
     
+    // Restore timeframe selection
+    const savedTimeframe = localStorage.getItem('admin_deposit_timeframe') || 'today';
+    const timeframeSelect = document.getElementById('depositTimeframeSelect');
+    if (timeframeSelect) timeframeSelect.value = savedTimeframe;
+    
     // Fetch live SQL statistics from backend
     loadSuperStats();
     
@@ -1951,8 +1979,12 @@ function loadSuperStats() {
         sevenDays = data.sevenDays || 0;
         month = data.month || 0;
         year = data.year || 0;
+        
+        const keysRev = data.keysRevenue || 0;
+        const verRev = data.verificationRevenue || 0;
+        const upgradeRev = data.upgradeRevenue || 0;
 
-        renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold, today, sevenDays, month, year);
+        renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold, today, sevenDays, month, year, keysRev, verRev, upgradeRev);
 
         // Optional background fallback for legacy local data
         if (window._9jaCash && window._9jaCash.db) {
@@ -2035,7 +2067,7 @@ function loadSuperStats() {
             const combinedDeposits = Math.max(sqlApprovedReceipts, legacyDeposits);
             const combinedKeys = Math.max(sqlKeysSold, legacyKeys);
 
-            renderStatsOnPage(combinedUsers, sqlPending, combinedDeposits, sqlApprovedWithdrawals, combinedKeys, today, sevenDays, month, year);
+            renderStatsOnPage(combinedUsers, sqlPending, combinedDeposits, sqlApprovedWithdrawals, combinedKeys, today, sevenDays, month, year, keysRev, verRev, upgradeRev);
           })
           .catch(err => {
             console.warn('Fallback stats calculation:', err);
@@ -2054,13 +2086,14 @@ function updateDepositTimeframeDisplay() {
   const select = document.getElementById('depositTimeframeSelect');
   if (!select) return;
   const val = select.value;
+  localStorage.setItem('admin_deposit_timeframe', val);
   const display = document.getElementById('statDepositsDisplay');
   if (display) {
     display.textContent = '₦' + (depositsCache[val] || 0).toLocaleString();
   }
 }
 
-function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 0, sevenDays = 0, month = 0, year = 0) {
+function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 0, sevenDays = 0, month = 0, year = 0, keysRev = 0, verRev = 0, upgradeRev = 0) {
   document.getElementById('statUsers').textContent = users;
   document.getElementById('usersBadge').textContent = users;
   document.getElementById('statPending').textContent = pending;
@@ -2080,6 +2113,13 @@ function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 
 
   document.getElementById('statApprovedWithdrawals').textContent = '₦' + withdrawals.toLocaleString();
   document.getElementById('statKeysSold').textContent = keys;
+
+  const keysRevEl = document.getElementById('statKeysRevenue');
+  if (keysRevEl) keysRevEl.textContent = '₦' + keysRev.toLocaleString();
+  const verRevEl = document.getElementById('statVerificationRevenue');
+  if (verRevEl) verRevEl.textContent = '₦' + verRev.toLocaleString();
+  const upgradeRevEl = document.getElementById('statUpgradeRevenue');
+  if (upgradeRevEl) upgradeRevEl.textContent = '₦' + upgradeRev.toLocaleString();
 }
 
 function parseLocaleDate(dateStr) {
