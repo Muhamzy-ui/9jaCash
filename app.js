@@ -1430,7 +1430,7 @@ app.post('/api/admin/super/verify-user', async (req, res) => {
       WHERE phone = ? 
          OR (LENGTH(?) > 5 AND phone LIKE ?)
          OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
-      ORDER BY id DESC LIMIT 1
+      ORDER BY created_at DESC LIMIT 1
     `, [phone, last10, '%' + last10, last10, '%' + last10]);
 
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
@@ -1658,7 +1658,7 @@ app.post('/api/admin/super/generate-user-key', async (req, res) => {
       WHERE phone = ? 
          OR (LENGTH(?) > 5 AND phone LIKE ?)
          OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
-      ORDER BY id DESC LIMIT 1
+      ORDER BY created_at DESC LIMIT 1
     `, [phone, last10, '%' + last10, last10, '%' + last10]);
 
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
@@ -1728,7 +1728,7 @@ app.post('/api/admin/junior/generate-user-key', async (req, res) => {
       WHERE phone = ? 
          OR (LENGTH(?) > 5 AND phone LIKE ?)
          OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
-      ORDER BY id DESC LIMIT 1
+      ORDER BY created_at DESC LIMIT 1
     `, [userPhone, last10, '%' + last10, last10, '%' + last10]);
 
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
@@ -2388,7 +2388,7 @@ app.post('/api/user/sync', async (req, res) => {
          OR full_name = ?
          OR (LENGTH(?) > 5 AND phone LIKE ?)
          OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
-      ORDER BY id DESC LIMIT 1
+      ORDER BY created_at DESC LIMIT 1
     `, [rawPhone, rawPhone, rawPhone, last10, '%' + last10, last10, '%' + last10]);
 
     if (users.length === 0) {
@@ -2442,7 +2442,7 @@ app.get('/api/user/details', async (req, res) => {
          OR email = ? 
          OR (LENGTH(?) > 5 AND phone LIKE ?)
          OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
-      ORDER BY id DESC LIMIT 1
+      ORDER BY created_at DESC LIMIT 1
     `, [rawPhone, rawPhone, last10, '%' + last10, last10, '%' + last10]);
 
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
