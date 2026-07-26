@@ -637,11 +637,21 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
   <div class="panel">
     <div class="panel-header">
       <div class="panel-icon blue"><i class="fa-brands fa-telegram"></i></div>
-      <div><div class="panel-title">Telegram</div><div class="panel-sub">Support channel link</div></div>
+      <div><div class="panel-title">Community & Support Links</div><div class="panel-sub">Configure community channel and customer care links</div></div>
     </div>
-    <div class="form-group" style="margin-bottom:0;">
-      <label class="form-label">Channel URL</label>
-      <input type="url" id="telegramLink" class="form-input" placeholder="https://t.me/9jaCashSupport">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Telegram Channel URL (Community)</label>
+        <input type="url" id="telegramLink" class="form-input" placeholder="https://t.me/9jaCash_Community">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Telegram Support URL (Customer Care)</label>
+        <input type="url" id="telegramSupportLink" class="form-input" placeholder="https://t.me/9jaCash_Support">
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:12px; margin-bottom:0;">
+      <label class="form-label">WhatsApp Support URL (Customer Care)</label>
+      <input type="url" id="whatsappLink" class="form-input" placeholder="https://wa.me/2349000000000">
     </div>
   </div>
 
@@ -1336,6 +1346,8 @@ async function loadData(){
     const videoChallengeData=videoChallengeDoc.exists?videoChallengeDoc.data():{active:true};
     
     document.getElementById('telegramLink').value=pay.telegramLink||'';
+    document.getElementById('telegramSupportLink').value=pay.telegramSupportLink||'';
+    document.getElementById('whatsappLink').value=pay.whatsappLink||'';
     document.getElementById('accNumber').value=pay.accNumber||'';
     document.getElementById('bankName').value=pay.bank||'';
     document.getElementById('accName').value=pay.accName||'';
@@ -1437,7 +1449,19 @@ async function saveAll(){
   const txt=document.getElementById('saveText');
   const orig=txt.textContent;
   
-  const pay={telegramLink:document.getElementById('telegramLink').value.trim(),accNumber:document.getElementById('accNumber').value.trim(),bank:document.getElementById('bankName').value.trim(),accName:document.getElementById('accName').value.trim(),amount:Number(document.getElementById('amount').value)||0,cryptoAddress:document.getElementById('cryptoAddress').value.trim(),cryptoNetwork:document.getElementById('cryptoNetwork').value.trim(),notice:document.getElementById('noticeText').value.trim(),updatedAt:new Date().toISOString()};
+  const pay={
+    telegramLink:document.getElementById('telegramLink').value.trim(),
+    telegramSupportLink:document.getElementById('telegramSupportLink').value.trim(),
+    whatsappLink:document.getElementById('whatsappLink').value.trim(),
+    accNumber:document.getElementById('accNumber').value.trim(),
+    bank:document.getElementById('bankName').value.trim(),
+    accName:document.getElementById('accName').value.trim(),
+    amount:Number(document.getElementById('amount').value)||0,
+    cryptoAddress:document.getElementById('cryptoAddress').value.trim(),
+    cryptoNetwork:document.getElementById('cryptoNetwork').value.trim(),
+    notice:document.getElementById('noticeText').value.trim(),
+    updatedAt:new Date().toISOString()
+  };
   const fee={accNumber:document.getElementById('feeAccNumber').value.trim(),bank:document.getElementById('feeBank').value.trim(),accName:document.getElementById('feeAccName').value.trim(),amount:Number(document.getElementById('feeAmount').value)||0,updatedAt:new Date().toISOString()};
   const taskD={tasks:tasks,updatedAt:new Date().toISOString()};
   const wd={success:wdSuccess,updatedAt:new Date().toISOString()};

@@ -1147,6 +1147,24 @@ function closeCustomerCareModal() {
   const modal = document.getElementById("customerCareModal");
   if (modal) modal.style.display = "none";
 }
+function loadCustomerCareLinks() {
+  if (window._9jaCash && window._9jaCash.db) {
+    window._9jaCash.db.collection('settings').doc('payment').get()
+      .then(function(doc) {
+        if (doc.exists) {
+          const data = doc.data();
+          const whatsappBtn = document.getElementById('modalWhatsappBtn');
+          const telegramBtn = document.getElementById('modalTelegramBtn');
+          if (whatsappBtn && data.whatsappLink) whatsappBtn.href = data.whatsappLink;
+          if (telegramBtn && data.telegramSupportLink) telegramBtn.href = data.telegramSupportLink;
+        }
+      })
+      .catch(function(err) {
+        console.warn("Error loading customer care links:", err);
+      });
+  }
+}
+setTimeout(loadCustomerCareLinks, 500);
 </script>
 
 </body>
