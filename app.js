@@ -1422,14 +1422,75 @@ app.post('/api/admin/super/reject-withdrawal', async (req, res) => {
   }
 });
 
-// GET /api/admin/super/juniors — List all Junior Admins
+// GET /api/admin/super/juniors — List all Junior Admins with Earnings & Commission stats
 app.get('/api/admin/super/juniors', async (req, res) => {
   try {
     const list = await db.query('SELECT email, referral_code, bank_name, account_number, account_name, is_active, created_at FROM junior_admins ORDER BY created_at DESC');
-    res.json({ status: true, juniors: list || [] });
+    
+    // Get setting for admin percentage
+    let adminPercentage = 20;
+    try {
+      const settingRes = await db.query("SELECT value FROM system_settings WHERE key = 'admin_percentage'");
+      if (settingRes && settingRes.length > 0 && settingRes[0].value) {
+        const parsed = typeof settingRes[0].value === 'string' ? JSON.parse(settingRes[0].value) : settingRes[0].value;
+        adminPercentage = parseFloat(parsed.percentage) ?? 20;
+      }
+    } catch (e) {
+      console.error('Error fetching admin_percentage:', e);
+    }
+
+    const juniorsWithStats = [];
+    for (const j of list) {
+      const code = j.referral_code;
+      // Get referred users
+      const users = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [code, code]);
+      const phones = (users || []).map(u => u.phone);
+
+      let keyGross = 0;
+      let verificationGross = 0;
+      let upgradeGross = 0;
+      let totalGross = 0;
+
+      if (phones.length > 0) {
+        const placeholders = phones.map(() => '?').join(',');
+        const receipts = await db.query(`
+          SELECT type, amount FROM receipts 
+          WHERE phone IN (${placeholders}) 
+            AND LOWER(status) IN ('approved', 'verified', 'completed', 'success')
+        `, phones);
+
+        (receipts || []).forEach(r => {
+          const amt = parseFloat(r.amount || 0);
+          totalGross += amt;
+          const rType = (r.type || '').toLowerCase();
+          if (rType === 'verification' || rType === 'account_verification') {
+            verificationGross += amt;
+          } else if (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key') {
+            keyGross += amt;
+          } else if (rType === 'upgrade') {
+            upgradeGross += amt;
+          }
+        });
+      }
+
+      juniorsWithStats.push({
+        ...j,
+        stats: {
+          adminPercentage,
+          totalGross,
+          adminShare: totalGross * (adminPercentage / 100),
+          juniorShare: totalGross * ((100 - adminPercentage) / 100),
+          keyGross,
+          verificationGross,
+          upgradeGross
+        }
+      });
+    }
+
+    res.json({ status: true, juniors: juniorsWithStats });
   } catch (err) {
-    console.error('Failed to fetch junior admins list:', err.message);
-    res.json({ status: true, juniors: [] });
+    console.error('Failed to fetch junior admins list with stats:', err.message);
+    res.json({ status: false, error: err.message, juniors: [] });
   }
 });
 
@@ -1968,7 +2029,28 @@ app.post('/api/admin/junior/update-payment-settings', async (req, res) => {
   }
 });
 
-// POST /api/admin/junior/get-payment-settings — Fetch Junior Admin details
+// POST /api/admin/junior/submit-settlement — Submit a commission settlement receipt
+app.post('/api/admin/junior/submit-settlement', async (req, res) => {
+  const { code, email, amount, receiptImage } = req.body || {};
+  if (!code || !amount || !receiptImage) {
+    return res.status(400).json({ status: false, error: 'Missing required fields' });
+  }
+  try {
+    const id = 'rc_set_' + Math.random().toString(36).substr(2, 9);
+    const createdAt = new Date().toLocaleString();
+
+    await db.query(`
+      INSERT INTO receipts (id, phone, user_name, type, plan_name, amount, receipt_image, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [id, code, email || 'Junior Admin', 'junior_settlement', 'Commission Settlement', parseFloat(amount), receiptImage, 'pending', createdAt]);
+
+    res.json({ status: true, message: 'Settlement receipt submitted successfully' });
+  } catch (err) {
+    console.error('Error submitting settlement receipt:', err.message);
+    res.status(500).json({ status: false, error: err.message });
+  }
+});
+
 app.post('/api/admin/junior/get-payment-settings', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
@@ -2334,7 +2416,8 @@ app.get('/api/settings/:key', async (req, res) => {
     paymentStatus: { active: false },
     videoChallenge: { active: true },
     payoutKeys: { price: 25000 },
-    redirects: { payoutSuccess: 'success.html', payoutFailed: 'payment-failed.html' }
+    redirects: { payoutSuccess: 'success.html', payoutFailed: 'payment-failed.html' },
+    admin_percentage: { percentage: 20 }
   };
   try {
     const result = await db.query('SELECT value FROM system_settings WHERE key = ?', [key]);
@@ -2616,6 +2699,18 @@ app.get('/api/receipts/image/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/admin/receipts/:id — Delete receipt by ID
+app.delete('/api/admin/receipts/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM receipts WHERE id = ?', [id]);
+    res.json({ status: true, message: 'Receipt deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting receipt:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to delete receipt' });
+  }
+});
+
 // DELETE /api/receipts/purge — Purge all old receipts to start fresh with new recordings
 app.delete('/api/receipts/purge', async (req, res) => {
   try {
@@ -2808,11 +2903,11 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
     const phones = (users || []).map(u => u.phone);
 
     if (phones.length === 0) {
-      return res.json({ status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0 } });
+      return res.json({ status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0, adminPercentage: 20, adminShare: 0, juniorShare: 0, keyGross: 0, verificationGross: 0, upgradeGross: 0 } });
     }
 
     let placeholders = phones.map(() => '?').join(',');
-    const receipts = await db.query(`SELECT * FROM receipts WHERE phone IN (${placeholders}) AND (status = 'Approved' OR status = 'approved')`, phones);
+    const receipts = await db.query(`SELECT * FROM receipts WHERE phone IN (${placeholders}) AND (status = 'Approved' OR status = 'approved' OR status = 'verified' OR status = 'completed' OR status = 'success')`, phones);
     
     const keysUsed = await db.query(`SELECT COUNT(*) as cnt FROM users WHERE (junior_admin_code = ? OR referred_by = ?) AND payout_key IS NOT NULL AND payout_key != ''`, [juniorCode, juniorCode]);
     const keysSold = parseInt((keysUsed[0] && keysUsed[0].cnt) || receipts.length || 0);
@@ -2824,6 +2919,7 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
     const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
 
     let today = 0, sevenDays = 0, month = 0, year = 0, total = 0;
+    let keyGross = 0, verificationGross = 0, upgradeGross = 0;
 
     (receipts || []).forEach(r => {
       const amt = parseFloat(r.amount || 0);
@@ -2833,7 +2929,27 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
       if (rTime >= startOfSevenDays) sevenDays += amt;
       if (rTime >= startOfMonth) month += amt;
       if (rTime >= startOfYear) year += amt;
+
+      const rType = (r.type || '').toLowerCase();
+      if (rType === 'verification' || rType === 'account_verification') {
+        verificationGross += amt;
+      } else if (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key') {
+        keyGross += amt;
+      } else if (rType === 'upgrade') {
+        upgradeGross += amt;
+      }
     });
+
+    let adminPercentage = 20;
+    try {
+      const settingRes = await db.query("SELECT value FROM system_settings WHERE key = 'admin_percentage'");
+      if (settingRes && settingRes.length > 0 && settingRes[0].value) {
+        const parsed = typeof settingRes[0].value === 'string' ? JSON.parse(settingRes[0].value) : settingRes[0].value;
+        adminPercentage = parseFloat(parsed.percentage) ?? 20;
+      }
+    } catch (e) {
+      console.error('Error fetching admin_percentage:', e);
+    }
 
     return res.json({
       status: true,
@@ -2843,12 +2959,18 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
         month,
         year,
         total,
-        keysSold
+        keysSold,
+        adminPercentage,
+        adminShare: total * (adminPercentage / 100),
+        juniorShare: total * ((100 - adminPercentage) / 100),
+        keyGross,
+        verificationGross,
+        upgradeGross
       }
     });
   } catch (err) {
     console.error('Error fetching junior analytics:', err);
-    return res.json({ status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0 } });
+    return res.json({ status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0, adminPercentage: 20, adminShare: 0, juniorShare: 0, keyGross: 0, verificationGross: 0, upgradeGross: 0 } });
   }
 });
 

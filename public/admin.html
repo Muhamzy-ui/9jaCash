@@ -953,6 +953,23 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
     </form>
   </div>
 
+  <!-- COMMISSION SETTINGS PANEL -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-icon orange" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fa-solid fa-percent"></i></div>
+      <div><div class="panel-title">Admin Commission Settings</div><div class="panel-sub">Set the percentage you collect from Junior Admins</div></div>
+    </div>
+    <div style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+      <div class="form-group" style="margin-bottom:0; flex: 1; min-width:200px;">
+        <label class="form-label">Super Admin Commission Percentage (%)</label>
+        <input type="number" id="adminPercentageInput" class="form-input" min="0" max="100" placeholder="20" value="20">
+      </div>
+      <button onclick="saveAdminPercentage()" class="save-btn" style="margin:0; height:42px; display:inline-flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-floppy-disk"></i> Save Commission %
+      </button>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="panel-header">
       <div class="panel-icon blue"><i class="fa-solid fa-users-line"></i></div>
@@ -965,14 +982,16 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Email</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Referral Code</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Bank Details</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Total Gross</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Admin Cut</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Junior Share</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Created Date</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: right;">Action</th>
           </tr>
         </thead>
         <tbody id="juniorAdminListTable">
           <tr>
-            <td colspan="6" style="padding: 15px; text-align: center; color: var(--text3);">Loading junior admins...</td>
+            <td colspan="8" style="padding: 15px; text-align: center; color: var(--text3);">Loading junior admins...</td>
           </tr>
         </tbody>
       </table>
@@ -1319,7 +1338,7 @@ function updateTaskBtn(){
 // ========== LOAD DATA (NO USERS) ==========
 async function loadData(){
   try{
-    const [payDoc,feeDoc,taskDoc,wdDoc,pmDoc,keyDoc,redirDoc,videoChallengeDoc]=await Promise.all([
+    const [payDoc,feeDoc,taskDoc,wdDoc,pmDoc,keyDoc,redirDoc,videoChallengeDoc,adminPctDoc]=await Promise.all([
       db.collection('settings').doc('payment').get(),
       db.collection('settings').doc('secondBilling').get(),
       db.collection('settings').doc('tasks').get(),
@@ -1327,7 +1346,8 @@ async function loadData(){
       db.collection('settings').doc('paymentStatus').get(),
       db.collection('settings').doc('payoutKeys').get(),
       db.collection('settings').doc('redirects').get(),
-      db.collection('settings').doc('videoChallenge').get()
+      db.collection('settings').doc('videoChallenge').get(),
+      db.collection('settings').doc('admin_percentage').get().catch(() => ({ exists: false }))
     ]);
     
     const pay=payDoc.exists?payDoc.data():{};
@@ -1338,6 +1358,10 @@ async function loadData(){
     const keyData=keyDoc.exists?keyDoc.data():{};
     const redirData=redirDoc.exists?redirDoc.data():{};
     const videoChallengeData=videoChallengeDoc.exists?videoChallengeDoc.data():{active:true};
+    const adminPct = adminPctDoc.exists ? (adminPctDoc.data().percentage || 20) : 20;
+    
+    const adminPercentageInput = document.getElementById('adminPercentageInput');
+    if (adminPercentageInput) adminPercentageInput.value = adminPct;
     
     document.getElementById('telegramLink').value=pay.telegramLink||'';
     document.getElementById('telegramSupportLink').value=pay.telegramSupportLink||'';
@@ -1505,6 +1529,21 @@ document.querySelectorAll('input,textarea').forEach(el=>el.addEventListener('inp
 window.addEventListener('load',initAuth);
 
 // ========== JUNIOR ADMIN MANAGEMENT ==========
+async function saveAdminPercentage() {
+  const pct = Number(document.getElementById('adminPercentageInput').value) || 0;
+  if (pct < 0 || pct > 100) {
+    showToast('Percentage must be between 0 and 100', 'error');
+    return;
+  }
+  try {
+    await db.collection('settings').doc('admin_percentage').set({ percentage: pct });
+    showToast('Commission percentage saved!', 'success');
+    loadJuniorAdminsList();
+  } catch (err) {
+    showToast('Failed to save percentage: ' + err.message, 'error');
+  }
+}
+
 function loadJuniorAdminsList() {
   fetch(API_URL + '/api/admin/super/juniors')
     .then(res => res.json())
@@ -1512,7 +1551,7 @@ function loadJuniorAdminsList() {
       const tbody = document.getElementById('juniorAdminListTable');
       if (data.status && Array.isArray(data.juniors)) {
         if (data.juniors.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="padding:15px; text-align:center; color:var(--text3);">No junior admins found</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" style="padding:15px; text-align:center; color:var(--text3);">No junior admins found</td></tr>';
           return;
         }
         tbody.innerHTML = '';
@@ -1524,14 +1563,18 @@ function loadJuniorAdminsList() {
             ? `<b>${j.bank_name}</b><br><span style="font-family:monospace;font-size:11px;">${j.account_number}</span><br><span style="font-size:10px;color:var(--text3);">${j.account_name || '—'}</span>` 
             : '<span style="color:var(--text3);">None (Super Admin details)</span>';
 
+          const stats = j.stats || { totalGross: 0, adminShare: 0, juniorShare: 0 };
+
           const tr = document.createElement('tr');
           tr.style.borderBottom = '1px solid var(--border)';
           tr.innerHTML = `
             <td style="padding:12px; color:var(--text); font-weight:600;">${j.email}</td>
             <td style="padding:12px; color:var(--accent); font-family:monospace; font-weight:700;">${j.referral_code}</td>
             <td style="padding:12px; color:var(--text2); font-size:12px; line-height:1.4;">${bankDetailsStr}</td>
+            <td style="padding:12px; color:var(--text); font-weight:700; font-family:monospace;">₦${parseFloat(stats.totalGross || 0).toLocaleString()}</td>
+            <td style="padding:12px; color:var(--danger); font-weight:700; font-family:monospace;">₦${parseFloat(stats.adminShare || 0).toLocaleString()}</td>
+            <td style="padding:12px; color:var(--accent); font-weight:700; font-family:monospace;">₦${parseFloat(stats.juniorShare || 0).toLocaleString()}</td>
             <td style="padding:12px; color:${statusColor}; font-weight:800; font-size:12px;">${statusText}</td>
-            <td style="padding:12px; color:var(--text2); font-size:12px;">${new Date(j.created_at).toLocaleDateString()}</td>
             <td style="padding:12px; text-align:right;">
               <div style="display:flex; gap:12px; justify-content:flex-end;">
                 <button onclick="toggleJuniorStatus('${j.email}', ${j.is_active === 1 ? 'false' : 'true'})" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;" class="hover:underline">
@@ -2128,7 +2171,7 @@ function purgeAllReceipts() {
 function renderReceiptsTable(receipts) {
   const table = document.getElementById('receiptListTable');
   if (receipts.length === 0) {
-    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No new receipts submitted yet.</td></tr>';
+    table.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No new receipts submitted yet.</td></tr>';
     return;
   }
   
@@ -2146,8 +2189,13 @@ function renderReceiptsTable(receipts) {
       statusLabel = 'Declined ❌';
     }
     
-    const typeLabel = r.type === 'account_verification' ? 'Account Verification' : (r.flowType || r.type || 'Payment');
-    const details = r.plan ? `${r.plan} (₦${parseFloat(r.amount || 0).toLocaleString()})` : `Verify Fee (₦${parseFloat(r.feeAmount || 35200).toLocaleString()})`;
+    const typeLabel = r.type === 'account_verification' 
+      ? 'Account Verification' 
+      : (r.type === 'junior_settlement' || r.type === 'junior_payment' ? 'Junior Commission' : (r.flowType || r.type || 'Payment'));
+    
+    const details = (r.type === 'junior_settlement' || r.type === 'junior_payment')
+      ? `Commission Paid: ₦${parseFloat(r.amount || 0).toLocaleString()}`
+      : (r.plan ? `${r.plan} (₦${parseFloat(r.amount || 0).toLocaleString()})` : `Verify Fee (₦${parseFloat(r.feeAmount || 35200).toLocaleString()})`);
     
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid var(--border)';
@@ -2166,13 +2214,54 @@ function renderReceiptsTable(receipts) {
         </button>
       </td>
       <td style="padding:12px; font-size:12px; text-align:right;">
-        ${isPending ? `
-          <button onclick="approveReceipt('${r.id}', '${r._collection}')" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer; margin-right:6px;">Approve</button>
-          <button onclick="declineReceipt('${r.id}', '${r._collection}')" style="background:#ef4444; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Decline</button>
-        ` : `<span class="${statusClass}" style="padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700;">${statusLabel}</span>`}
+        <div style="display:inline-flex; gap:8px; align-items:center; justify-content:flex-end;">
+          ${isPending ? `
+            <button onclick="approveReceipt('${r.id}', '${r._collection}')" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Approve</button>
+            <button onclick="declineReceipt('${r.id}', '${r._collection}')" style="background:#ef4444; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Decline</button>
+          ` : `<span class="${statusClass}" style="padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700;">${statusLabel}</span>`}
+          
+          <button onclick="deleteReceipt('${r.id}')" style="background:#ef4444; border:none; padding:6px 10px; border-radius:8px; color:white; font-weight:700; cursor:pointer; margin-left:6px;" title="Delete Receipt">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
       </td>
     `;
     table.appendChild(tr);
+  });
+}
+
+function deleteReceipt(id) {
+  Swal.fire({
+    title: 'Delete Receipt?',
+    text: 'This will permanently delete the payment receipt from the database.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Yes, Delete',
+    background: '#1e293b',
+    color: '#f8fafc'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      
+      fetch(API_URL + `/api/admin/receipts/${id}`, {
+        method: 'DELETE'
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Deleted', text: 'Receipt deleted successfully.', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+          loadAllReceipts();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Deletion Failed', text: data.error || 'Operation failed', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Deletion Failed', text: err.message || 'Operation failed', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+      });
+    }
   });
 }
 

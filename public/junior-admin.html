@@ -249,6 +249,75 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
   </div>
 
+  <!-- Detailed Earning & Settlement Breakdown -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Earnings Overview Card -->
+    <div class="card p-6 lg:col-span-2">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h4 class="font-extrabold text-[16px] text-white">Earnings & Commissions</h4>
+          <p class="text-xs text-slate-400">Track your gross revenue, admin percentage, and net payout earnings</p>
+        </div>
+        <span class="px-3 py-1 bg-violet-900/30 text-violet-400 text-xs font-bold rounded-lg border border-violet-800/30" id="statAdminPercentBadge">Admin Commission: 20%</span>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="bg-[#0b0f19] p-4 rounded-xl border border-[#1e293b]">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Gross Referred Revenue</div>
+          <div class="text-lg font-extrabold text-white font-mono" id="statGrossRevenue">₦0</div>
+        </div>
+        <div class="bg-[#0b0f19] p-4 rounded-xl border border-[#1e293b]">
+          <div class="text-[10px] font-bold text-rose-400 uppercase tracking-wider mb-1">Admin Cut</div>
+          <div class="text-lg font-extrabold text-rose-400 font-mono" id="statAdminCut">₦0</div>
+        </div>
+        <div class="bg-[#0b0f19] p-4 rounded-xl border border-emerald-900/30">
+          <div class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">Your Net Share</div>
+          <div class="text-lg font-extrabold text-emerald-400 font-mono" id="statJuniorShare">₦0</div>
+        </div>
+      </div>
+
+      <div class="border-t border-[#1e293b] pt-4">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Revenue Breakdown by Payment Type</div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="flex items-center justify-between p-3 bg-[#0d1527] rounded-lg border border-[#1e293b]">
+            <span class="text-xs text-slate-300"><i class="fa-solid fa-key text-pink-400 mr-1"></i> Payout Keys</span>
+            <span class="text-xs font-extrabold text-white font-mono" id="statBreakdownKeys">₦0</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-[#0d1527] rounded-lg border border-[#1e293b]">
+            <span class="text-xs text-slate-300"><i class="fa-solid fa-user-check text-violet-400 mr-1"></i> Verifications</span>
+            <span class="text-xs font-extrabold text-white font-mono" id="statBreakdownVerification">₦0</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-[#0d1527] rounded-lg border border-[#1e293b]">
+            <span class="text-xs text-slate-300"><i class="fa-solid fa-circle-up text-amber-400 mr-1"></i> Plan Upgrades</span>
+            <span class="text-xs font-extrabold text-white font-mono" id="statBreakdownUpgrades">₦0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Settlement Receipt Card -->
+    <div class="card p-6 flex flex-col justify-between">
+      <div>
+        <h4 class="font-extrabold text-[16px] text-white mb-2">Submit Settlement Proof</h4>
+        <p class="text-xs text-slate-400 mb-4">Upload proof of payment after transferring the admin commission percentage.</p>
+        
+        <form id="settlementForm" onsubmit="submitSettlement(event)" class="space-y-3">
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Amount Paid (₦)</label>
+            <input type="number" id="settlementAmount" class="w-full bg-[#0b0f19] border border-[#2c3b63] rounded-lg p-2 text-white text-xs font-bold focus:outline-none focus:border-violet-500" placeholder="e.g. 40000" required>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Payment Proof Image (Screenshot)</label>
+            <input type="file" id="settlementImage" accept="image/*" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-700" required>
+          </div>
+          <button type="submit" id="submitSettlementBtn" class="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all mt-2">
+            Submit Settlement Proof
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <div class="grid grid-cols-1 gap-8">
     
     <!-- Payout Requests -->
@@ -644,9 +713,69 @@ function loadDashboardData() {
         updateRevenueTimeframeDisplay();
 
         document.getElementById('statKeysSold').textContent = s.keysSold || 0;
+        
+        // Detailed commission calculations UI binding
+        document.getElementById('statAdminPercentBadge').textContent = `Admin Commission: ${s.adminPercentage || 20}%`;
+        document.getElementById('statGrossRevenue').textContent = '₦' + parseFloat(s.total || 0).toLocaleString();
+        document.getElementById('statAdminCut').textContent = '₦' + parseFloat(s.adminShare || 0).toLocaleString();
+        document.getElementById('statJuniorShare').textContent = '₦' + parseFloat(s.juniorShare || 0).toLocaleString();
+        
+        document.getElementById('statBreakdownKeys').textContent = '₦' + parseFloat(s.keyGross || 0).toLocaleString();
+        document.getElementById('statBreakdownVerification').textContent = '₦' + parseFloat(s.verificationGross || 0).toLocaleString();
+        document.getElementById('statBreakdownUpgrades').textContent = '₦' + parseFloat(s.upgradeGross || 0).toLocaleString();
       }
     })
     .catch(err => console.error('Error fetching junior stats:', err));
+}
+
+function submitSettlement(e) {
+  e.preventDefault();
+  const amtInput = document.getElementById('settlementAmount');
+  const imgInput = document.getElementById('settlementImage');
+  const btn = document.getElementById('submitSettlementBtn');
+  
+  if (!imgInput.files || imgInput.files.length === 0) {
+    Swal.fire({ icon: 'error', title: 'File Required', text: 'Please select a screenshot of the payment proof.', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+    return;
+  }
+  
+  const file = imgInput.files[0];
+  const reader = new FileReader();
+  reader.onloadend = function() {
+    const base64data = reader.result;
+    
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    
+    fetch(API_URL + '/api/admin/junior/submit-settlement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: adminSession.referralCode || adminSession.email,
+        email: adminSession.email,
+        amount: Number(amtInput.value),
+        receiptImage: base64data
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.textContent = 'Submit Settlement Proof';
+      if (data.status) {
+        Swal.fire({ icon: 'success', title: 'Submitted', text: 'Settlement proof uploaded successfully! The Super Admin will review and approve it shortly.', confirmButtonColor: '#10b981', background: '#1e293b', color: '#f8fafc' });
+        document.getElementById('settlementForm').reset();
+      } else {
+        Swal.fire({ icon: 'error', title: 'Submission Failed', text: data.error || 'Please try again', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.textContent = 'Submit Settlement Proof';
+      console.error(err);
+      Swal.fire({ icon: 'error', title: 'Submission Failed', text: err.message, confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+    });
+  };
+  reader.readAsDataURL(file);
 }
 
 // ========== RENDER DATA ==========
