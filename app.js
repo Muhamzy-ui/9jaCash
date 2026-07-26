@@ -2547,17 +2547,29 @@ app.get('/api/receipts/list', async (req, res) => {
   }
 });
 
-// GET /api/receipts/image/:id — Retrieve base64 receipt image data on-demand (improves network loading)
+// GET /api/receipts/image/:id — Stream receipt image as binary directly to browser (highly optimized, avoids base64 JSON latency)
 app.get('/api/receipts/image/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const rows = await db.query('SELECT receipt_image FROM receipts WHERE id = ?', [id]);
-    if (rows && rows.length > 0) {
-      return res.json({ status: true, receiptImage: rows[0].receipt_image || '' });
+    if (rows && rows.length > 0 && rows[0].receipt_image) {
+      const dataUrl = rows[0].receipt_image;
+      const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (matches) {
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+        res.set('Content-Type', mimeType);
+        return res.send(buffer);
+      } else {
+        const buffer = Buffer.from(dataUrl, 'base64');
+        res.set('Content-Type', 'image/jpeg');
+        return res.send(buffer);
+      }
     }
-    res.status(404).json({ status: false, error: 'Receipt not found' });
+    res.status(404).send('Receipt not found');
   } catch (err) {
-    res.status(500).json({ status: false, error: err.message });
+    res.status(500).send(err.message);
   }
 });
 
