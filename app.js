@@ -1420,9 +1420,24 @@ app.get('/api/admin/super/users', async (req, res) => {
 app.post('/api/admin/super/verify-user', async (req, res) => {
   const { phone, isVerified } = req.body || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone number required' });
+
+  const digitsOnly = phone.toString().replace(/\D/g, '');
+  const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+
   try {
+    const users = await db.query(`
+      SELECT phone FROM users 
+      WHERE phone = ? 
+         OR (LENGTH(?) > 5 AND phone LIKE ?)
+         OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
+      ORDER BY id DESC LIMIT 1
+    `, [phone, last10, '%' + last10, last10, '%' + last10]);
+
+    if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
+    const targetPhone = users[0].phone;
+
     const val = (isVerified === true || isVerified === 1 || isVerified === '1') ? 1 : 0;
-    await db.query('UPDATE users SET is_verified = ? WHERE phone = ?', [val, phone]);
+    await db.query('UPDATE users SET is_verified = ? WHERE phone = ?', [val, targetPhone]);
     res.json({ status: true, message: `User verification mark updated (${val === 1 ? 'Verified' : 'Unverified'})` });
   } catch (err) {
     res.status(500).json({ status: false, error: err.message });
@@ -1490,23 +1505,51 @@ app.get('/api/admin/super/stats', async (req, res) => {
     const uCount = await db.query('SELECT COUNT(*) as cnt FROM users');
     const jCount = await db.query('SELECT COUNT(*) as cnt FROM junior_admins');
     const wCount = await db.query("SELECT COUNT(*) as cnt FROM withdrawals WHERE status = 'Pending'");
-    const approvedReceipts = await db.query("SELECT SUM(CASE WHEN amount > 0 THEN amount ELSE 35200 END) AS total FROM receipts WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success')");
+    
+    // Fetch all approved receipts for time-window calculations
+    const receipts = await db.query(`
+      SELECT amount, created_at FROM receipts 
+      WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success')
+    `);
+
     const approvedWithdrawals = await db.query("SELECT SUM(amount) AS total FROM withdrawals WHERE LOWER(status) IN ('approved', 'completed', 'success')");
+    
     const keysCount = await db.query(`
       SELECT COUNT(*) AS cnt FROM receipts 
-      WHERE (status = 'approved' OR status = 'Approved') 
+      WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success') 
       AND (
         type IN ('verification', 'payout_key_purchase', 'account_verification', 'payout', 'key', 'payoutKey')
         OR LOWER(plan_name) LIKE '%key%'
       )
     `);
+    
     const usersWithKeys = await db.query(`
       SELECT COUNT(*) AS cnt FROM users 
       WHERE payout_key IS NOT NULL AND payout_key != '' AND payout_key != 'None'
     `);
 
     const getCnt = (arr) => (arr && arr[0]) ? (arr[0].cnt || arr[0]['cnt'] || arr[0]['COUNT(*)'] || 0) : 0;
-    const getTotal = (arr) => (arr && arr[0]) ? parseFloat(arr[0].total || arr[0]['SUM(amount)'] || 0) : 0;
+    
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfSevenDays = startOfToday - (6 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+
+    let today = 0, sevenDays = 0, month = 0, year = 0, total = 0;
+
+    (receipts || []).forEach(r => {
+      let amt = parseFloat(r.amount);
+      if (isNaN(amt) || amt <= 0) {
+        amt = 35200; // default verification fee if not specified
+      }
+      total += amt;
+      const rTime = new Date(r.created_at).getTime() || Date.now();
+      if (rTime >= startOfToday) today += amt;
+      if (rTime >= startOfSevenDays) sevenDays += amt;
+      if (rTime >= startOfMonth) month += amt;
+      if (rTime >= startOfYear) year += amt;
+    });
 
     const totalKeysSold = Math.max(parseInt(getCnt(keysCount)), parseInt(getCnt(usersWithKeys)));
 
@@ -1515,8 +1558,12 @@ app.get('/api/admin/super/stats', async (req, res) => {
       totalUsers: parseInt(getCnt(uCount)),
       totalJuniors: parseInt(getCnt(jCount)),
       totalPendingWithdrawals: parseInt(getCnt(wCount)),
-      approvedReceiptsAmount: getTotal(approvedReceipts),
-      approvedWithdrawalsAmount: getTotal(approvedWithdrawals),
+      approvedReceiptsAmount: total,
+      today,
+      sevenDays,
+      month,
+      year,
+      approvedWithdrawalsAmount: (approvedWithdrawals && approvedWithdrawals[0] && parseFloat(approvedWithdrawals[0].total || 0)) || 0,
       keysSold: totalKeysSold
     });
   } catch (err) {
@@ -1527,6 +1574,10 @@ app.get('/api/admin/super/stats', async (req, res) => {
       totalJuniors: 0,
       totalPendingWithdrawals: 0,
       approvedReceiptsAmount: 0,
+      today: 0,
+      sevenDays: 0,
+      month: 0,
+      year: 0,
       approvedWithdrawalsAmount: 0,
       keysSold: 0
     });
@@ -1598,13 +1649,23 @@ app.post('/api/admin/super/generate-user-key', async (req, res) => {
   const { phone } = req.body || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone number is required' });
 
+  const digitsOnly = phone.toString().replace(/\D/g, '');
+  const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+
   try {
-    const users = await db.query('SELECT phone, email, full_name FROM users WHERE phone = ?', [phone]);
+    const users = await db.query(`
+      SELECT phone, email, full_name FROM users 
+      WHERE phone = ? 
+         OR (LENGTH(?) > 5 AND phone LIKE ?)
+         OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
+      ORDER BY id DESC LIMIT 1
+    `, [phone, last10, '%' + last10, last10, '%' + last10]);
+
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
     const u = users[0];
 
     const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
-    await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, phone]);
+    await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, u.phone]);
 
     // Send email alert to user with their payout key
     if (u.email && !u.email.endsWith('@9jacash.com')) {
@@ -1659,7 +1720,17 @@ app.post('/api/admin/junior/generate-user-key', async (req, res) => {
     const jaCode = list[0].referral_code;
 
     // 2. Verify target user is in their network
-    const users = await db.query('SELECT phone, email, full_name, referred_by, junior_admin_code FROM users WHERE phone = ?', [userPhone]);
+    const digitsOnly = userPhone.toString().replace(/\D/g, '');
+    const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+
+    const users = await db.query(`
+      SELECT phone, email, full_name, referred_by, junior_admin_code FROM users 
+      WHERE phone = ? 
+         OR (LENGTH(?) > 5 AND phone LIKE ?)
+         OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
+      ORDER BY id DESC LIMIT 1
+    `, [userPhone, last10, '%' + last10, last10, '%' + last10]);
+
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
     const u = users[0];
 
@@ -1670,7 +1741,7 @@ app.post('/api/admin/junior/generate-user-key', async (req, res) => {
 
     // 3. Generate key and save to database
     const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
-    await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, userPhone]);
+    await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, u.phone]);
 
     // 4. Send email alert to user with their payout key
     if (u.email && !u.email.endsWith('@9jacash.com')) {
@@ -2370,12 +2441,18 @@ app.get('/api/user/details', async (req, res) => {
       WHERE phone = ? 
          OR email = ? 
          OR (LENGTH(?) > 5 AND phone LIKE ?)
+         OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
       ORDER BY id DESC LIMIT 1
-    `, [rawPhone, rawPhone, last10, '%' + last10]);
+    `, [rawPhone, rawPhone, last10, '%' + last10, last10, '%' + last10]);
 
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
     const u = users[0];
     const isVerifiedNum = (u.is_verified === 1 || u.is_verified === true || u.is_verified === '1') ? 1 : 0;
+
+    // Get withdrawal count
+    const wCountRes = await db.query('SELECT COUNT(*) as cnt FROM withdrawals WHERE phone = ?', [u.phone]);
+    const wCount = parseInt((wCountRes && wCountRes[0] && (wCountRes[0].cnt || wCountRes[0]['cnt'] || wCountRes[0]['COUNT(*)'])) || 0);
+
     res.json({
       status: true,
       user: {
@@ -2391,7 +2468,12 @@ app.get('/api/user/details', async (req, res) => {
         planName: u.plan_name || 'Free Miner',
         is_verified: isVerifiedNum,
         isVerified: isVerifiedNum === 1,
-        payoutKey: u.payout_key || ''
+        payoutKey: u.payout_key || '',
+        juniorAdminCode: u.junior_admin_code || null,
+        referredBy: u.referred_by || '',
+        status: u.status || 'active',
+        createdAt: u.created_at,
+        withdrawalCount: wCount
       }
     });
   } catch (err) {
@@ -2692,39 +2774,6 @@ app.post('/api/receipts/purge', async (req, res) => {
       await db.query('DELETE FROM receipts');
     }
     res.json({ status: true, message: 'Receipt history purged successfully' });
-  } catch (err) {
-    res.status(500).json({ status: false, error: err.message });
-  }
-});
-
-// GET /api/user/details — Get full user details including payout keys (supports phone or email search)
-app.get('/api/user/details', async (req, res) => {
-  const { phone } = req.query;
-  if (!phone) return res.status(400).json({ status: false, error: 'Phone is required' });
-  try {
-    const users = await db.query('SELECT * FROM users WHERE phone = ? OR email = ?', [phone, phone]);
-    if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
-    const u = users[0];
-    res.json({
-      status: true,
-      user: {
-        phone: u.phone,
-        email: u.email,
-        fullName: u.full_name,
-        name: u.full_name,
-        bankName: u.bank_name,
-        accountNumber: u.account_number,
-        balance: parseFloat(u.balance) || 0,
-        miningPower: parseFloat(u.mining_power) || 1,
-        totalMined: parseFloat(u.total_mined) || 0,
-        planName: u.plan_name || 'Free Miner',
-        juniorAdminCode: u.junior_admin_code || null,
-        payoutKey: u.payout_key || null,
-        referredBy: u.referred_by,
-        status: u.status,
-        createdAt: u.created_at
-      }
-    });
   } catch (err) {
     res.status(500).json({ status: false, error: err.message });
   }

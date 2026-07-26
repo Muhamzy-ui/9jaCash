@@ -419,7 +419,7 @@ async function checkKeyAgainstFirebase(key) {
       }
     }
 
-    if (userPayoutKey && key.toUpperCase() === userPayoutKey.toUpperCase()) {
+    if (userPayoutKey && userPayoutKey !== 'None' && key.trim().toUpperCase() === userPayoutKey.trim().toUpperCase()) {
       return { valid: true, type: "user_payout_key" };
     }
 

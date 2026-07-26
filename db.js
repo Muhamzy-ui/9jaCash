@@ -206,9 +206,6 @@ async function initDb() {
       )
     `);
 
-    // Purge all old test receipts from database
-    try { await query("DELETE FROM receipts"); } catch(e) {}
-
     // Dynamic Alter Columns for backwards compatibility
     const alterStatements = [
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS junior_admin_code TEXT",

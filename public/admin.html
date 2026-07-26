@@ -363,21 +363,41 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
     </div>
   </div>
 
-  <div class="stats-row" style="grid-template-columns: repeat(3, 1fr);">
-    <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15);">
-      <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981;"><i class="fa-solid fa-vault"></i></div>
-      <div class="stat-num green" id="statApprovedReceipts" style="color: #10b981; font-family: 'JetBrains Mono', monospace;">₦0</div>
-      <div class="stat-label">Total Deposits Approved</div>
+  <div class="stats-row" style="grid-template-columns: repeat(7, 1fr); display: grid; gap: 12px; margin-bottom: 24px;">
+    <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15); padding: 12px;">
+      <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-calendar-day"></i></div>
+      <div class="stat-num green" id="statTodayRevenue" style="color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 10px;">Today's Deposits</div>
     </div>
-    <div class="stat-card red" style="background: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.15);">
-      <div class="stat-icon red" style="background: rgba(239, 68, 68, 0.08); color: #ef4444;"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-      <div class="stat-num red" id="statApprovedWithdrawals" style="color: #ef4444; font-family: 'JetBrains Mono', monospace;">₦0</div>
-      <div class="stat-label">Total Withdrawals Approved</div>
+    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15); padding: 12px;">
+      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-chart-line"></i></div>
+      <div class="stat-num blue" id="statSevenDaysRevenue" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 10px;">Past 7 Days</div>
     </div>
-    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15);">
-      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6;"><i class="fa-solid fa-key"></i></div>
-      <div class="stat-num blue" id="statKeysSold" style="color: #3b82f6;">0</div>
-      <div class="stat-label">Total Keys Sold</div>
+    <div class="stat-card purple" style="background: rgba(139, 92, 246, 0.03); border: 1px solid rgba(139, 92, 246, 0.15); padding: 12px;">
+      <div class="stat-icon purple" style="background: rgba(139, 92, 246, 0.08); color: #8b5cf6; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-calendar-week"></i></div>
+      <div class="stat-num purple" id="statMonthRevenue" style="color: #8b5cf6; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 10px;">This Month</div>
+    </div>
+    <div class="stat-card teal" style="background: rgba(20, 184, 166, 0.03); border: 1px solid rgba(20, 184, 166, 0.15); padding: 12px;">
+      <div class="stat-icon teal" style="background: rgba(20, 184, 166, 0.08); color: #20b2aa; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-calendar-days"></i></div>
+      <div class="stat-num teal" id="statYearRevenue" style="color: #20b2aa; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 10px;">This Year</div>
+    </div>
+    <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15); padding: 12px;">
+      <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-vault"></i></div>
+      <div class="stat-num green" id="statApprovedReceipts" style="color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 10px;">Total Deposits</div>
+    </div>
+    <div class="stat-card red" style="background: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.15); padding: 12px;">
+      <div class="stat-icon red" style="background: rgba(239, 68, 68, 0.08); color: #ef4444; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+      <div class="stat-num red" id="statApprovedWithdrawals" style="color: #ef4444; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 10px;">Total Payouts</div>
+    </div>
+    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15); padding: 12px;">
+      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-key"></i></div>
+      <div class="stat-num blue" id="statKeysSold" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">0</div>
+      <div class="stat-label" style="font-size: 10px;">Total Keys Sold</div>
     </div>
   </div>
 
@@ -1835,6 +1855,7 @@ function filterUsers() {
 
 // ========== STATS LOADER ==========
 function loadSuperStats() {
+  let today = 0, sevenDays = 0, month = 0, year = 0;
   fetch(API_URL + '/api/admin/super/stats')
     .then(res => res.json())
     .then(data => {
@@ -1844,8 +1865,12 @@ function loadSuperStats() {
         let sqlApprovedReceipts = data.approvedReceiptsAmount || 0;
         let sqlApprovedWithdrawals = data.approvedWithdrawalsAmount || 0;
         let sqlKeysSold = data.keysSold || 0;
+        today = data.today || 0;
+        sevenDays = data.sevenDays || 0;
+        month = data.month || 0;
+        year = data.year || 0;
 
-        renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold);
+        renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold, today, sevenDays, month, year);
 
         // Optional background fallback for legacy local data
         if (window._9jaCash && window._9jaCash.db) {
@@ -1928,7 +1953,7 @@ function loadSuperStats() {
             const combinedDeposits = Math.max(sqlApprovedReceipts, legacyDeposits);
             const combinedKeys = Math.max(sqlKeysSold, legacyKeys);
 
-            renderStatsOnPage(combinedUsers, sqlPending, combinedDeposits, sqlApprovedWithdrawals, combinedKeys);
+            renderStatsOnPage(combinedUsers, sqlPending, combinedDeposits, sqlApprovedWithdrawals, combinedKeys, today, sevenDays, month, year);
           })
           .catch(err => {
             console.warn('Fallback stats calculation:', err);
@@ -1941,7 +1966,7 @@ function loadSuperStats() {
     });
 }
 
-function renderStatsOnPage(users, pending, receipts, withdrawals, keys) {
+function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 0, sevenDays = 0, month = 0, year = 0) {
   document.getElementById('statUsers').textContent = users;
   document.getElementById('usersBadge').textContent = users;
   document.getElementById('statPending').textContent = pending;
@@ -1950,6 +1975,10 @@ function renderStatsOnPage(users, pending, receipts, withdrawals, keys) {
     wdBadge.textContent = pending;
     wdBadge.style.display = pending > 0 ? 'inline-block' : 'none';
   }
+  document.getElementById('statTodayRevenue').textContent = '₦' + today.toLocaleString();
+  document.getElementById('statSevenDaysRevenue').textContent = '₦' + sevenDays.toLocaleString();
+  document.getElementById('statMonthRevenue').textContent = '₦' + month.toLocaleString();
+  document.getElementById('statYearRevenue').textContent = '₦' + year.toLocaleString();
   document.getElementById('statApprovedReceipts').textContent = '₦' + receipts.toLocaleString();
   document.getElementById('statApprovedWithdrawals').textContent = '₦' + withdrawals.toLocaleString();
   document.getElementById('statKeysSold').textContent = keys;
