@@ -1636,6 +1636,55 @@ app.get('/api/admin/debug-approved', async (req, res) => {
   }
 });
 
+app.get('/api/admin/migrate-keys', async (req, res) => {
+  try {
+    const approvedReceipts = await db.query(`
+      SELECT DISTINCT phone, amount FROM receipts 
+      WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success')
+        AND type IN ('payout', 'key', 'payout_key', 'payout_key_purchase')
+    `);
+
+    let migrated = 0;
+    for (const rc of approvedReceipts) {
+      const users = await db.query('SELECT payout_key, email, full_name FROM users WHERE phone = ?', [rc.phone]);
+      if (users.length > 0) {
+        const u = users[0];
+        if (!u.payout_key || u.payout_key === 'None' || u.payout_key.trim() === '') {
+          const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
+          await db.query('UPDATE users SET payout_key = ?, is_verified = 1 WHERE phone = ?', [keyStr, rc.phone]);
+
+          const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+          await db.query(`
+            INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+            VALUES (?, ?, 'alert', 'Payout Key Approved 🔑', ?, ?, ?)
+          `, [notifId, rc.phone, `Your withdrawal payout key payment has been verified. Your unique payout key is: ${keyStr}.`, rc.amount ? rc.amount.toString() : '0', new Date().toISOString()]);
+
+          if (u.email && !u.email.endsWith('@9jacash.com')) {
+            const welcomeHtml = compileEmailTemplate(
+              "Your Withdrawal Payout Key is Approved! 🔓",
+              `<p>Hi ${u.full_name || 'User'},</p>
+               <p>Your payment for the withdrawal payout key has been verified and approved.</p>
+               <p>Use the unique payout key below on the authorization screen to complete your withdrawal:</p>
+               <div style="background: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
+                 <span style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #10b981; font-weight: 700; margin-bottom: 8px;">Your Unique Payout Key</span>
+                 <span style="font-family: monospace; font-size: 24px; font-weight: 800; color: #059669; letter-spacing: 2px;">${keyStr}</span>
+               </div>`,
+              "Complete Withdrawal",
+              `${getBaseUrl(req)}/dashboard.html`,
+              "#10b981"
+            );
+            try { await sendResendEmail(u.email, "Withdrawal Payout Key Ready — 9jaCash", welcomeHtml); } catch (e) { console.error("Email error:", e); }
+          }
+          migrated++;
+        }
+      }
+    }
+    res.json({ status: true, message: `Migrated ${migrated} users with new payout keys` });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 // POST /api/admin/super/delete-junior — Remove Junior Admin
 app.post('/api/admin/super/delete-junior', async (req, res) => {
   const { email } = req.body || {};
