@@ -74,7 +74,7 @@ function queryMock(sql, params = []) {
   }
 }
 
-// Unified query function with seamless fallback
+// Unified query function with seamless fallback and timeout protection
 async function query(sql, params = []) {
   if (dbType === 'postgres' && pgPool) {
     try {
@@ -84,10 +84,13 @@ async function query(sql, params = []) {
         pgSql = pgSql.replace('?', `$${index}`);
         index++;
       }
-      const res = await pgPool.query(pgSql, params);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('PostgreSQL Query Timeout')), 5000)
+      );
+      const res = await Promise.race([pgPool.query(pgSql, params), timeoutPromise]);
       return res.rows || [];
     } catch (err) {
-      console.warn('⚠️ Postgres query failed, executing fallback query:', err.message);
+      console.warn('⚠️ Postgres query warning/timeout:', err.message);
       if (sqliteDb) {
         return querySqlite(sql, params);
       }

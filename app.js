@@ -2276,39 +2276,38 @@ app.post('/api/receipts/submit', async (req, res) => {
 app.get('/api/receipts/list', async (req, res) => {
   const { phone } = req.query;
   try {
-    let list;
+    let list = [];
     if (phone) {
       const referredUsers = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [phone, phone]);
       const phones = (referredUsers || []).map(u => u.phone);
-      if (phones.length === 0) {
-        return res.json({ status: true, receipts: [] });
+      if (phones.length > 0) {
+        let placeholders = phones.map(() => '?').join(',');
+        list = await db.query(`SELECT * FROM receipts WHERE phone IN (${placeholders})`, phones);
       }
-      let placeholders = phones.map(() => '?').join(',');
-      list = await db.query(`SELECT * FROM receipts WHERE phone IN (${placeholders}) ORDER BY created_at DESC`, phones);
     } else {
-      list = await db.query('SELECT * FROM receipts ORDER BY created_at DESC');
+      list = await db.query('SELECT * FROM receipts');
     }
     
     const formatted = (list || []).map(r => ({
-      id: r.id,
-      userId: r.phone,
-      phone: r.phone,
-      userName: r.user_name,
-      type: r.type,
-      plan: r.plan_name,
-      flowType: r.type,
-      amount: r.amount,
-      feeAmount: r.amount,
-      receiptImage: r.receipt_image,
-      status: r.status,
-      date: r.created_at,
-      createdAt: r.created_at,
+      id: r.id || 'rc_' + Math.random().toString(36).substr(2, 6),
+      userId: r.phone || '',
+      phone: r.phone || '',
+      userName: r.user_name || 'User',
+      type: r.type || 'Payment',
+      plan: r.plan_name || 'Verification',
+      flowType: r.type || 'Payment',
+      amount: parseFloat(r.amount || 0),
+      feeAmount: parseFloat(r.amount || 0),
+      receiptImage: r.receipt_image || '',
+      status: r.status || 'pending',
+      date: r.created_at || new Date().toLocaleString(),
+      createdAt: r.created_at || new Date().toLocaleString(),
       _collection: 'receipts'
     }));
-    res.json({ status: true, receipts: formatted });
+    return res.status(200).json({ status: true, receipts: formatted });
   } catch (err) {
     console.error('Failed to fetch receipts list:', err.message);
-    res.json({ status: true, receipts: [] });
+    return res.status(200).json({ status: true, receipts: [] });
   }
 });
 
