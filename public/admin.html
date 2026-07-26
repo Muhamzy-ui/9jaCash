@@ -500,7 +500,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         </thead>
         <tbody id="receiptListTable">
           <tr>
-            <td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Loading payment receipts...</td>
+            <td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No new receipts submitted yet.</td>
           </tr>
         </tbody>
       </table>
@@ -2021,7 +2021,7 @@ function loadAllReceipts() {
     })
     .catch(err => {
       console.error('Error fetching receipts:', err);
-      table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Failed to load receipts</td></tr>';
+      table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No new receipts submitted yet.</td></tr>';
     });
 }
 
@@ -2061,7 +2061,7 @@ function purgeAllReceipts() {
 function renderReceiptsTable(receipts) {
   const table = document.getElementById('receiptListTable');
   if (receipts.length === 0) {
-    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No receipts found in database</td></tr>';
+    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No new receipts submitted yet.</td></tr>';
     return;
   }
   
