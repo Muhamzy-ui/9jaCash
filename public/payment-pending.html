@@ -197,10 +197,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;color:#f8fafc
     db.collection("paymentReceipts").doc(docId).onSnapshot(function(doc) {
       if (doc.exists) {
         const data = doc.data();
-        if (data.status === "Approved") {
+        const stat = (data.status || "").toLowerCase();
+        if (stat === "approved" || stat === "verified") {
           // Play confetti and redirect to success!
           window.location.href = "payment-success.html";
-        } else if (data.status === "Declined") {
+        } else if (stat === "declined" || stat === "rejected") {
           switchToFailed(data.declineReason || "Proof rejected - invalid transfer reference or receipt unreadable.");
         }
       }
