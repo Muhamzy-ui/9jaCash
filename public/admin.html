@@ -500,7 +500,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         </thead>
         <tbody id="receiptListTable">
           <tr>
-            <td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Loading receipts from Firestore...</td>
+            <td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Loading payment receipts...</td>
           </tr>
         </tbody>
       </table>
@@ -1012,6 +1012,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
 <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Saved!</span></div>
 
 <script>
+const API_URL = window.location.origin;
 const firebaseConfig={apiKey: "AIzaSyAojnW_iRXCk4mR9ihRz8GwQI4aPWIXepA",
   authDomain: "jacash-51c97.firebaseapp.com",
   databaseURL: "https://jacash-51c97-default-rtdb.firebaseio.com",
