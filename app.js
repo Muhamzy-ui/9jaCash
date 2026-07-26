@@ -1474,6 +1474,17 @@ app.get('/api/admin/super/migrate-from-neon', async (req, res) => {
   }
 });
 
+// GET /api/receipts/list — Return all receipts for mock Firestore compatibility
+app.get('/api/receipts/list', async (req, res) => {
+  try {
+    const receipts = await db.query('SELECT * FROM receipts ORDER BY created_at DESC');
+    res.json({ status: true, receipts: receipts || [] });
+  } catch (err) {
+    console.error('Failed to fetch receipts list:', err.message);
+    res.json({ status: true, receipts: [] });
+  }
+});
+
 // GET /api/admin/super/stats — Fetch platform stats (total users, approved amounts, keys sold)
 app.get('/api/admin/super/stats', async (req, res) => {
   try {

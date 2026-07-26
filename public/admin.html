@@ -1841,13 +1841,15 @@ function loadSuperStats() {
     .then(res => res.json())
     .then(data => {
       if (data.status) {
-        let sqlUsers = data.totalUsers;
-        let sqlPending = data.totalPendingWithdrawals;
-        let sqlApprovedReceipts = data.approvedReceiptsAmount;
-        let sqlApprovedWithdrawals = data.approvedWithdrawalsAmount;
-        let sqlKeysSold = data.keysSold;
+        let sqlUsers = data.totalUsers || 0;
+        let sqlPending = data.totalPendingWithdrawals || 0;
+        let sqlApprovedReceipts = data.approvedReceiptsAmount || 0;
+        let sqlApprovedWithdrawals = data.approvedWithdrawalsAmount || 0;
+        let sqlKeysSold = data.keysSold || 0;
 
-        // Fetch fallback/legacy stats from Firestore in parallel to combine them
+        renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold);
+
+        // Optional background fallback for legacy local data
         if (window._9jaCash && window._9jaCash.db) {
           const db = window._9jaCash.db;
           Promise.all([
@@ -1857,6 +1859,8 @@ function loadSuperStats() {
             db.collection('activation_payments').get().catch(() => ({ docs: [] }))
           ])
           .then(results => {
+            let legacyKeys = 0;
+            let legacyDeposits = 0;
             const usersSnap = results[0];
             const receiptsSnap = results[1];
             const verificationsSnap = results[2];
@@ -1879,7 +1883,6 @@ function loadSuperStats() {
               return s === 'approved' || s === 'verified' || s === 'completed' || s === 'success';
             }
 
-            // 1. Count users with assigned keys
             let usersWithKeyCount = 0;
             const uDocs = (usersSnap && usersSnap.docs) ? usersSnap.docs : (Array.isArray(usersSnap) ? usersSnap : []);
             uDocs.forEach(doc => {
@@ -1889,7 +1892,6 @@ function loadSuperStats() {
               }
             });
 
-            // 2. Count from paymentReceipts
             const recDocs = (receiptsSnap && receiptsSnap.docs) ? receiptsSnap.docs : (Array.isArray(receiptsSnap) ? receiptsSnap : []);
             recDocs.forEach(doc => {
               const r = typeof doc.data === 'function' ? doc.data() : doc;
@@ -1904,7 +1906,6 @@ function loadSuperStats() {
               }
             });
 
-            // 3. Count from verifications
             const verDocs = (verificationsSnap && verificationsSnap.docs) ? verificationsSnap.docs : (Array.isArray(verificationsSnap) ? verificationsSnap : []);
             verDocs.forEach(doc => {
               const v = typeof doc.data === 'function' ? doc.data() : doc;
@@ -1914,7 +1915,6 @@ function loadSuperStats() {
               }
             });
 
-            // 4. Count from activation_payments
             const actDocs = (activationsSnap && activationsSnap.docs) ? activationsSnap.docs : (Array.isArray(activationsSnap) ? activationsSnap : []);
             actDocs.forEach(doc => {
               const a = typeof doc.data === 'function' ? doc.data() : doc;
@@ -1926,19 +1926,15 @@ function loadSuperStats() {
 
             legacyKeys = Math.max(legacyKeys, usersWithKeyCount);
 
-            // Combine stats safely
             const combinedUsers = Math.max(sqlUsers, legacyUsers);
-            const combinedDeposits = sqlApprovedReceipts + legacyDeposits;
+            const combinedDeposits = Math.max(sqlApprovedReceipts, legacyDeposits);
             const combinedKeys = Math.max(sqlKeysSold, legacyKeys);
 
             renderStatsOnPage(combinedUsers, sqlPending, combinedDeposits, sqlApprovedWithdrawals, combinedKeys);
           })
           .catch(err => {
-            console.warn('Failed to calculate legacy stats:', err);
-            renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold);
+            console.warn('Fallback stats calculation:', err);
           });
-        } else {
-          renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold);
         }
       }
     })
