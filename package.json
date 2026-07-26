@@ -2,8 +2,9 @@
   "name": "9jacash",
   "version": "1.0.0",
   "description": "9jaCash app with secure Paystack verification backend",
-  "main": "server.js",
-  "scripts": {},
+  "scripts": {
+    "start": "node --max-old-space-size=384 server.js"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
