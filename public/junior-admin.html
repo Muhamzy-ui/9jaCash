@@ -178,7 +178,8 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 
   <!-- Stats Grid -->
-  <div class="grid grid-cols-2 md:grid-cols-5 xl:grid-cols-10 gap-4 mb-8">
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
     <div class="card p-4">
       <div class="flex items-center justify-between mb-2">
         <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Total Referrals</span>
@@ -207,41 +208,22 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
       <div class="text-xl font-extrabold text-blue-400 font-mono" id="statPaid">₦0</div>
     </div>
-    <div class="card p-4">
+
+    <!-- Revenue Card (OPay Style Dropdown) -->
+    <div class="card p-4 relative">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Today's Revenue</span>
-        <span class="text-emerald-400 text-base"><i class="fa-solid fa-calendar-day"></i></span>
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Revenue</span>
+        <select id="revenueTimeframeSelect" onchange="updateRevenueTimeframeDisplay()" style="background: #131a2e; color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 2px 4px; font-size: 10px; font-weight: 700; cursor: pointer; outline: none; font-family: inherit;">
+          <option value="today">Today</option>
+          <option value="sevenDays">Past 7 Days</option>
+          <option value="month">This Month</option>
+          <option value="year">This Year</option>
+          <option value="total" selected>All Time</option>
+        </select>
       </div>
-      <div class="text-xl font-extrabold font-mono text-emerald-400" id="statTodayRevenue">₦0</div>
+      <div class="text-xl font-extrabold font-mono text-[#10b981]" id="statRevenueDisplay">₦0</div>
     </div>
-    <div class="card p-4">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Past 7 Days</span>
-        <span class="text-blue-400 text-base"><i class="fa-solid fa-chart-line"></i></span>
-      </div>
-      <div class="text-xl font-extrabold text-blue-400 font-mono" id="statSevenDaysRevenue">₦0</div>
-    </div>
-    <div class="card p-4">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">This Month</span>
-        <span class="text-purple-400 text-base"><i class="fa-solid fa-calendar-week"></i></span>
-      </div>
-      <div class="text-xl font-extrabold text-purple-400 font-mono" id="statMonthRevenue">₦0</div>
-    </div>
-    <div class="card p-4">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">This Year</span>
-        <span class="text-teal-400 text-base"><i class="fa-solid fa-calendar-days"></i></span>
-      </div>
-      <div class="text-xl font-extrabold text-teal-400 font-mono" id="statYearRevenue">₦0</div>
-    </div>
-    <div class="card p-4">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Total Revenue</span>
-        <span class="text-indigo-400 text-base"><i class="fa-solid fa-sack-dollar"></i></span>
-      </div>
-      <div class="text-xl font-extrabold text-indigo-400 font-mono" id="statTotalRevenue">₦0</div>
-    </div>
+
     <div class="card p-4">
       <div class="flex items-center justify-between mb-2">
         <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Keys Sold</span>
@@ -453,6 +435,18 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
 <script>
 let adminSession = null;
+let revenueCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+
+function updateRevenueTimeframeDisplay() {
+  const select = document.getElementById('revenueTimeframeSelect');
+  if (!select) return;
+  const val = select.value;
+  const display = document.getElementById('statRevenueDisplay');
+  if (display) {
+    display.textContent = '₦' + (revenueCache[val] || 0).toLocaleString();
+  }
+}
+
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
 
 // ========== TOAST ==========
@@ -641,11 +635,14 @@ function loadDashboardData() {
     .then(data => {
       if (data.status && data.stats) {
         const s = data.stats;
-        document.getElementById('statTodayRevenue').textContent = '₦' + (s.today || 0).toLocaleString();
-        document.getElementById('statSevenDaysRevenue').textContent = '₦' + (s.sevenDays || 0).toLocaleString();
-        document.getElementById('statMonthRevenue').textContent = '₦' + (s.month || 0).toLocaleString();
-        document.getElementById('statYearRevenue').textContent = '₦' + (s.year || 0).toLocaleString();
-        document.getElementById('statTotalRevenue').textContent = '₦' + (s.total || 0).toLocaleString();
+        revenueCache.today = s.today || 0;
+        revenueCache.sevenDays = s.sevenDays || 0;
+        revenueCache.month = s.month || 0;
+        revenueCache.year = s.year || 0;
+        revenueCache.total = s.total || 0;
+
+        updateRevenueTimeframeDisplay();
+
         document.getElementById('statKeysSold').textContent = s.keysSold || 0;
       }
     })

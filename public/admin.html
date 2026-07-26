@@ -363,41 +363,35 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
     </div>
   </div>
 
-  <div class="stats-row" style="grid-template-columns: repeat(7, 1fr); display: grid; gap: 12px; margin-bottom: 24px;">
-    <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15); padding: 12px;">
-      <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-calendar-day"></i></div>
-      <div class="stat-num green" id="statTodayRevenue" style="color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
-      <div class="stat-label" style="font-size: 10px;">Today's Deposits</div>
+  <div class="stats-row" style="grid-template-columns: repeat(3, 1fr); display: grid; gap: 16px; margin-bottom: 24px;">
+    <!-- Deposits Card (OPay Style Dropdown) -->
+    <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15); padding: 16px; position: relative;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px;"><i class="fa-solid fa-vault"></i></div>
+        <select id="depositTimeframeSelect" onchange="updateDepositTimeframeDisplay()" style="background: #1e293b; color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer; outline: none; font-family: inherit;">
+          <option value="today">Today</option>
+          <option value="sevenDays">Past 7 Days</option>
+          <option value="month">This Month</option>
+          <option value="year">This Year</option>
+          <option value="total" selected>All Time</option>
+        </select>
+      </div>
+      <div class="stat-num green" id="statDepositsDisplay" style="color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Deposits Revenue</div>
     </div>
-    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15); padding: 12px;">
-      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-chart-line"></i></div>
-      <div class="stat-num blue" id="statSevenDaysRevenue" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
-      <div class="stat-label" style="font-size: 10px;">Past 7 Days</div>
+
+    <!-- Total Payouts Card -->
+    <div class="stat-card red" style="background: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.15); padding: 16px;">
+      <div class="stat-icon red" style="background: rgba(239, 68, 68, 0.08); color: #ef4444; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+      <div class="stat-num red" id="statApprovedWithdrawals" style="color: #ef4444; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Total Payouts</div>
     </div>
-    <div class="stat-card purple" style="background: rgba(139, 92, 246, 0.03); border: 1px solid rgba(139, 92, 246, 0.15); padding: 12px;">
-      <div class="stat-icon purple" style="background: rgba(139, 92, 246, 0.08); color: #8b5cf6; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-calendar-week"></i></div>
-      <div class="stat-num purple" id="statMonthRevenue" style="color: #8b5cf6; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
-      <div class="stat-label" style="font-size: 10px;">This Month</div>
-    </div>
-    <div class="stat-card teal" style="background: rgba(20, 184, 166, 0.03); border: 1px solid rgba(20, 184, 166, 0.15); padding: 12px;">
-      <div class="stat-icon teal" style="background: rgba(20, 184, 166, 0.08); color: #20b2aa; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-calendar-days"></i></div>
-      <div class="stat-num teal" id="statYearRevenue" style="color: #20b2aa; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
-      <div class="stat-label" style="font-size: 10px;">This Year</div>
-    </div>
-    <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15); padding: 12px;">
-      <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-vault"></i></div>
-      <div class="stat-num green" id="statApprovedReceipts" style="color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
-      <div class="stat-label" style="font-size: 10px;">Total Deposits</div>
-    </div>
-    <div class="stat-card red" style="background: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.15); padding: 12px;">
-      <div class="stat-icon red" style="background: rgba(239, 68, 68, 0.08); color: #ef4444; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-      <div class="stat-num red" id="statApprovedWithdrawals" style="color: #ef4444; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">₦0</div>
-      <div class="stat-label" style="font-size: 10px;">Total Payouts</div>
-    </div>
-    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15); padding: 12px;">
-      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 14px; width: 28px; height: 28px;"><i class="fa-solid fa-key"></i></div>
-      <div class="stat-num blue" id="statKeysSold" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin: 4px 0;">0</div>
-      <div class="stat-label" style="font-size: 10px;">Total Keys Sold</div>
+
+    <!-- Total Keys Sold Card -->
+    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15); padding: 16px;">
+      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-key"></i></div>
+      <div class="stat-num blue" id="statKeysSold" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Total Payout Keys Sold</div>
     </div>
   </div>
 
@@ -1990,6 +1984,18 @@ function loadSuperStats() {
     });
 }
 
+let depositsCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+
+function updateDepositTimeframeDisplay() {
+  const select = document.getElementById('depositTimeframeSelect');
+  if (!select) return;
+  const val = select.value;
+  const display = document.getElementById('statDepositsDisplay');
+  if (display) {
+    display.textContent = '₦' + (depositsCache[val] || 0).toLocaleString();
+  }
+}
+
 function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 0, sevenDays = 0, month = 0, year = 0) {
   document.getElementById('statUsers').textContent = users;
   document.getElementById('usersBadge').textContent = users;
@@ -1999,11 +2005,15 @@ function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 
     wdBadge.textContent = pending;
     wdBadge.style.display = pending > 0 ? 'inline-block' : 'none';
   }
-  document.getElementById('statTodayRevenue').textContent = '₦' + today.toLocaleString();
-  document.getElementById('statSevenDaysRevenue').textContent = '₦' + sevenDays.toLocaleString();
-  document.getElementById('statMonthRevenue').textContent = '₦' + month.toLocaleString();
-  document.getElementById('statYearRevenue').textContent = '₦' + year.toLocaleString();
-  document.getElementById('statApprovedReceipts').textContent = '₦' + receipts.toLocaleString();
+  
+  depositsCache.today = today;
+  depositsCache.sevenDays = sevenDays;
+  depositsCache.month = month;
+  depositsCache.year = year;
+  depositsCache.total = receipts;
+
+  updateDepositTimeframeDisplay();
+
   document.getElementById('statApprovedWithdrawals').textContent = '₦' + withdrawals.toLocaleString();
   document.getElementById('statKeysSold').textContent = keys;
 }

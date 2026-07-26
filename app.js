@@ -16,6 +16,49 @@ const fetch = require('node-fetch');
 const db = require('./db');
 const https = require('https');
 
+// Helper to parse dates safely in different environments (handles ISO string and locale dates)
+function safeParseDate(dateStr) {
+  if (!dateStr) return new Date(0);
+  if (dateStr instanceof Date) return dateStr;
+  let d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d;
+  try {
+    const parts = dateStr.toString().split(',');
+    if (parts.length >= 1) {
+      const dateParts = parts[0].trim().split('/');
+      if (dateParts.length === 3) {
+        let month = parseInt(dateParts[0]);
+        let day = parseInt(dateParts[1]);
+        const year = parseInt(dateParts[2]);
+        if (month > 12) {
+          const temp = month;
+          month = day;
+          day = temp;
+        }
+        let hours = 0, minutes = 0, seconds = 0;
+        if (parts.length >= 2) {
+          const timeParts = parts[1].trim().split(' ');
+          const hms = timeParts[0].split(':');
+          hours = parseInt(hms[0] || 0);
+          minutes = parseInt(hms[1] || 0);
+          seconds = parseInt(hms[2] || 0);
+          if (timeParts.length >= 2 && timeParts[1].toLowerCase() === 'pm' && hours < 12) {
+            hours += 12;
+          }
+          if (timeParts.length >= 2 && timeParts[1].toLowerCase() === 'am' && hours === 12) {
+            hours = 0;
+          }
+        }
+        d = new Date(year, month - 1, day, hours, minutes, seconds);
+        if (!isNaN(d.getTime())) return d;
+      }
+    }
+  } catch (e) {
+    console.error('safeParseDate error:', e);
+  }
+  return new Date(0);
+}
+
 // Helper to send emails via Resend API or SMTP fallback
 function sendResendEmail(to, subject, html, retries = 3, delay = 1000) {
   // Skip placeholder derived emails
@@ -1544,7 +1587,7 @@ app.get('/api/admin/super/stats', async (req, res) => {
         amt = 35200; // default verification fee if not specified
       }
       total += amt;
-      const rTime = new Date(r.created_at).getTime() || Date.now();
+      const rTime = safeParseDate(r.created_at).getTime();
       if (rTime >= startOfToday) today += amt;
       if (rTime >= startOfSevenDays) sevenDays += amt;
       if (rTime >= startOfMonth) month += amt;
@@ -2518,10 +2561,10 @@ app.get('/api/receipts/list', async (req, res) => {
       const phones = (referredUsers || []).map(u => u.phone);
       if (phones.length > 0) {
         let placeholders = phones.map(() => '?').join(',');
-        list = await db.query(`SELECT id, phone, user_name, type, plan_name, amount, status, created_at FROM receipts WHERE phone IN (${placeholders})`, phones);
+        list = await db.query(`SELECT id, phone, user_name, type, plan_name, amount, status, created_at FROM receipts WHERE phone IN (${placeholders}) ORDER BY created_at DESC`, phones);
       }
     } else {
-      list = await db.query('SELECT id, phone, user_name, type, plan_name, amount, status, created_at FROM receipts');
+      list = await db.query('SELECT id, phone, user_name, type, plan_name, amount, status, created_at FROM receipts ORDER BY created_at DESC');
     }
     
     const formatted = (list || []).map(r => ({
@@ -2708,7 +2751,7 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
     (receipts || []).forEach(r => {
       const amt = parseFloat(r.amount || 0);
       total += amt;
-      const rTime = new Date(r.created_at).getTime() || Date.now();
+      const rTime = safeParseDate(r.created_at).getTime();
       if (rTime >= startOfToday) today += amt;
       if (rTime >= startOfSevenDays) sevenDays += amt;
       if (rTime >= startOfMonth) month += amt;
