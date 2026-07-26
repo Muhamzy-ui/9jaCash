@@ -354,6 +354,7 @@ async function findJuniorAdminCode(referredBy) {
 // Helper to map database underscore properties to camelCase properties for frontend compatibility
 function mapUserKeys(u) {
   if (!u) return null;
+  const isVer = u.is_verified === 1 || u.is_verified === true || u.is_verified === '1';
   return {
     phone: u.phone,
     email: u.email,
@@ -369,6 +370,8 @@ function mapUserKeys(u) {
     juniorAdminCode: u.junior_admin_code || null,
     referredBy: u.referred_by,
     status: u.status,
+    is_verified: isVer ? 1 : 0,
+    isVerified: isVer,
     createdAt: u.created_at
   };
 }
@@ -2322,6 +2325,11 @@ app.post('/api/user/sync', async (req, res) => {
     }
     const u = users[0];
     const isVerifiedNum = (u.is_verified === 1 || u.is_verified === true || u.is_verified === '1') ? 1 : 0;
+    
+    // Fetch real withdrawal count from SQL database
+    const wCountRes = await db.query('SELECT COUNT(*) as cnt FROM withdrawals WHERE phone = ?', [u.phone]);
+    const wCount = parseInt((wCountRes && wCountRes[0] && (wCountRes[0].cnt || wCountRes[0]['cnt'] || wCountRes[0]['COUNT(*)'])) || 0);
+
     const freshUser = {
       phone: u.phone,
       full_name: u.full_name,
@@ -2338,7 +2346,8 @@ app.post('/api/user/sync', async (req, res) => {
       isVerified: isVerifiedNum === 1,
       payoutKey: u.payout_key || '',
       juniorAdminCode: u.junior_admin_code || '',
-      referredBy: u.referred_by || ''
+      referredBy: u.referred_by || '',
+      withdrawalCount: wCount
     };
     res.json({ status: true, user: freshUser });
   } catch (err) {

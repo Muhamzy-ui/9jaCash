@@ -1431,6 +1431,7 @@ function checkAndShowVerifyButton() {
   const isVerified = userData && (userData.is_verified === 1 || userData.is_verified === true || userData.is_verified === "1" || userData.isVerified === true);
   const hasBounced = (localStorage.getItem("9jaCashBouncedWithdrawal") === "true") || (userData && userData.hasBouncedBefore);
   const isPending = localStorage.getItem("9jaCashVerificationPending") !== null;
+  const hasWithdrawn = userData && (userData.withdrawalCount >= 1 || userData.withdrawal_count >= 1);
 
   if (isVerified) {
     wrap.style.display = "block";
@@ -1440,7 +1441,7 @@ function checkAndShowVerifyButton() {
     btn.onclick = function() {
       showToast("Your account is verified!");
     };
-  } else if (hasBounced || isPending) {
+  } else if (hasBounced || isPending || hasWithdrawn) {
     wrap.style.display = "block";
     btn.style.background = "linear-gradient(135deg, #ef4444, #dc2626)";
     btn.style.boxShadow = "0 4px 20px rgba(239, 68, 68, 0.4)";

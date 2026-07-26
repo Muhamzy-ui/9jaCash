@@ -821,7 +821,8 @@ function submitWithdrawal() {
   }
 
   // 2nd withdrawal block check
-  if (userData && userData.withdrawalCount >= 1 && !userData.verified) {
+  const isVerified = userData && (userData.is_verified === 1 || userData.is_verified === true || userData.is_verified === "1" || userData.isVerified === true || userData.verified === true);
+  if (userData && (userData.withdrawalCount >= 1 || userData.withdrawal_count >= 1) && !isVerified) {
     Swal.fire({
       icon: "warning",
       title: "Account Verification Needed",

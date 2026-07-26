@@ -178,48 +178,76 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 
   <!-- Stats Grid -->
-  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-    <div class="card p-5">
+  <div class="grid grid-cols-2 md:grid-cols-5 xl:grid-cols-10 gap-4 mb-8">
+    <div class="card p-4">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">Total Referrals</span>
-        <span class="text-violet-400 text-lg"><i class="fa-solid fa-users"></i></span>
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Total Referrals</span>
+        <span class="text-violet-400 text-base"><i class="fa-solid fa-users"></i></span>
       </div>
-      <div class="text-2xl font-extrabold" id="statUsers">0</div>
+      <div class="text-xl font-extrabold" id="statUsers">0</div>
     </div>
-    <div class="card p-5">
+    <div class="card p-4">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">Today's Revenue</span>
-        <span class="text-emerald-400 text-lg"><i class="fa-solid fa-calendar-day"></i></span>
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">User Balances</span>
+        <span class="text-emerald-400 text-base"><i class="fa-solid fa-wallet"></i></span>
       </div>
-      <div class="text-2xl font-extrabold font-mono text-emerald-400" id="statTodayRevenue">₦0</div>
+      <div class="text-xl font-extrabold font-mono text-emerald-400" id="statBalances">₦0</div>
     </div>
-    <div class="card p-5">
+    <div class="card p-4">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">Past 7 Days</span>
-        <span class="text-blue-400 text-lg"><i class="fa-solid fa-chart-line"></i></span>
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Pending Payouts</span>
+        <span class="text-amber-400 text-base"><i class="fa-solid fa-hourglass-half"></i></span>
       </div>
-      <div class="text-2xl font-extrabold text-blue-400 font-mono" id="statSevenDaysRevenue">₦0</div>
+      <div class="text-xl font-extrabold text-amber-400" id="statPending">0</div>
     </div>
-    <div class="card p-5">
+    <div class="card p-4">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">This Month</span>
-        <span class="text-purple-400 text-lg"><i class="fa-solid fa-calendar-week"></i></span>
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Total Paid Out</span>
+        <span class="text-blue-400 text-base"><i class="fa-solid fa-circle-check"></i></span>
       </div>
-      <div class="text-2xl font-extrabold text-purple-400 font-mono" id="statMonthRevenue">₦0</div>
+      <div class="text-xl font-extrabold text-blue-400 font-mono" id="statPaid">₦0</div>
     </div>
-    <div class="card p-5">
+    <div class="card p-4">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">This Year</span>
-        <span class="text-teal-400 text-lg"><i class="fa-solid fa-calendar-days"></i></span>
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Today's Revenue</span>
+        <span class="text-emerald-400 text-base"><i class="fa-solid fa-calendar-day"></i></span>
       </div>
-      <div class="text-2xl font-extrabold text-teal-400 font-mono" id="statYearRevenue">₦0</div>
+      <div class="text-xl font-extrabold font-mono text-emerald-400" id="statTodayRevenue">₦0</div>
     </div>
-    <div class="card p-5">
+    <div class="card p-4">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">Keys Sold</span>
-        <span class="text-pink-400 text-lg"><i class="fa-solid fa-key"></i></span>
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Past 7 Days</span>
+        <span class="text-blue-400 text-base"><i class="fa-solid fa-chart-line"></i></span>
       </div>
-      <div class="text-2xl font-extrabold text-pink-400" id="statKeysSold">0</div>
+      <div class="text-xl font-extrabold text-blue-400 font-mono" id="statSevenDaysRevenue">₦0</div>
+    </div>
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">This Month</span>
+        <span class="text-purple-400 text-base"><i class="fa-solid fa-calendar-week"></i></span>
+      </div>
+      <div class="text-xl font-extrabold text-purple-400 font-mono" id="statMonthRevenue">₦0</div>
+    </div>
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">This Year</span>
+        <span class="text-teal-400 text-base"><i class="fa-solid fa-calendar-days"></i></span>
+      </div>
+      <div class="text-xl font-extrabold text-teal-400 font-mono" id="statYearRevenue">₦0</div>
+    </div>
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Total Revenue</span>
+        <span class="text-indigo-400 text-base"><i class="fa-solid fa-sack-dollar"></i></span>
+      </div>
+      <div class="text-xl font-extrabold text-indigo-400 font-mono" id="statTotalRevenue">₦0</div>
+    </div>
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Keys Sold</span>
+        <span class="text-pink-400 text-base"><i class="fa-solid fa-key"></i></span>
+      </div>
+      <div class="text-xl font-extrabold text-pink-400" id="statKeysSold">0</div>
     </div>
   </div>
 
@@ -607,13 +635,18 @@ function loadDashboardData() {
   // 3. Fetch Video Submissions
   loadJuniorVideoSubmissions();
 
-  // 4. Fetch Referral Network Stats
-  fetch(API_URL + '/api/admin/junior/stats?referralCode=' + refCode)
+  // 4. Fetch Referral Network Stats & Analytics
+  fetch(API_URL + '/api/admin/junior/analytics?code=' + refCode)
     .then(res => res.json())
     .then(data => {
-      if (data.status) {
-        document.getElementById('statApprovedReceipts').textContent = '₦' + data.approvedReceiptsAmount.toLocaleString();
-        document.getElementById('statKeysSold').textContent = data.keysSold;
+      if (data.status && data.stats) {
+        const s = data.stats;
+        document.getElementById('statTodayRevenue').textContent = '₦' + (s.today || 0).toLocaleString();
+        document.getElementById('statSevenDaysRevenue').textContent = '₦' + (s.sevenDays || 0).toLocaleString();
+        document.getElementById('statMonthRevenue').textContent = '₦' + (s.month || 0).toLocaleString();
+        document.getElementById('statYearRevenue').textContent = '₦' + (s.year || 0).toLocaleString();
+        document.getElementById('statTotalRevenue').textContent = '₦' + (s.total || 0).toLocaleString();
+        document.getElementById('statKeysSold').textContent = s.keysSold || 0;
       }
     })
     .catch(err => console.error('Error fetching junior stats:', err));
