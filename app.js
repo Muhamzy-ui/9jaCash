@@ -1419,6 +1419,61 @@ app.post('/api/admin/super/verify-user', async (req, res) => {
   }
 });
 
+// GET /api/admin/super/migrate-from-neon — Trigger one-click data migration from Neon to Render Postgres
+app.get('/api/admin/super/migrate-from-neon', async (req, res) => {
+  const { Pool } = require('pg');
+  const neonUrl = 'postgresql://neondb_owner:npg_DJo20VrMUKam@ep-wild-smoke-ay0gdd4y-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require';
+  
+  try {
+    const sourcePool = new Pool({ connectionString: neonUrl, ssl: { rejectUnauthorized: false } });
+    
+    const tablesRes = await sourcePool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+    `);
+    const tables = tablesRes.rows.map(r => r.table_name);
+    
+    let report = {};
+
+    for (const table of tables) {
+      const colRes = await sourcePool.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = $1
+        ORDER BY ordinal_position
+      `, [table]);
+      const columns = colRes.rows.map(c => c.column_name);
+
+      const rowsRes = await sourcePool.query(`SELECT * FROM "${table}"`);
+      const rows = rowsRes.rows;
+      
+      let inserted = 0;
+      if (rows.length > 0) {
+        const colNames = columns.map(c => `"${c}"`).join(', ');
+        for (const row of rows) {
+          const values = columns.map(c => row[c]);
+          const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+          const insertQuery = `INSERT INTO "${table}" (${colNames}) VALUES (${placeholders}) ON CONFLICT DO NOTHING`;
+          try {
+            await db.query(insertQuery, values);
+            inserted++;
+          } catch (e) {
+            console.warn(`Migration notice on ${table}:`, e.message);
+          }
+        }
+      }
+      report[table] = `${inserted}/${rows.length} records transferred`;
+    }
+
+    await sourcePool.end();
+    res.json({ status: true, message: 'Data migration from Neon to Render Postgres completed successfully!', report });
+  } catch (err) {
+    console.error('Migration endpoint error:', err);
+    res.status(500).json({ status: false, error: err.message });
+  }
+});
+
 // GET /api/admin/super/stats — Fetch platform stats (total users, approved amounts, keys sold)
 app.get('/api/admin/super/stats', async (req, res) => {
   try {
