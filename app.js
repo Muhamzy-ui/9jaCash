@@ -2251,7 +2251,49 @@ app.post('/api/settings/:key', async (req, res) => {
   } catch (err) {
     res.status(500).json({ status: false, error: err.message });
   }
-});
+// POST /api/register or /api/user/register — Create/update user registration in PostgreSQL
+async function handleUserRegistration(req, res) {
+  const body = req.body || {};
+  const phone = body.phone || body.phoneNumber || body.userId;
+  const fullName = body.fullName || body.name || body.accountName || '9jaCash User';
+  const email = body.email || null;
+  const bankName = body.bankName || null;
+  const accountNumber = body.accountNumber || null;
+  const referredBy = body.referredBy || null;
+
+  if (!phone) {
+    return res.status(400).json({ status: false, error: 'Phone number is required for registration' });
+  }
+
+  try {
+    const existing = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+    if (existing.length > 0) {
+      await db.query(`
+        UPDATE users 
+        SET full_name = ?, email = COALESCE(?, email), bank_name = COALESCE(?, bank_name), account_number = COALESCE(?, account_number), referred_by = COALESCE(?, referred_by)
+        WHERE phone = ?
+      `, [fullName, email, bankName, accountNumber, referredBy, phone]);
+      
+      const updated = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+      return res.json({ status: true, user: updated[0], message: 'User profile updated successfully' });
+    } else {
+      const juniorCode = await findJuniorAdminCode(referredBy);
+      await db.query(`
+        INSERT INTO users (phone, full_name, email, bank_name, account_number, balance, mining_power, total_mined, referred_by, junior_admin_code, plan_name, is_verified, created_at)
+        VALUES (?, ?, ?, ?, ?, 0, 1, 0, ?, ?, 'Free Miner', 0, CURRENT_TIMESTAMP)
+      `, [phone, fullName, email, bankName, accountNumber, referredBy, juniorCode]);
+
+      const newUser = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+      return res.json({ status: true, user: newUser[0], message: 'User registered successfully' });
+    }
+  } catch (err) {
+    console.error('Registration error:', err);
+    return res.status(500).json({ status: false, error: err.message });
+  }
+}
+
+app.post('/api/register', handleUserRegistration);
+app.post('/api/user/register', handleUserRegistration);
 
 // POST /api/receipts/submit — Submit a verification/upgrade receipt
 app.post('/api/receipts/submit', async (req, res) => {

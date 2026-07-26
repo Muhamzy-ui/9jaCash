@@ -1429,6 +1429,8 @@ function checkAndShowVerifyButton() {
   if (!wrap || !btn) return;
 
   const isVerified = userData && (userData.is_verified === 1 || userData.is_verified === true || userData.is_verified === "1" || userData.isVerified === true);
+  const hasBounced = (localStorage.getItem("9jaCashBouncedWithdrawal") === "true") || (userData && userData.hasBouncedBefore);
+  const isPending = localStorage.getItem("9jaCashVerificationPending") !== null;
 
   if (isVerified) {
     wrap.style.display = "block";
@@ -1438,12 +1440,15 @@ function checkAndShowVerifyButton() {
     btn.onclick = function() {
       showToast("Your account is verified!");
     };
-  } else {
+  } else if (hasBounced || isPending) {
     wrap.style.display = "block";
     btn.style.background = "linear-gradient(135deg, #ef4444, #dc2626)";
     btn.style.boxShadow = "0 4px 20px rgba(239, 68, 68, 0.4)";
     btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i><span>Verify Linked Account</span>';
     btn.onclick = verifyBankLink;
+  } else {
+    // HIDDEN BY DEFAULT FOR NEW SIGNUPS AND UNBOUNCED ACCOUNTS
+    wrap.style.display = "none";
   }
 }
 
