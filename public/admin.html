@@ -630,6 +630,19 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
 
   <div class="panel">
     <div class="panel-header">
+      <div class="panel-icon orange" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fa-solid fa-percent"></i></div>
+      <div><div class="panel-title">Admin Commission Setting</div><div class="panel-sub">Set the percentage you collect from Junior Admins</div></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Super Admin Commission Percentage (%)</label>
+        <input type="number" id="adminPercentageInput" class="form-input" min="0" max="100" placeholder="20" value="20">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
       <div class="panel-icon blue"><i class="fa-brands fa-telegram"></i></div>
       <div><div class="panel-title">Community & Support Links</div><div class="panel-sub">Configure community channel and customer care links</div></div>
     </div>
@@ -951,23 +964,6 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         </button>
       </div>
     </form>
-  </div>
-
-  <!-- COMMISSION SETTINGS PANEL -->
-  <div class="panel">
-    <div class="panel-header">
-      <div class="panel-icon orange" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fa-solid fa-percent"></i></div>
-      <div><div class="panel-title">Admin Commission Settings</div><div class="panel-sub">Set the percentage you collect from Junior Admins</div></div>
-    </div>
-    <div style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
-      <div class="form-group" style="margin-bottom:0; flex: 1; min-width:200px;">
-        <label class="form-label">Super Admin Commission Percentage (%)</label>
-        <input type="number" id="adminPercentageInput" class="form-input" min="0" max="100" placeholder="20" value="20">
-      </div>
-      <button onclick="saveAdminPercentage()" class="save-btn" style="margin:0; height:42px; display:inline-flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-floppy-disk"></i> Save Commission %
-      </button>
-    </div>
   </div>
 
   <div class="panel">
@@ -1492,6 +1488,8 @@ async function saveAll(){
     cloudinaryUploadPreset:document.getElementById('cloudinaryUploadPreset').value.trim(),
     updatedAt:new Date().toISOString()
   };
+  const adminPctVal = Number(document.getElementById('adminPercentageInput').value) || 20;
+  const adminPct = { percentage: adminPctVal, updatedAt: new Date().toISOString() };
   
   if(pay.accNumber&&pay.accNumber.length!==10){showToast('Main account: 10 digits','error');return;}
   if(fee.accNumber&&fee.accNumber.length!==10){showToast('Fee account: 10 digits','error');return;}
@@ -1506,7 +1504,8 @@ async function saveAll(){
       db.collection('settings').doc('paymentStatus').set(pm),
       db.collection('settings').doc('payoutKeys').set(keyD),
       db.collection('settings').doc('redirects').set(redir),
-      db.collection('settings').doc('videoChallenge').set(videoChallenge)
+      db.collection('settings').doc('videoChallenge').set(videoChallenge),
+      db.collection('settings').doc('admin_percentage').set(adminPct)
     ]);
     updatePreview();showToast('All saved!','success');
   }catch(err){showToast('Failed: '+err.message,'error');}
@@ -1529,21 +1528,6 @@ document.querySelectorAll('input,textarea').forEach(el=>el.addEventListener('inp
 window.addEventListener('load',initAuth);
 
 // ========== JUNIOR ADMIN MANAGEMENT ==========
-async function saveAdminPercentage() {
-  const pct = Number(document.getElementById('adminPercentageInput').value) || 0;
-  if (pct < 0 || pct > 100) {
-    showToast('Percentage must be between 0 and 100', 'error');
-    return;
-  }
-  try {
-    await db.collection('settings').doc('admin_percentage').set({ percentage: pct });
-    showToast('Commission percentage saved!', 'success');
-    loadJuniorAdminsList();
-  } catch (err) {
-    showToast('Failed to save percentage: ' + err.message, 'error');
-  }
-}
-
 function loadJuniorAdminsList() {
   fetch(API_URL + '/api/admin/super/juniors')
     .then(res => res.json())
