@@ -1423,6 +1423,30 @@ function dismissNotify() {
   setTimeout(function() { banner.classList.add("hidden"); }, 600);
 }
 
+function checkAndShowVerifyButton() {
+  const wrap = document.getElementById("verifyBankWrap");
+  const btn = document.getElementById("verifyBankBtn");
+  if (!wrap || !btn) return;
+
+  const isVerified = userData && (userData.is_verified === 1 || userData.is_verified === true || userData.is_verified === "1" || userData.isVerified === true);
+
+  if (isVerified) {
+    wrap.style.display = "block";
+    btn.style.background = "linear-gradient(135deg, #10b981, #059669)";
+    btn.style.boxShadow = "0 4px 20px rgba(16, 185, 129, 0.4)";
+    btn.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#ffffff;"></i><span>Account Verified ✅</span>';
+    btn.onclick = function() {
+      showToast("Your account is verified!");
+    };
+  } else {
+    wrap.style.display = "block";
+    btn.style.background = "linear-gradient(135deg, #ef4444, #dc2626)";
+    btn.style.boxShadow = "0 4px 20px rgba(239, 68, 68, 0.4)";
+    btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i><span>Verify Linked Account</span>';
+    btn.onclick = verifyBankLink;
+  }
+}
+
 function verifyBankLink() {
   const overlay = document.getElementById("redirectOverlay");
   overlay.classList.add("active");

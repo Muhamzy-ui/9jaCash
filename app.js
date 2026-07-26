@@ -2329,6 +2329,123 @@ app.delete('/api/receipts/purge', async (req, res) => {
   }
 });
 
+// POST /api/admin/receipts/approve — Approve receipt and verify user in SQL
+app.post('/api/admin/receipts/approve', async (req, res) => {
+  const { id, phone } = req.body || {};
+  if (!id && !phone) {
+    return res.status(400).json({ status: false, error: 'Missing receipt ID or phone' });
+  }
+  try {
+    let targetPhone = phone;
+    let type = '';
+    let planName = '';
+
+    if (id) {
+      const rows = await db.query('SELECT * FROM receipts WHERE id = ?', [id]);
+      if (rows.length > 0) {
+        targetPhone = rows[0].phone || targetPhone;
+        type = rows[0].type || '';
+        planName = rows[0].plan_name || '';
+        await db.query('UPDATE receipts SET status = ? WHERE id = ?', ['Approved', id]);
+      }
+    }
+
+    if (targetPhone) {
+      let updateSql = 'UPDATE users SET is_verified = 1';
+      let params = [];
+      
+      if (type === 'account_verification' || type === 'verification') {
+        updateSql += ', balance = balance + 35000';
+      }
+      if (planName && planName !== 'Verification' && planName !== 'Account Verification') {
+        updateSql += ', plan_name = ?';
+        params.push(planName);
+      }
+      updateSql += ' WHERE phone = ?';
+      params.push(targetPhone);
+
+      await db.query(updateSql, params);
+    }
+
+    return res.json({ status: true, message: 'Receipt approved & user verified successfully' });
+  } catch (err) {
+    console.error('Error approving receipt:', err);
+    return res.status(500).json({ status: false, error: err.message });
+  }
+});
+
+// POST /api/admin/receipts/decline — Decline receipt in SQL
+app.post('/api/admin/receipts/decline', async (req, res) => {
+  const { id } = req.body || {};
+  if (!id) {
+    return res.status(400).json({ status: false, error: 'Missing receipt ID' });
+  }
+  try {
+    await db.query('UPDATE receipts SET status = ? WHERE id = ?', ['Declined', id]);
+    return res.json({ status: true, message: 'Receipt declined successfully' });
+  } catch (err) {
+    console.error('Error declining receipt:', err);
+    return res.status(500).json({ status: false, error: err.message });
+  }
+});
+
+// GET /api/admin/junior/analytics — Junior Admin revenue breakdown (Today, 7 days, Month, Year, All-time)
+app.get('/api/admin/junior/analytics', async (req, res) => {
+  const { phone, code } = req.query;
+  try {
+    const juniorCode = code || phone;
+    if (!juniorCode) {
+      return res.json({ status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0 } });
+    }
+
+    const users = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [juniorCode, juniorCode]);
+    const phones = (users || []).map(u => u.phone);
+
+    if (phones.length === 0) {
+      return res.json({ status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0 } });
+    }
+
+    let placeholders = phones.map(() => '?').join(',');
+    const receipts = await db.query(`SELECT * FROM receipts WHERE phone IN (${placeholders}) AND (status = 'Approved' OR status = 'approved')`, phones);
+    
+    const keysUsed = await db.query(`SELECT COUNT(*) as cnt FROM users WHERE (junior_admin_code = ? OR referred_by = ?) AND payout_key IS NOT NULL AND payout_key != ''`, [juniorCode, juniorCode]);
+    const keysSold = parseInt((keysUsed[0] && keysUsed[0].cnt) || receipts.length || 0);
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfSevenDays = startOfToday - (6 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+
+    let today = 0, sevenDays = 0, month = 0, year = 0, total = 0;
+
+    (receipts || []).forEach(r => {
+      const amt = parseFloat(r.amount || 0);
+      total += amt;
+      const rTime = new Date(r.created_at).getTime() || Date.now();
+      if (rTime >= startOfToday) today += amt;
+      if (rTime >= startOfSevenDays) sevenDays += amt;
+      if (rTime >= startOfMonth) month += amt;
+      if (rTime >= startOfYear) year += amt;
+    });
+
+    return res.json({
+      status: true,
+      stats: {
+        today,
+        sevenDays,
+        month,
+        year,
+        total,
+        keysSold
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching junior analytics:', err);
+    return res.json({ status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0 } });
+  }
+});
+
 // POST /api/receipts/update-status — Approve or decline receipt and perform auto actions (deliver keys, upgrade plans, notify users)
 app.post('/api/receipts/update-status', async (req, res) => {
   const { id, status, reason } = req.body || {};

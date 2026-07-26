@@ -2148,112 +2148,25 @@ function approveReceipt(id, collectionName) {
     if (res.isConfirmed) {
       Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
       
-      // db is globally defined in admin.html
-      db.collection(collectionName).doc(id).update({ status: 'Approved' })
-        .then(() => {
-          // If account verification
-          if (collectionName === 'verifications' || receipt.type === 'account_verification') {
-            return db.collection('users').doc(phone).get().then(uDoc => {
-              if (uDoc.exists) {
-                const uData = uDoc.data();
-                const newBal = (parseFloat(uData.balance) || 0) + 35000;
-                
-                return db.collection('users').doc(phone).update({
-                  balance: newBal,
-                  status: 'active',
-                  is_verified: true
-                }).then(() => {
-                  fetch(API_URL + '/api/admin/super/verify-user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone, isVerified: true })
-                  }).catch(() => {});
-                  return fetch(API_URL + '/api/user/update-balance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      phone: phone,
-                      balance: newBal,
-                      totalMined: uData.totalMined || 0,
-                      adminSecret: '9jaCashAdminMasterSecretCode1083'
-                    })
-                  });
-                }).then(() => {
-                  return fetch(API_URL + '/api/admin/super/send-message', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      phone: phone,
-                      title: 'Verification Approved',
-                      content: 'Your account has been fully verified. ₦35,000 refund was successfully credited to your wallet.',
-                      type: 'alert'
-                    })
-                  });
-                });
-              }
-            });
-          }
-          // If payout key purchase
-          else if (receipt.flowType === 'payoutKey' || receipt.type === 'payoutKey' || (receipt.plan && receipt.plan.includes('Key'))) {
-            const keyStr = 'KEY-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-            return db.collection('users').doc(phone).update({
-              payoutKey: keyStr
-            }).then(() => {
-              return fetch(API_URL + '/api/admin/super/send-message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  phone: phone,
-                  title: 'Payout Key Issued',
-                  content: `Your payout key was successfully generated: ${keyStr}. Copy this key to verify your withdrawal request.`,
-                  type: 'payout_key'
-                })
-              });
-            });
-          }
-          // If plan upgrade
-          else if (receipt.type === 'upgrade' || receipt.flowType === 'upgrade') {
-            let multiplier = 1.5;
-            if (receipt.plan && receipt.plan.includes('Silver')) multiplier = 2.0;
-            if (receipt.plan && receipt.plan.includes('Gold')) multiplier = 3.0;
-            if (receipt.plan && receipt.plan.includes('Diamond')) multiplier = 5.0;
-            
-            return db.collection('users').doc(phone).update({
-              miningPower: multiplier,
-              planName: receipt.plan
-            }).then(() => {
-              return fetch(API_URL + '/api/user/update-plan-power', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  phone: phone,
-                  plan: receipt.plan,
-                  miningPower: multiplier,
-                  adminSecret: '9jaCashAdminMasterSecretCode1083'
-                })
-              });
-            }).then(() => {
-              return fetch(API_URL + '/api/admin/super/send-message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  phone: phone,
-                  title: 'Plan Upgrade Success',
-                  content: `Your purchase was verified. Your account is now active on the ${receipt.plan || 'Basic Plan'} (${multiplier}x mining power).`,
-                  type: 'alert'
-                })
-              });
-            });
-          }
-        })
-        .then(() => {
-          Swal.fire({ icon: 'success', title: 'Approved', text: 'Payment approved and notification sent!', confirmButtonColor: '#6366f1' });
+      fetch(API_URL + '/api/admin/receipts/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, phone: phone })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Approved', text: 'Payment approved and user account verified!', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
           loadAllReceipts();
-        })
-        .catch(err => {
-          console.error(err);
-          Swal.fire({ icon: 'error', title: 'Approval Failed', text: err.message || 'Operation failed', confirmButtonColor: '#6366f1' });
-        });
+          loadAllUsersList();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Approval Failed', text: data.error || 'Operation failed', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Approval Failed', text: err.message || 'Operation failed', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+      });
     }
   });
 }
@@ -2279,15 +2192,27 @@ function declineReceipt(id, collectionName) {
       const reason = res.value || 'Payment proof could not be verified.';
       Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
       
-      // db is globally defined in admin.html
-      db.collection(collectionName).doc(id).update({ status: 'Declined' })
-        .then(() => {
-          return fetch(API_URL + '/api/admin/super/send-message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              phone: phone,
-              title: 'Payment Declined',
+      fetch(API_URL + '/api/admin/receipts/decline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, phone: phone, reason: reason })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'info', title: 'Declined', text: 'Payment receipt declined.', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+          loadAllReceipts();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Decline Failed', text: data.error || 'Operation failed', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Decline Failed', text: err.message || 'Operation failed', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+      });
+    }
+  });
+}
               content: `Your payment request was declined. Reason: ${reason}. Please make a new submission with valid proof.`,
               type: 'alert'
             })
