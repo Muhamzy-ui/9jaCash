@@ -1398,11 +1398,24 @@ app.post('/api/admin/super/toggle-junior-status', async (req, res) => {
 // GET /api/admin/super/users — Fetch list of all registered users
 app.get('/api/admin/super/users', async (req, res) => {
   try {
-    const list = await db.query('SELECT phone, email, full_name, bank_name, account_number, balance, mining_power, total_mined, referred_by, junior_admin_code, payout_key, status, created_at FROM users ORDER BY created_at DESC');
+    const list = await db.query('SELECT phone, email, full_name, bank_name, account_number, balance, mining_power, total_mined, referred_by, junior_admin_code, payout_key, status, is_verified, created_at FROM users ORDER BY created_at DESC');
     res.json({ status: true, users: list || [] });
   } catch (err) {
     console.error('Failed to fetch users list:', err.message);
     res.json({ status: true, users: [] });
+  }
+});
+
+// POST /api/admin/super/verify-user — Toggle user verified checkmark status
+app.post('/api/admin/super/verify-user', async (req, res) => {
+  const { phone, isVerified } = req.body || {};
+  if (!phone) return res.status(400).json({ status: false, error: 'Phone number required' });
+  try {
+    const val = (isVerified === true || isVerified === 1 || isVerified === '1') ? 1 : 0;
+    await db.query('UPDATE users SET is_verified = ? WHERE phone = ?', [val, phone]);
+    res.json({ status: true, message: `User verification mark updated (${val === 1 ? 'Verified' : 'Unverified'})` });
+  } catch (err) {
+    res.status(500).json({ status: false, error: err.message });
   }
 });
 
@@ -2255,6 +2268,9 @@ app.post('/api/receipts/update-status', async (req, res) => {
       const u = users[0];
 
       if (rc.type === 'payout' || rc.type === 'key' || rc.type === 'verification' || rc.type === 'payout_key_purchase' || rc.type === 'account_verification') {
+        if (rc.type === 'verification' || rc.type === 'account_verification') {
+          await db.query('UPDATE users SET is_verified = 1 WHERE phone = ?', [rc.phone]);
+        }
         // Generate unique payout key
         const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
         await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, rc.phone]);

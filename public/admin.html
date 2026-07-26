@@ -1767,12 +1767,14 @@ function renderAllUsers(users, isFiltering = false) {
     const uStatusColor = u.status === 'suspended' ? 'var(--danger)' : 'var(--accent)';
     const cleanName = (u.full_name || '9jaCash User').replace(/'/g, "\\'").replace(/"/g, '\\"');
     const payoutKeyStr = u.payout_key || '<span style="color:var(--text3);">None</span>';
+    const isUserVerified = u.is_verified === 1 || u.is_verified === true || u.is_verified === '1';
+    const verifiedBadge = isUserVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:13px;" title="Verified Account"></i>' : '';
     
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid var(--border)';
     tr.innerHTML = `
       <td style="padding:10px; color:var(--text3); font-size:12px;">${joinedDate}</td>
-      <td style="padding:10px; color:var(--text); font-weight:600;">${u.full_name || '9jaCash User'}</td>
+      <td style="padding:10px; color:var(--text); font-weight:600;">${u.full_name || '9jaCash User'}${verifiedBadge}</td>
       <td style="padding:10px; color:var(--text2); font-family:monospace; font-size:12px;">${u.phone || '—'}</td>
       <td style="padding:10px; color:var(--text2); font-size:12px;">${u.email || '—'}</td>
       <td style="padding:10px; color:var(--accent); font-weight:700; font-size:12px;">${u.referred_by || 'Direct'}</td>
@@ -1781,6 +1783,9 @@ function renderAllUsers(users, isFiltering = false) {
       <td style="padding:10px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase;">${u.status || 'ACTIVE'}</td>
       <td style="padding:10px; text-align:right;">
         <div style="display:flex; gap:12px; justify-content:flex-end;">
+          <button onclick="toggleVerifyUser('${u.phone}', ${isUserVerified ? 'false' : 'true'})" style="background:none; border:none; color:${isUserVerified ? '#1d9bf0' : 'var(--text3)'}; font-weight:700; cursor:pointer;" class="hover:underline" title="Toggle Verified Badge">
+            <i class="fa-solid fa-certificate"></i> ${isUserVerified ? 'Verified' : 'Verify'}
+          </button>
           <button onclick="generateUserKey('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--warning); font-weight:700; cursor:pointer;" class="hover:underline">
             <i class="fa-solid fa-key"></i> Key
           </button>
@@ -1795,6 +1800,24 @@ function renderAllUsers(users, isFiltering = false) {
     `;
     tbody.appendChild(tr);
   });
+}
+
+function toggleVerifyUser(phone, isVerified) {
+  fetch(API_URL + '/api/admin/super/verify-user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, isVerified })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status) {
+      showToast(data.message, 'success');
+      loadAllUsersList();
+    } else {
+      showToast(data.error || 'Failed to toggle verification status', 'error');
+    }
+  })
+  .catch(err => showToast('Connection error', 'error'));
 }
 
 function filterUsers() {
@@ -2159,8 +2182,14 @@ function approveReceipt(id, collectionName) {
                 
                 return db.collection('users').doc(phone).update({
                   balance: newBal,
-                  status: 'active'
+                  status: 'active',
+                  is_verified: true
                 }).then(() => {
+                  fetch(API_URL + '/api/admin/super/verify-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, isVerified: true })
+                  }).catch(() => {});
                   return fetch(API_URL + '/api/user/update-balance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2368,13 +2397,7 @@ function renderSuperWithdrawals(withdrawals) {
       statusLabel = 'Declined ❌';
     }
 
-    const isPending = w.status === 'Pending' || w.status === 'pending';
-    const actionsHtml = isPending ? `
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button onclick="approveSuperWithdrawal('${w.id}')" style="padding:6px 12px; border:none; border-radius:6px; background:var(--accent); color:white; font-weight:700; cursor:pointer;">Approve</button>
-        <button onclick="rejectSuperWithdrawal('${w.id}')" style="padding:6px 12px; border:none; border-radius:6px; background:var(--danger); color:white; font-weight:700; cursor:pointer;">Decline</button>
-      </div>
-    ` : `<span class="${statusClass}" style="padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700;">${statusLabel}</span>`;
+    const actionsHtml = `<span style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); color:#818cf8; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-eye"></i> Logged Attempt (₦${parseFloat(w.amount || 0).toLocaleString()})</span>`;
 
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid var(--border)';
@@ -2388,7 +2411,7 @@ function renderSuperWithdrawals(withdrawals) {
         <div style="color:var(--text);">${w.bank_name || '—'}</div>
         <div style="font-size:11px; color:var(--text3); font-family:monospace; margin-top:2px;">${w.account_number || '—'}</div>
       </td>
-      <td style="padding:12px; color:white; font-weight:700;">₦${parseFloat(w.amount || 0).toLocaleString()}</td>
+      <td style="padding:12px; color:#10b981; font-weight:800; font-size:14px;">₦${parseFloat(w.amount || 0).toLocaleString()}</td>
       <td style="padding:12px;"><span class="${statusClass}" style="padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700;">${w.status}</span></td>
       <td style="padding:12px; text-align:right;">${actionsHtml}</td>
     `;

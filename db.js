@@ -115,6 +115,7 @@ async function initDb() {
         plan_name TEXT DEFAULT 'Free Miner',
         payout_key TEXT,
         status TEXT DEFAULT 'active',
+        is_verified INTEGER DEFAULT 0,
         created_at TEXT
       )
     `);
@@ -199,14 +200,15 @@ async function initDb() {
 
     // Dynamic Alter Columns for backwards compatibility
     const alterStatements = [
-      "ALTER TABLE users ADD COLUMN junior_admin_code TEXT",
-      "ALTER TABLE users ADD COLUMN plan_name TEXT DEFAULT 'Free Miner'",
-      "ALTER TABLE users ADD COLUMN payout_key TEXT",
-      "ALTER TABLE junior_admins ADD COLUMN bank_name TEXT",
-      "ALTER TABLE junior_admins ADD COLUMN account_number TEXT",
-      "ALTER TABLE junior_admins ADD COLUMN account_name TEXT",
-      "ALTER TABLE junior_admins ADD COLUMN crypto_address TEXT",
-      "ALTER TABLE junior_admins ADD COLUMN crypto_network TEXT"
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS junior_admin_code TEXT",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_name TEXT DEFAULT 'Free Miner'",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS payout_key TEXT",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified INTEGER DEFAULT 0",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS bank_name TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS account_number TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS account_name TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS crypto_address TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS crypto_network TEXT"
     ];
     for (const stmt of alterStatements) {
       try { await query(stmt); } catch (e) {}
