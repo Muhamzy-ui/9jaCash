@@ -1030,6 +1030,10 @@ function loadDashboardReceipts() {
   const table = document.getElementById('receiptListTable');
   const badgeEl = document.getElementById('receiptsBadge');
   
+  if (table) {
+    table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading receipts...</td></tr>';
+  }
+  
   if (!window._9jaCash || !window._9jaCash.db) {
     table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">Firebase not initialized</td></tr>';
     return;

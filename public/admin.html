@@ -2003,6 +2003,10 @@ function loadAllReceipts() {
   const table = document.getElementById('receiptListTable');
   const badgeEl = document.getElementById('receiptsBadge');
   
+  if (table) {
+    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading receipts...</td></tr>';
+  }
+  
   fetch(API_URL + '/api/receipts/list')
     .then(res => res.json())
     .then(data => {
