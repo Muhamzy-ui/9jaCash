@@ -924,6 +924,29 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
     </div>
   </div>
 
+  <div class="stats-row" style="grid-template-columns: repeat(3, 1fr); display: grid; gap: 16px; margin-bottom: 24px;">
+    <!-- Total Junior Gross Revenue -->
+    <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15); padding: 16px;">
+      <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-vault"></i></div>
+      <div class="stat-num green" id="juniorTotalGross" style="color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Total Junior Gross</div>
+    </div>
+
+    <!-- Total Admin Share -->
+    <div class="stat-card red" style="background: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.15); padding: 16px;">
+      <div class="stat-icon red" style="background: rgba(239, 68, 68, 0.08); color: #ef4444; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-percent"></i></div>
+      <div class="stat-num red" id="juniorTotalAdminShare" style="color: #ef4444; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Your Commission (Cut)</div>
+    </div>
+
+    <!-- Total Junior Net Share -->
+    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15); padding: 16px;">
+      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-wallet"></i></div>
+      <div class="stat-num blue" id="juniorTotalNetShare" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">₦0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Junior Admins Net Share</div>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="panel-header">
       <div class="panel-icon green"><i class="fa-solid fa-user-plus"></i></div>
@@ -1533,9 +1556,16 @@ function loadJuniorAdminsList() {
     .then(res => res.json())
     .then(data => {
       const tbody = document.getElementById('juniorAdminListTable');
+      let sumGross = 0;
+      let sumAdmin = 0;
+      let sumJunior = 0;
+      
       if (data.status && Array.isArray(data.juniors)) {
         if (data.juniors.length === 0) {
           tbody.innerHTML = '<tr><td colspan="8" style="padding:15px; text-align:center; color:var(--text3);">No junior admins found</td></tr>';
+          document.getElementById('juniorTotalGross').textContent = '₦0';
+          document.getElementById('juniorTotalAdminShare').textContent = '₦0';
+          document.getElementById('juniorTotalNetShare').textContent = '₦0';
           return;
         }
         tbody.innerHTML = '';
@@ -1548,6 +1578,9 @@ function loadJuniorAdminsList() {
             : '<span style="color:var(--text3);">None (Super Admin details)</span>';
 
           const stats = j.stats || { totalGross: 0, adminShare: 0, juniorShare: 0 };
+          sumGross += parseFloat(stats.totalGross || 0);
+          sumAdmin += parseFloat(stats.adminShare || 0);
+          sumJunior += parseFloat(stats.juniorShare || 0);
 
           const tr = document.createElement('tr');
           tr.style.borderBottom = '1px solid var(--border)';
@@ -1572,6 +1605,10 @@ function loadJuniorAdminsList() {
           `;
           tbody.appendChild(tr);
         });
+        
+        document.getElementById('juniorTotalGross').textContent = '₦' + sumGross.toLocaleString();
+        document.getElementById('juniorTotalAdminShare').textContent = '₦' + sumAdmin.toLocaleString();
+        document.getElementById('juniorTotalNetShare').textContent = '₦' + sumJunior.toLocaleString();
       }
     })
     .catch(err => {
