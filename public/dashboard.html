@@ -1619,7 +1619,10 @@ function copyReferralLink() {
 
 // ========== BACKEND SQL DATA SYNC ==========
 function syncFromBackend() {
-  if (!userData || !userData.phone) return;
+  if (!userData) return;
+  const userPhone = userData.phone || userData.userId || userData.phoneNumber || userData.email;
+  if (!userPhone) return;
+
   if (isBouncing) {
     console.log("Sync deferred because bounce is executing...");
     return;
@@ -1633,7 +1636,7 @@ function syncFromBackend() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
-      phone: userData.phone,
+      phone: userPhone,
       balance: localBalance,
       totalMined: localTotalMined,
       withdrawalCount: localWithdrawalCount
@@ -1643,15 +1646,18 @@ function syncFromBackend() {
   .then(function(data) {
     if (data.status && data.user) {
       const fresh = data.user;
-      userData = fresh;
+      userData = Object.assign({}, userData, fresh);
       localStorage.setItem("9jaCashUser", JSON.stringify(userData));
       balance = parseFloat(fresh.balance) || 0;
       updateBalance();
       document.getElementById("totalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
       updatePlanUI();
       
-      // Update Twitter verified checkmark dynamically
-      const isUserVer = fresh && (fresh.is_verified === 1 || fresh.is_verified === true || fresh.isVerified === true || fresh.is_verified === "1");
+      const isUserVer = fresh.is_verified === 1 || fresh.is_verified === true || fresh.isVerified === true || fresh.is_verified === "1";
+      if (isUserVer) {
+        localStorage.removeItem("9jaCashVerificationPending");
+      }
+
       const verCheckmark = isUserVer ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:14px;" title="Verified Account"></i>' : '';
       const uNameEl = document.getElementById("userName");
       if (uNameEl) uNameEl.innerHTML = (fresh.full_name || fresh.name || fresh.fullName || "9jaCash User") + verCheckmark;

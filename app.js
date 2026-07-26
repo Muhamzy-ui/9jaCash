@@ -2299,14 +2299,29 @@ app.post('/api/user/register', handleUserRegistration);
 
 // POST /api/user/sync — Fetch fresh user status & sync data with PostgreSQL
 app.post('/api/user/sync', async (req, res) => {
-  const { phone } = req.body || {};
-  if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
+  const body = req.body || {};
+  const rawPhone = (body.phone || body.userId || body.phoneNumber || body.email || '').toString().trim();
+  if (!rawPhone) return res.status(400).json({ status: false, error: 'Phone required' });
+  
+  const digitsOnly = rawPhone.replace(/\D/g, '');
+  const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+
   try {
-    const users = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+    const users = await db.query(`
+      SELECT * FROM users 
+      WHERE phone = ? 
+         OR email = ? 
+         OR full_name = ?
+         OR (LENGTH(?) > 5 AND phone LIKE ?)
+         OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
+      ORDER BY id DESC LIMIT 1
+    `, [rawPhone, rawPhone, rawPhone, last10, '%' + last10, last10, '%' + last10]);
+
     if (users.length === 0) {
       return res.status(404).json({ status: false, error: 'User not found' });
     }
     const u = users[0];
+    const isVerifiedNum = (u.is_verified === 1 || u.is_verified === true || u.is_verified === '1') ? 1 : 0;
     const freshUser = {
       phone: u.phone,
       full_name: u.full_name,
@@ -2319,8 +2334,8 @@ app.post('/api/user/sync', async (req, res) => {
       miningPower: parseFloat(u.mining_power || 1),
       totalMined: parseFloat(u.total_mined || 0),
       planName: u.plan_name || 'Free Miner',
-      is_verified: parseInt(u.is_verified || 0),
-      isVerified: u.is_verified === 1 || u.is_verified === true || u.is_verified === '1',
+      is_verified: isVerifiedNum,
+      isVerified: isVerifiedNum === 1,
       payoutKey: u.payout_key || '',
       juniorAdminCode: u.junior_admin_code || '',
       referredBy: u.referred_by || ''
@@ -2334,12 +2349,24 @@ app.post('/api/user/sync', async (req, res) => {
 
 // GET /api/user/details — Get user details by phone
 app.get('/api/user/details', async (req, res) => {
-  const { phone } = req.query || {};
-  if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
+  const rawPhone = (req.query.phone || req.query.email || '').toString().trim();
+  if (!rawPhone) return res.status(400).json({ status: false, error: 'Phone required' });
+
+  const digitsOnly = rawPhone.replace(/\D/g, '');
+  const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+
   try {
-    const users = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+    const users = await db.query(`
+      SELECT * FROM users 
+      WHERE phone = ? 
+         OR email = ? 
+         OR (LENGTH(?) > 5 AND phone LIKE ?)
+      ORDER BY id DESC LIMIT 1
+    `, [rawPhone, rawPhone, last10, '%' + last10]);
+
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
     const u = users[0];
+    const isVerifiedNum = (u.is_verified === 1 || u.is_verified === true || u.is_verified === '1') ? 1 : 0;
     res.json({
       status: true,
       user: {
@@ -2353,8 +2380,8 @@ app.get('/api/user/details', async (req, res) => {
         miningPower: parseFloat(u.mining_power || 1),
         totalMined: parseFloat(u.total_mined || 0),
         planName: u.plan_name || 'Free Miner',
-        is_verified: parseInt(u.is_verified || 0),
-        isVerified: u.is_verified === 1 || u.is_verified === true || u.is_verified === '1',
+        is_verified: isVerifiedNum,
+        isVerified: isVerifiedNum === 1,
         payoutKey: u.payout_key || ''
       }
     });
