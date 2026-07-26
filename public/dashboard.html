@@ -1619,14 +1619,13 @@ function syncFromBackend() {
       balance = parseFloat(fresh.balance) || 0;
       updateBalance();
       document.getElementById("totalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
-      document.getElementById("miningPower").textContent = (fresh.miningPower || 1) + "x";
       updatePlanUI();
       
-      // Android / PWA bounce status recovery
-      if (fresh.hasBouncedBefore) {
-        localStorage.setItem("9jaCashBouncedWithdrawal", "true");
-        checkAndShowVerifyButton();
-      }
+      // Update Twitter verified checkmark dynamically
+      const isUserVer = fresh && (fresh.is_verified === 1 || fresh.is_verified === true || fresh.isVerified === true || fresh.is_verified === "1");
+      const verCheckmark = isUserVer ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:14px;" title="Verified Account"></i>' : '';
+      const uNameEl = document.getElementById("userName");
+      if (uNameEl) uNameEl.innerHTML = (fresh.full_name || fresh.name || fresh.fullName || "9jaCash User") + verCheckmark;
     }
     loadActivity();
   })

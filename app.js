@@ -2255,9 +2255,16 @@ app.post('/api/settings/:key', async (req, res) => {
 
 // POST /api/receipts/submit — Submit a verification/upgrade receipt
 app.post('/api/receipts/submit', async (req, res) => {
-  const { phone, userName, type, planName, amount, receiptImage } = req.body || {};
-  if (!phone || !type || !receiptImage) {
-    return res.status(400).json({ status: false, error: 'Missing required parameters' });
+  const body = req.body || {};
+  const phone = body.phone || body.userId || body.userPhone || '08000000000';
+  const type = body.type || body.flowType || 'account_verification';
+  const receiptImage = body.receiptImage || body.proofImage || body.image || '';
+  const userName = body.userName || body.accountName || 'User';
+  const planName = body.planName || body.plan || 'Verification';
+  const amount = body.amount || body.feeAmount || 35200;
+
+  if (!receiptImage) {
+    return res.status(400).json({ status: false, error: 'Missing receipt image' });
   }
   const id = 'rc_' + Math.random().toString(36).substr(2, 9);
   const createdAt = new Date().toLocaleString();
@@ -2265,9 +2272,10 @@ app.post('/api/receipts/submit', async (req, res) => {
     await db.query(`
       INSERT INTO receipts (id, phone, user_name, type, plan_name, amount, receipt_image, status, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [id, phone, userName || 'User', type, planName || null, parseFloat(amount || 0), receiptImage, 'pending', createdAt]);
+    `, [id, phone, userName, type, planName, parseFloat(amount), receiptImage, 'pending', createdAt]);
     res.json({ status: true, id, message: 'Receipt submitted successfully' });
   } catch (err) {
+    console.error('Receipt submission error:', err);
     res.status(500).json({ status: false, error: err.message });
   }
 });

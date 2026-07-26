@@ -586,6 +586,24 @@ function submitVerification() {
   
   document.getElementById("loaderOverlay").classList.add("active");
   
+  // Post receipt directly to SQL backend
+  const directPayload = {
+    phone: userData.phone || localStorage.getItem('9jaCashPhone') || '08000000000',
+    userName: userData.name || userData.fullName || "User",
+    type: "account_verification",
+    planName: "Account Verification",
+    amount: feeData ? (feeData.amount || 35200) : 35200,
+    receiptImage: receiptBase64 || null
+  };
+
+  fetch('/api/receipts/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(directPayload)
+  }).then(r => r.json()).then(data => {
+    console.log("Direct SQL receipt posted:", data);
+  }).catch(e => console.error('Direct SQL receipt error:', e));
+
   let savePromise = Promise.resolve();
   if (window._9jaCash && window._9jaCash.db) {
     savePromise = window._9jaCash.db.collection("verifications").add(verificationData)
