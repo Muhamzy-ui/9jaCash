@@ -3,6 +3,13 @@
 // Shared between local server.js and Netlify production serverless functions.
 try { require('dotenv').config(); } catch(e) {}
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ Unhandled Rejection (handled):', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ Uncaught Exception (handled):', err.message);
+});
+
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
@@ -1477,8 +1484,25 @@ app.get('/api/admin/super/migrate-from-neon', async (req, res) => {
 // GET /api/receipts/list — Return all receipts for mock Firestore compatibility
 app.get('/api/receipts/list', async (req, res) => {
   try {
-    const receipts = await db.query('SELECT * FROM receipts ORDER BY created_at DESC');
-    res.json({ status: true, receipts: receipts || [] });
+    const list = await db.query('SELECT * FROM receipts ORDER BY created_at DESC');
+    const formatted = (list || []).map(r => ({
+      id: r.id,
+      phone: r.phone,
+      userName: r.user_name || r.userName || 'User',
+      name: r.user_name || r.userName || 'User',
+      type: r.type,
+      flowType: r.type,
+      plan: r.plan_name || r.plan,
+      planName: r.plan_name || r.plan,
+      amount: parseFloat(r.amount || 0),
+      receiptUrl: r.receipt_image || r.receiptUrl,
+      receiptImage: r.receipt_image || r.receiptUrl,
+      status: r.status || 'pending',
+      date: r.created_at || new Date().toISOString(),
+      createdAt: r.created_at || new Date().toISOString(),
+      ...r
+    }));
+    res.json({ status: true, receipts: formatted });
   } catch (err) {
     console.error('Failed to fetch receipts list:', err.message);
     res.json({ status: true, receipts: [] });
