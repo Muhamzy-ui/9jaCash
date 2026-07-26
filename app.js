@@ -2785,6 +2785,22 @@ app.delete('/api/admin/receipts/:id', async (req, res) => {
   }
 });
 
+// POST /api/admin/receipts/bulk-delete — Bulk delete receipts by list of IDs
+app.post('/api/admin/receipts/bulk-delete', async (req, res) => {
+  const { ids } = req.body || {};
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ status: false, error: 'Missing or invalid IDs list' });
+  }
+  try {
+    const placeholders = ids.map(() => '?').join(', ');
+    await db.query(`DELETE FROM receipts WHERE id IN (${placeholders})`, ids);
+    res.json({ status: true, message: `${ids.length} receipts deleted successfully` });
+  } catch (err) {
+    console.error('Error bulk deleting receipts:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to bulk delete receipts' });
+  }
+});
+
 // DELETE /api/receipts/purge — Purge all old receipts to start fresh with new recordings
 app.delete('/api/receipts/purge', async (req, res) => {
   try {

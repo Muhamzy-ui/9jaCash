@@ -519,14 +519,20 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
   </div>
 
   <div class="panel">
-    <div class="panel-header">
-      <div class="panel-icon orange" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fa-solid fa-receipt"></i></div>
-      <div><div class="panel-title">Pending Payment Receipts</div><div class="panel-sub">Inspect uploaded transaction proofs</div></div>
+    <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="panel-icon orange" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fa-solid fa-receipt"></i></div>
+        <div><div class="panel-title">Pending Payment Receipts</div><div class="panel-sub">Inspect uploaded transaction proofs</div></div>
+      </div>
+      <button id="bulkDeleteReceiptsBtn" onclick="bulkDeleteReceipts()" class="btn-danger" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#ef4444; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
+        <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="bulkDeleteCount">0</span>)
+      </button>
     </div>
     <div class="table-wrap overflow-x-auto">
       <table class="w-full text-left" style="width:100%; border-collapse:collapse; min-width:800px;">
         <thead>
           <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding:12px; font-size:11px; width:40px; text-align:center;"><input type="checkbox" id="selectAllReceipts" onchange="toggleSelectAllReceipts(this)" style="cursor:pointer; width:15px; height:15px; accent-color:#10b981;"></th>
             <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Date</th>
             <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">User</th>
             <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Type</th>
@@ -537,7 +543,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         </thead>
         <tbody id="receiptListTable">
           <tr>
-            <td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No new receipts submitted yet.</td>
+            <td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No new receipts submitted yet.</td>
           </tr>
         </tbody>
       </table>
@@ -2312,6 +2318,9 @@ function renderReceiptsTable(receipts) {
     tr.style.borderBottom = '1px solid var(--border)';
     
     tr.innerHTML = `
+      <td style="padding:12px; text-align:center; vertical-align:middle;">
+        <input type="checkbox" class="receipt-select-chk" value="${r.id}" onchange="updateBulkDeleteButton()" style="cursor:pointer; width:15px; height:15px; accent-color:#10b981;">
+      </td>
       <td style="padding:12px; font-size:12px; color:var(--text);">${r.date || '—'}</td>
       <td style="padding:12px; font-size:12px;">
         <div style="font-weight:700; color:var(--text);">${r.userName || r.accountName || 'Unknown'}</div>
@@ -2371,6 +2380,78 @@ function deleteReceipt(id) {
       .catch(err => {
         console.error(err);
         Swal.fire({ icon: 'error', title: 'Deletion Failed', text: err.message || 'Operation failed', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+      });
+    }
+  });
+}
+
+function toggleSelectAllReceipts(master) {
+  const checkboxes = document.querySelectorAll('.receipt-select-chk');
+  checkboxes.forEach(chk => {
+    chk.checked = master.checked;
+  });
+  updateBulkDeleteButton();
+}
+
+function updateBulkDeleteButton() {
+  const checked = document.querySelectorAll('.receipt-select-chk:checked');
+  const btn = document.getElementById('bulkDeleteReceiptsBtn');
+  const countSpan = document.getElementById('bulkDeleteCount');
+  
+  if (btn && countSpan) {
+    if (checked.length > 0) {
+      btn.style.display = 'inline-flex';
+      countSpan.textContent = checked.length;
+    } else {
+      btn.style.display = 'none';
+      countSpan.textContent = '0';
+    }
+  }
+}
+
+function bulkDeleteReceipts() {
+  const checked = document.querySelectorAll('.receipt-select-chk:checked');
+  if (checked.length === 0) return;
+  const ids = Array.from(checked).map(chk => chk.value);
+  
+  Swal.fire({
+    title: 'Delete Selected Receipts?',
+    text: `Are you sure you want to permanently delete these ${ids.length} selected receipts from the database?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Delete All',
+    cancelButtonText: 'Cancel',
+    background: '#131a2e',
+    color: '#f1f5f9'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/receipts/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Deleted', text: data.message, confirmButtonColor: '#10b981', background: '#131a2e', color: '#f1f5f9' });
+          
+          const master = document.getElementById('selectAllReceipts');
+          if (master) master.checked = false;
+          
+          const btn = document.getElementById('bulkDeleteReceiptsBtn');
+          if (btn) btn.style.display = 'none';
+          
+          loadAllReceipts();
+        } else {
+          showToast(data.error || 'Failed to delete selected receipts', 'error');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('Connection error', 'error');
       });
     }
   });
