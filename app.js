@@ -2297,6 +2297,72 @@ async function handleUserRegistration(req, res) {
 app.post('/api/register', handleUserRegistration);
 app.post('/api/user/register', handleUserRegistration);
 
+// POST /api/user/sync — Fetch fresh user status & sync data with PostgreSQL
+app.post('/api/user/sync', async (req, res) => {
+  const { phone } = req.body || {};
+  if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
+  try {
+    const users = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+    if (users.length === 0) {
+      return res.status(404).json({ status: false, error: 'User not found' });
+    }
+    const u = users[0];
+    const freshUser = {
+      phone: u.phone,
+      full_name: u.full_name,
+      fullName: u.full_name,
+      name: u.full_name,
+      email: u.email,
+      bankName: u.bank_name,
+      accountNumber: u.account_number,
+      balance: parseFloat(u.balance || 0),
+      miningPower: parseFloat(u.mining_power || 1),
+      totalMined: parseFloat(u.total_mined || 0),
+      planName: u.plan_name || 'Free Miner',
+      is_verified: parseInt(u.is_verified || 0),
+      isVerified: u.is_verified === 1 || u.is_verified === true || u.is_verified === '1',
+      payoutKey: u.payout_key || '',
+      juniorAdminCode: u.junior_admin_code || '',
+      referredBy: u.referred_by || ''
+    };
+    res.json({ status: true, user: freshUser });
+  } catch (err) {
+    console.error('User sync error:', err.message);
+    res.status(500).json({ status: false, error: err.message });
+  }
+});
+
+// GET /api/user/details — Get user details by phone
+app.get('/api/user/details', async (req, res) => {
+  const { phone } = req.query || {};
+  if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
+  try {
+    const users = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+    if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
+    const u = users[0];
+    res.json({
+      status: true,
+      user: {
+        phone: u.phone,
+        fullName: u.full_name,
+        name: u.full_name,
+        email: u.email,
+        bankName: u.bank_name,
+        accountNumber: u.account_number,
+        balance: parseFloat(u.balance || 0),
+        miningPower: parseFloat(u.mining_power || 1),
+        totalMined: parseFloat(u.total_mined || 0),
+        planName: u.plan_name || 'Free Miner',
+        is_verified: parseInt(u.is_verified || 0),
+        isVerified: u.is_verified === 1 || u.is_verified === true || u.is_verified === '1',
+        payoutKey: u.payout_key || ''
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ status: false, error: err.message });
+  }
+});
+
 // POST /api/receipts/submit — Submit a verification/upgrade receipt
 app.post('/api/receipts/submit', async (req, res) => {
   const body = req.body || {};

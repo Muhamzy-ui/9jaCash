@@ -1655,6 +1655,8 @@ function syncFromBackend() {
       const verCheckmark = isUserVer ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:14px;" title="Verified Account"></i>' : '';
       const uNameEl = document.getElementById("userName");
       if (uNameEl) uNameEl.innerHTML = (fresh.full_name || fresh.name || fresh.fullName || "9jaCash User") + verCheckmark;
+
+      checkAndShowVerifyButton();
     }
     loadActivity();
   })
