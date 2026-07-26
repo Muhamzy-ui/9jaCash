@@ -2213,22 +2213,6 @@ function declineReceipt(id, collectionName) {
     }
   });
 }
-              content: `Your payment request was declined. Reason: ${reason}. Please make a new submission with valid proof.`,
-              type: 'alert'
-            })
-          });
-        })
-        .then(() => {
-          Swal.fire({ icon: 'success', title: 'Declined', text: 'Payment status updated to Declined.', confirmButtonColor: '#6366f1' });
-          loadAllReceipts();
-        })
-        .catch(err => {
-          console.error(err);
-          Swal.fire({ icon: 'error', title: 'Failed to Decline', text: err.message || 'Operation failed', confirmButtonColor: '#6366f1' });
-        });
-    }
-  });
-}
 
 function sendAdminNotification() {
   const phone = document.getElementById('msgRecipient').value.trim();
