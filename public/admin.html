@@ -1012,7 +1012,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
 <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Saved!</span></div>
 
 <script>
-const API_URL = window.location.origin;
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
 const firebaseConfig={apiKey: "AIzaSyAojnW_iRXCk4mR9ihRz8GwQI4aPWIXepA",
   authDomain: "jacash-51c97.firebaseapp.com",
   databaseURL: "https://jacash-51c97-default-rtdb.firebaseio.com",
@@ -1465,9 +1465,6 @@ function showToast(msg,type){
 document.querySelectorAll('input,textarea').forEach(el=>el.addEventListener('input',updatePreview));
 
 window.addEventListener('load',initAuth);
-
-// ========== DYNAMIC API PREFIX ==========
-const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
 
 // ========== JUNIOR ADMIN MANAGEMENT ==========
 function loadJuniorAdminsList() {
