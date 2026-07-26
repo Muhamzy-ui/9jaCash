@@ -2616,15 +2616,47 @@ app.post('/api/admin/receipts/approve', async (req, res) => {
   }
 });
 
-// POST /api/admin/receipts/decline — Decline receipt in SQL
+// POST /api/admin/receipts/decline — Decline receipt in SQL and notify user
 app.post('/api/admin/receipts/decline', async (req, res) => {
-  const { id } = req.body || {};
+  const { id, reason } = req.body || {};
   if (!id) {
     return res.status(400).json({ status: false, error: 'Missing receipt ID' });
   }
   try {
+    const rows = await db.query('SELECT phone, type, plan_name, amount FROM receipts WHERE id = ?', [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ status: false, error: 'Receipt not found' });
+    }
+    const rc = rows[0];
+    const amountStr = rc.amount ? parseFloat(rc.amount).toLocaleString() : '0';
+
     await db.query('UPDATE receipts SET status = ? WHERE id = ?', ['Declined', id]);
-    return res.json({ status: true, message: 'Receipt declined successfully' });
+
+    // Create user notification based on the payment type
+    let title = 'Payment Receipt Declined ❌';
+    let content = `Your payment of ₦${amountStr} was declined. Please verify your receipt and try again.`;
+
+    if (rc.type === 'payout' || rc.type === 'key' || rc.type === 'payout_key_purchase') {
+      title = 'Payout Key Payment Declined ❌';
+      content = `Your payment of ₦${amountStr} for the withdrawal payout key was declined. ${reason || 'Please verify your transaction proof and try again.'}`;
+    } else if (rc.type === 'upgrade') {
+      const planName = rc.plan_name || 'Premium';
+      title = 'Plan Upgrade Declined ❌';
+      content = `Your payment of ₦${amountStr} for the ${planName} upgrade was declined. ${reason || 'Please verify your receipt and re-upload valid proof.'}`;
+    } else if (rc.type === 'account_verification' || rc.type === 'verification') {
+      title = 'Verification Payment Declined ❌';
+      content = `Your account verification fee payment of ₦${amountStr} was declined. ${reason || 'Please verify your receipt and upload valid proof.'}`;
+    } else if (reason) {
+      content = `Your payment of ₦${amountStr} was declined. Reason: ${reason}`;
+    }
+
+    const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+    await db.query(`
+      INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+      VALUES (?, ?, 'alert', ?, ?, ?, ?)
+    `, [notifId, rc.phone, title, content, (rc.amount || 0).toString(), new Date().toISOString()]);
+
+    return res.json({ status: true, message: 'Receipt declined successfully and user notified' });
   } catch (err) {
     console.error('Error declining receipt:', err);
     return res.status(500).json({ status: false, error: err.message });
