@@ -1481,34 +1481,6 @@ app.get('/api/admin/super/migrate-from-neon', async (req, res) => {
   }
 });
 
-// GET /api/receipts/list — Return all receipts for mock Firestore compatibility
-app.get('/api/receipts/list', async (req, res) => {
-  try {
-    const list = await db.query('SELECT * FROM receipts ORDER BY created_at DESC');
-    const formatted = (list || []).map(r => ({
-      id: r.id,
-      phone: r.phone,
-      userName: r.user_name || r.userName || 'User',
-      name: r.user_name || r.userName || 'User',
-      type: r.type,
-      flowType: r.type,
-      plan: r.plan_name || r.plan,
-      planName: r.plan_name || r.plan,
-      amount: parseFloat(r.amount || 0),
-      receiptUrl: r.receipt_image || r.receiptUrl,
-      receiptImage: r.receipt_image || r.receiptUrl,
-      status: r.status || 'pending',
-      date: r.created_at || new Date().toISOString(),
-      createdAt: r.created_at || new Date().toISOString(),
-      ...r
-    }));
-    res.json({ status: true, receipts: formatted });
-  } catch (err) {
-    console.error('Failed to fetch receipts list:', err.message);
-    res.json({ status: true, receipts: [] });
-  }
-});
-
 // GET /api/admin/super/stats — Fetch platform stats (total users, approved amounts, keys sold)
 app.get('/api/admin/super/stats', async (req, res) => {
   try {
@@ -2337,6 +2309,16 @@ app.get('/api/receipts/list', async (req, res) => {
   } catch (err) {
     console.error('Failed to fetch receipts list:', err.message);
     res.json({ status: true, receipts: [] });
+  }
+});
+
+// DELETE /api/receipts/purge — Purge all old receipts to start fresh with new recordings
+app.delete('/api/receipts/purge', async (req, res) => {
+  try {
+    await db.query('DELETE FROM receipts');
+    res.json({ status: true, message: 'All old receipts purged successfully' });
+  } catch (err) {
+    res.status(500).json({ status: false, error: err.message });
   }
 });
 

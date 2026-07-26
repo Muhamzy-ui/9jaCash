@@ -2005,42 +2005,32 @@ function loadAllReceipts() {
   const table = document.getElementById('receiptListTable');
   const badgeEl = document.getElementById('receiptsBadge');
   
-  if (typeof db === 'undefined') {
-    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Firebase not initialized</td></tr>';
-    return;
-  }
-  
-  Promise.all([
-    db.collection('paymentReceipts').get().then(snap => snap.docs.map(d => ({ id: d.id, _collection: 'paymentReceipts', ...d.data() }))),
-    db.collection('verifications').get().then(snap => snap.docs.map(d => ({ id: d.id, _collection: 'verifications', ...d.data() })))
-  ])
-  .then(function(results) {
-    const receipts = results[0].concat(results[1]);
-    
-    // Sort by date descending (safely using createdAt or robust parseLocaleDate fallback)
-    receipts.sort((a, b) => {
-      const timeA = a.createdAt || parseLocaleDate(a.date);
-      const timeB = b.createdAt || parseLocaleDate(b.date);
-      return timeB - timeA;
+  fetch(API_URL + '/api/receipts/list')
+    .then(res => res.json())
+    .then(data => {
+      let receipts = data.receipts || [];
+      allReceipts = receipts;
+      
+      const pendingCount = receipts.filter(r => {
+        const s = (r.status || '').toLowerCase();
+        return s === 'pending' || s === 'pending_verification';
+      }).length;
+      
+      if (badgeEl) badgeEl.textContent = pendingCount;
+      if (badgeEl) badgeEl.style.display = pendingCount > 0 ? 'flex' : 'none';
+      
+      renderReceiptsTable(receipts);
+    })
+    .catch(err => {
+      console.error('Error fetching receipts:', err);
+      table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Failed to load receipts</td></tr>';
     });
-    allReceipts = receipts;
-    
-    const pendingCount = receipts.filter(r => r.status === 'pending_verification' || r.status === 'pending').length;
-    if (badgeEl) badgeEl.textContent = pendingCount;
-    if (badgeEl) badgeEl.style.display = pendingCount > 0 ? 'flex' : 'none';
-    
-    renderReceiptsTable(receipts);
-  })
-  .catch(function(err) {
-    console.error('Error fetching receipts:', err);
-    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Failed to load receipts from Firebase</td></tr>';
-  });
 }
 
 function purgeAllReceipts() {
   Swal.fire({
     title: 'Purge Receipts History?',
-    text: 'This will delete ALL existing receipts and verification proofs permanently from the database. It should only show new ones.',
+    text: 'This will delete ALL old receipts permanently from the database. Going forward, only NEW user receipts will be recorded.',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
@@ -2052,26 +2042,20 @@ function purgeAllReceipts() {
     if (res.isConfirmed) {
       Swal.fire({ title: 'Purging receipts...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
       
-      const batch = db.batch();
-      
-      Promise.all([
-        db.collection('paymentReceipts').get(),
-        db.collection('verifications').get()
-      ]).then(results => {
-        const snap1 = results[0];
-        const snap2 = results[1];
-        
-        snap1.docs.forEach(doc => batch.delete(doc.ref));
-        snap2.docs.forEach(doc => batch.delete(doc.ref));
-        
-        return batch.commit();
-      }).then(() => {
-        Swal.fire({ icon: 'success', title: 'Purged!', text: 'All receipt and verification records have been deleted.', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
-        loadAllReceipts();
-      }).catch(err => {
-        console.error('Purge failed:', err);
-        Swal.fire({ icon: 'error', title: 'Purge Failed', text: err.message, confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
-      });
+      fetch(API_URL + '/api/receipts/purge', { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status) {
+            Swal.fire({ icon: 'success', title: 'Purged!', text: 'All old receipts deleted. Now only new user submissions will be recorded.', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+            loadAllReceipts();
+          } else {
+            Swal.fire({ icon: 'error', title: 'Purge Failed', text: data.error || 'Delete failed', confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+          }
+        })
+        .catch(err => {
+          console.error('Purge error:', err);
+          Swal.fire({ icon: 'error', title: 'Purge Failed', text: err.message, confirmButtonColor: '#6366f1', background: '#1e293b', color: '#f8fafc' });
+        });
     }
   });
 }
