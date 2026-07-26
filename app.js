@@ -1680,9 +1680,9 @@ app.get('/api/admin/super/stats', async (req, res) => {
     const startOfYear = new Date(nowWat.getFullYear(), 0, 1).getTime() - 1 * 60 * 60 * 1000;
 
     let today = 0, sevenDays = 0, month = 0, year = 0, total = 0;
-    let keysRevenue = 0;
-    let verificationRevenue = 0;
-    let upgradeRevenue = 0;
+    let keysRevenue = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+    let verificationRevenue = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+    let upgradeRevenue = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
 
     (receipts || []).forEach(r => {
       let amt = parseFloat(r.amount);
@@ -1697,12 +1697,28 @@ app.get('/api/admin/super/stats', async (req, res) => {
       if (rTime >= startOfYear) year += amt;
 
       const rType = (r.type || '').toLowerCase();
-      if (rType === 'verification' || rType === 'account_verification') {
-        verificationRevenue += amt;
-      } else if (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key') {
-        keysRevenue += amt;
-      } else if (rType === 'upgrade') {
-        upgradeRevenue += amt;
+      const isVer = (rType === 'verification' || rType === 'account_verification');
+      const isKey = (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key');
+      const isUpgrade = (rType === 'upgrade');
+
+      if (isVer) {
+        verificationRevenue.total += amt;
+        if (rTime >= startOfToday) verificationRevenue.today += amt;
+        if (rTime >= startOfSevenDays) verificationRevenue.sevenDays += amt;
+        if (rTime >= startOfMonth) verificationRevenue.month += amt;
+        if (rTime >= startOfYear) verificationRevenue.year += amt;
+      } else if (isKey) {
+        keysRevenue.total += amt;
+        if (rTime >= startOfToday) keysRevenue.today += amt;
+        if (rTime >= startOfSevenDays) keysRevenue.sevenDays += amt;
+        if (rTime >= startOfMonth) keysRevenue.month += amt;
+        if (rTime >= startOfYear) keysRevenue.year += amt;
+      } else if (isUpgrade) {
+        upgradeRevenue.total += amt;
+        if (rTime >= startOfToday) upgradeRevenue.today += amt;
+        if (rTime >= startOfSevenDays) upgradeRevenue.sevenDays += amt;
+        if (rTime >= startOfMonth) upgradeRevenue.month += amt;
+        if (rTime >= startOfYear) upgradeRevenue.year += amt;
       }
     });
 
@@ -1736,9 +1752,9 @@ app.get('/api/admin/super/stats', async (req, res) => {
       sevenDays: 0,
       month: 0,
       year: 0,
-      keysRevenue: 0,
-      verificationRevenue: 0,
-      upgradeRevenue: 0,
+      keysRevenue: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 },
+      verificationRevenue: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 },
+      upgradeRevenue: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 },
       approvedWithdrawalsAmount: 0,
       keysSold: 0
     });
@@ -2474,7 +2490,8 @@ app.get('/api/settings/:key', async (req, res) => {
     videoChallenge: { active: true },
     payoutKeys: { price: 25000 },
     redirects: { payoutSuccess: 'success.html', payoutFailed: 'payment-failed.html' },
-    admin_percentage: { percentage: 20 }
+    admin_percentage: { percentage: 20 },
+    referral_bonus: { amount: 10000 }
   };
   try {
     const result = await db.query('SELECT value FROM system_settings WHERE key = ?', [key]);
@@ -2792,7 +2809,7 @@ app.post('/api/admin/receipts/approve', async (req, res) => {
     // Mark the receipt as Approved in the database
     await db.query('UPDATE receipts SET status = ? WHERE id = ?', ['Approved', id]);
 
-    const users = await db.query('SELECT email, full_name, balance FROM users WHERE phone = ?', [rc.phone]);
+    const users = await db.query('SELECT email, full_name, balance, referred_by FROM users WHERE phone = ?', [rc.phone]);
     const u = users[0];
 
     // 1. Account Verification Flow
@@ -2801,6 +2818,34 @@ app.post('/api/admin/receipts/approve', async (req, res) => {
       
       const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
       await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, rc.phone]);
+
+      // Credit referral bonus to referrer
+      const referrerPhone = u ? u.referred_by : null;
+      if (referrerPhone) {
+        let referralBonus = 10000;
+        try {
+          const refSet = await db.query("SELECT value FROM system_settings WHERE key = 'referral_bonus'");
+          if (refSet && refSet.length > 0 && refSet[0].value) {
+            const parsed = typeof refSet[0].value === 'string' ? JSON.parse(refSet[0].value) : refSet[0].value;
+            if (parsed && parsed.amount !== undefined) {
+              referralBonus = parseFloat(parsed.amount);
+            }
+          }
+        } catch (e) {
+          console.error("Error loading referral_bonus setting:", e);
+        }
+
+        const referrerUser = await db.query('SELECT phone, full_name FROM users WHERE phone = ?', [referrerPhone]);
+        if (referrerUser && referrerUser.length > 0) {
+          await db.query('UPDATE users SET balance = balance + ? WHERE phone = ?', [referralBonus, referrerPhone]);
+
+          const refNotifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+          await db.query(`
+            INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+            VALUES (?, ?, 'alert', 'Referral Bonus Credited! 🎁', ?, ?, ?)
+          `, [refNotifId, referrerPhone, `You have been credited with ₦${referralBonus.toLocaleString()} because your referral ${u.full_name || 'User'} (${rc.phone}) completed verification.`, referralBonus.toString(), new Date().toISOString()]);
+        }
+      }
 
       // Notification
       const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);

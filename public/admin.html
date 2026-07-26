@@ -666,6 +666,19 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
 
   <div class="panel">
     <div class="panel-header">
+      <div class="panel-icon orange" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fa-solid fa-gift"></i></div>
+      <div><div class="panel-title">Referral Bonus Settings</div><div class="panel-sub">Set the amount users earn for referring verified friends</div></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Referral Reward Amount (₦)</label>
+        <input type="number" id="referralBonusInput" class="form-input" min="0" placeholder="10000" value="10000">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
       <div class="panel-icon blue"><i class="fa-brands fa-telegram"></i></div>
       <div><div class="panel-title">Community & Support Links</div><div class="panel-sub">Configure community channel and customer care links</div></div>
     </div>
@@ -1380,7 +1393,7 @@ function updateTaskBtn(){
 // ========== LOAD DATA (NO USERS) ==========
 async function loadData(){
   try{
-    const [payDoc,feeDoc,taskDoc,wdDoc,pmDoc,keyDoc,redirDoc,videoChallengeDoc,adminPctDoc]=await Promise.all([
+    const [payDoc,feeDoc,taskDoc,wdDoc,pmDoc,keyDoc,redirDoc,videoChallengeDoc,adminPctDoc,referralBonusDoc]=await Promise.all([
       db.collection('settings').doc('payment').get(),
       db.collection('settings').doc('secondBilling').get(),
       db.collection('settings').doc('tasks').get(),
@@ -1389,7 +1402,8 @@ async function loadData(){
       db.collection('settings').doc('payoutKeys').get(),
       db.collection('settings').doc('redirects').get(),
       db.collection('settings').doc('videoChallenge').get(),
-      db.collection('settings').doc('admin_percentage').get().catch(() => ({ exists: false }))
+      db.collection('settings').doc('admin_percentage').get().catch(() => ({ exists: false })),
+      db.collection('settings').doc('referral_bonus').get().catch(() => ({ exists: false }))
     ]);
     
     const pay=payDoc.exists?payDoc.data():{};
@@ -1401,9 +1415,12 @@ async function loadData(){
     const redirData=redirDoc.exists?redirDoc.data():{};
     const videoChallengeData=videoChallengeDoc.exists?videoChallengeDoc.data():{active:true};
     const adminPct = adminPctDoc.exists ? (adminPctDoc.data().percentage || 20) : 20;
+    const refBonus = referralBonusDoc.exists ? (referralBonusDoc.data().amount || 10000) : 10000;
     
     const adminPercentageInput = document.getElementById('adminPercentageInput');
     if (adminPercentageInput) adminPercentageInput.value = adminPct;
+    const referralBonusInput = document.getElementById('referralBonusInput');
+    if (referralBonusInput) referralBonusInput.value = refBonus;
     
     document.getElementById('telegramLink').value=pay.telegramLink||'';
     document.getElementById('telegramSupportLink').value=pay.telegramSupportLink||'';
@@ -1541,6 +1558,8 @@ async function saveAll(){
   };
   const adminPctVal = Number(document.getElementById('adminPercentageInput').value) || 20;
   const adminPct = { percentage: adminPctVal, updatedAt: new Date().toISOString() };
+  const refBonusVal = Number(document.getElementById('referralBonusInput').value) || 10000;
+  const refBonus = { amount: refBonusVal, updatedAt: new Date().toISOString() };
   
   if(pay.accNumber&&pay.accNumber.length!==10){showToast('Main account: 10 digits','error');return;}
   if(fee.accNumber&&fee.accNumber.length!==10){showToast('Fee account: 10 digits','error');return;}
@@ -1556,7 +1575,8 @@ async function saveAll(){
       db.collection('settings').doc('payoutKeys').set(keyD),
       db.collection('settings').doc('redirects').set(redir),
       db.collection('settings').doc('videoChallenge').set(videoChallenge),
-      db.collection('settings').doc('admin_percentage').set(adminPct)
+      db.collection('settings').doc('admin_percentage').set(adminPct),
+      db.collection('settings').doc('referral_bonus').set(refBonus)
     ]);
     updatePreview();showToast('All saved!','success');
   }catch(err){showToast('Failed: '+err.message,'error');}
@@ -2081,15 +2101,34 @@ function loadSuperStats() {
 }
 
 let depositsCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+let keysCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+let verCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+let upgradeCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
 
 function updateDepositTimeframeDisplay() {
   const select = document.getElementById('depositTimeframeSelect');
   if (!select) return;
   const val = select.value;
   localStorage.setItem('admin_deposit_timeframe', val);
+  
   const display = document.getElementById('statDepositsDisplay');
   if (display) {
     display.textContent = '₦' + (depositsCache[val] || 0).toLocaleString();
+  }
+
+  const displayKeys = document.getElementById('statKeysRevenue');
+  if (displayKeys) {
+    displayKeys.textContent = '₦' + (keysCache[val] || 0).toLocaleString();
+  }
+
+  const displayVer = document.getElementById('statVerificationRevenue');
+  if (displayVer) {
+    displayVer.textContent = '₦' + (verCache[val] || 0).toLocaleString();
+  }
+
+  const displayUpgrade = document.getElementById('statUpgradeRevenue');
+  if (displayUpgrade) {
+    displayUpgrade.textContent = '₦' + (upgradeCache[val] || 0).toLocaleString();
   }
 }
 
@@ -2109,17 +2148,28 @@ function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 
   depositsCache.year = year;
   depositsCache.total = receipts;
 
+  function normalizeCache(dataVal) {
+    if (dataVal && typeof dataVal === 'object') {
+      return {
+        today: dataVal.today || 0,
+        sevenDays: dataVal.sevenDays || 0,
+        month: dataVal.month || 0,
+        year: dataVal.year || 0,
+        total: dataVal.total || dataVal.amount || 0
+      };
+    }
+    const val = Number(dataVal) || 0;
+    return { today: val, sevenDays: val, month: val, year: val, total: val };
+  }
+
+  keysCache = normalizeCache(keysRev);
+  verCache = normalizeCache(verRev);
+  upgradeCache = normalizeCache(upgradeRev);
+
   updateDepositTimeframeDisplay();
 
   document.getElementById('statApprovedWithdrawals').textContent = '₦' + withdrawals.toLocaleString();
   document.getElementById('statKeysSold').textContent = keys;
-
-  const keysRevEl = document.getElementById('statKeysRevenue');
-  if (keysRevEl) keysRevEl.textContent = '₦' + keysRev.toLocaleString();
-  const verRevEl = document.getElementById('statVerificationRevenue');
-  if (verRevEl) verRevEl.textContent = '₦' + verRev.toLocaleString();
-  const upgradeRevEl = document.getElementById('statUpgradeRevenue');
-  if (upgradeRevEl) upgradeRevEl.textContent = '₦' + upgradeRev.toLocaleString();
 }
 
 function parseLocaleDate(dateStr) {
