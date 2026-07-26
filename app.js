@@ -2508,7 +2508,7 @@ app.post('/api/receipts/submit', async (req, res) => {
   }
 });
 
-// GET /api/receipts/list — Retrieve receipts (filtered by network for junior admins)
+// GET /api/receipts/list — Retrieve receipts without heavy base64 image data
 app.get('/api/receipts/list', async (req, res) => {
   const { phone } = req.query;
   try {
@@ -2518,10 +2518,10 @@ app.get('/api/receipts/list', async (req, res) => {
       const phones = (referredUsers || []).map(u => u.phone);
       if (phones.length > 0) {
         let placeholders = phones.map(() => '?').join(',');
-        list = await db.query(`SELECT * FROM receipts WHERE phone IN (${placeholders})`, phones);
+        list = await db.query(`SELECT id, phone, user_name, type, plan_name, amount, status, created_at FROM receipts WHERE phone IN (${placeholders})`, phones);
       }
     } else {
-      list = await db.query('SELECT * FROM receipts');
+      list = await db.query('SELECT id, phone, user_name, type, plan_name, amount, status, created_at FROM receipts');
     }
     
     const formatted = (list || []).map(r => ({
@@ -2534,7 +2534,7 @@ app.get('/api/receipts/list', async (req, res) => {
       flowType: r.type || 'Payment',
       amount: parseFloat(r.amount || 0),
       feeAmount: parseFloat(r.amount || 0),
-      receiptImage: r.receipt_image || '',
+      receiptImage: null, // Loaded on-demand
       status: r.status || 'pending',
       date: r.created_at || new Date().toLocaleString(),
       createdAt: r.created_at || new Date().toLocaleString(),
@@ -2544,6 +2544,20 @@ app.get('/api/receipts/list', async (req, res) => {
   } catch (err) {
     console.error('Failed to fetch receipts list:', err.message);
     return res.status(200).json({ status: true, receipts: [] });
+  }
+});
+
+// GET /api/receipts/image/:id — Retrieve base64 receipt image data on-demand (improves network loading)
+app.get('/api/receipts/image/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const rows = await db.query('SELECT receipt_image FROM receipts WHERE id = ?', [id]);
+    if (rows && rows.length > 0) {
+      return res.json({ status: true, receiptImage: rows[0].receipt_image || '' });
+    }
+    res.status(404).json({ status: false, error: 'Receipt not found' });
+  } catch (err) {
+    res.status(500).json({ status: false, error: err.message });
   }
 });
 

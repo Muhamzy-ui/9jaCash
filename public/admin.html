@@ -2170,21 +2170,49 @@ function renderReceiptsTable(receipts) {
 
 function viewReceiptImage(id) {
   const receipt = allReceipts.find(r => r.id === id);
-  if (receipt && receipt.receiptImage) {
+  if (!receipt) return;
+  
+  if (receipt.receiptImage) {
+    showReceiptModal(receipt);
+  } else {
     Swal.fire({
-      title: 'Payment Proof',
-      html: `
-        <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">Submitted by ${receipt.userName || 'User'} (${receipt.userId || receipt.phone})</div>
-        <img src="${receipt.receiptImage}" style="max-width:100%; border-radius:8px; border:1px solid #334155; max-height: 450px; object-fit: contain;" />
-      `,
-      confirmButtonText: 'Close',
-      confirmButtonColor: '#6366f1',
+      title: 'Loading Proof...',
+      html: '<div style="margin:20px 0;"><div class="spin" style="margin:0 auto; width:30px; height:30px; border-color:#6366f1; border-top-color:transparent;"></div></div>',
+      showConfirmButton: false,
+      allowOutsideClick: false,
       background: '#1e293b',
       color: '#f8fafc'
     });
-  } else {
-    Swal.fire({ icon: 'error', title: 'No Image Found', text: 'Proof does not contain image attachment', confirmButtonColor: '#6366f1' });
+    
+    fetch(API_URL + '/api/receipts/image/' + id)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status && data.receiptImage) {
+          receipt.receiptImage = data.receiptImage;
+          showReceiptModal(receipt);
+        } else {
+          Swal.fire({ icon: 'error', title: 'Load Failed', text: 'Proof image is empty or not found', confirmButtonColor: '#6366f1' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Load Failed', text: 'Network error loading image', confirmButtonColor: '#6366f1' });
+      });
   }
+}
+
+function showReceiptModal(receipt) {
+  Swal.fire({
+    title: 'Payment Proof',
+    html: `
+      <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">Submitted by ${receipt.userName || 'User'} (${receipt.userId || receipt.phone})</div>
+      <img src="${receipt.receiptImage}" style="max-width:100%; border-radius:8px; border:1px solid #334155; max-height: 450px; object-fit: contain;" />
+    `,
+    confirmButtonText: 'Close',
+    confirmButtonColor: '#6366f1',
+    background: '#1e293b',
+    color: '#f8fafc'
+  });
 }
 
 function approveReceipt(id, collectionName) {
