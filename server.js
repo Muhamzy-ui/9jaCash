@@ -6,7 +6,15 @@ const path    = require('path');
 const app     = require('./app');
 
 // Serve all static frontend files from public directory
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: function (res, filepath) {
+    if (filepath.endsWith('.html') || filepath.includes('admin') || filepath.includes('junior')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Fallback to index.html for frontend routing
 app.get('*', (req, res) => {

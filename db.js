@@ -252,17 +252,13 @@ async function initDb() {
       } catch (e) {}
     }
 
-    // One-time clean: delete non-key deposit/revenue receipts once to start from beginning as requested by admin
+    // One-time clean: delete all receipts once to start from beginning as requested by admin
     try {
-      const runFlag = await query("SELECT key FROM system_settings WHERE key = 'deposit_purged_2026'");
+      const runFlag = await query("SELECT key FROM system_settings WHERE key = 'deposit_purged_final'");
       if (!runFlag || runFlag.length === 0) {
-        console.log('🧹 Running one-time deposit/revenue receipts purge...');
-        await query(`
-          DELETE FROM receipts 
-          WHERE type NOT IN ('payout_key_purchase', 'payout', 'key', 'payoutKey', 'payout_key')
-          AND LOWER(plan_name) NOT LIKE '%key%'
-        `);
-        await query("INSERT INTO system_settings (key, value) VALUES ('deposit_purged_2026', 'true')");
+        console.log('🧹 Running one-time all receipts purge...');
+        await query("DELETE FROM receipts");
+        await query("INSERT INTO system_settings (key, value) VALUES ('deposit_purged_final', 'true')");
         console.log('🧹 One-time purge complete and flag set.');
       }
     } catch (e) {
