@@ -2799,6 +2799,8 @@ app.post('/api/admin/receipts/bulk-delete', async (req, res) => {
     console.error('Error bulk deleting receipts:', err.message);
     res.status(500).json({ status: false, error: 'Failed to bulk delete receipts' });
   }
+});
+
 // POST /api/admin/receipts/bulk-approve — Bulk approve receipts by list of IDs
 app.post('/api/admin/receipts/bulk-approve', async (req, res) => {
   const { ids } = req.body || {};
