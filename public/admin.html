@@ -584,8 +584,18 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
     </div>
   </div>
 
+  <!-- Receipts Category Selector Dropdown -->
+  <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 16px;">
+    <div style="font-size: 14px; font-weight: 700; color: var(--text);">Select Receipts Type to View:</div>
+    <select id="receiptCategorySelect" onchange="switchReceiptCategory()" style="background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer; outline: none; font-family: inherit;">
+      <option value="verification" selected>Verification Receipts</option>
+      <option value="upgrade">Plan Upgrade Receipts</option>
+      <option value="key">Payout Key Receipts</option>
+    </select>
+  </div>
+
   <!-- ─── PANEL 1: Payout Key Receipts ─── -->
-  <div class="panel" style="margin-bottom: 24px;">
+  <div class="panel" id="receiptPanel_key" style="margin-bottom: 24px; display: none;">
     <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <div class="panel-icon blue" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fa-solid fa-key"></i></div>
@@ -623,7 +633,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
   </div>
 
   <!-- ─── PANEL 2: Plan Upgrade Receipts ─── -->
-  <div class="panel" style="margin-bottom: 24px;">
+  <div class="panel" id="receiptPanel_upgrade" style="margin-bottom: 24px; display: none;">
     <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <div class="panel-icon purple" style="background:rgba(139,92,246,0.1); color:#8b5cf6;"><i class="fa-solid fa-circle-up"></i></div>
@@ -661,7 +671,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
   </div>
 
   <!-- ─── PANEL 3: Account Verification Receipts ─── -->
-  <div class="panel" style="margin-bottom: 24px;">
+  <div class="panel" id="receiptPanel_verification" style="margin-bottom: 24px;">
     <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <div class="panel-icon green" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="fa-solid fa-user-check"></i></div>
@@ -2418,18 +2428,15 @@ function renderReceiptsTable(receipts) {
         </button>
       </td>
       <td style="padding:12px; font-size:12px; text-align:right;">
-        <div class="action-dropdown">
-          <button class="action-dropdown-btn" onclick="toggleActionMenu(this, '${r.id}')">
-            Actions <i class="fa-solid fa-chevron-down"></i>
+        <div style="display:inline-flex; gap:8px; align-items:center; justify-content:flex-end;">
+          ${isPending ? `
+            <button onclick="approveReceipt('${r.id}', '${r._collection || 'receipts'}')" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Approve</button>
+            <button onclick="declineReceipt('${r.id}', '${r._collection || 'receipts'}')" style="background:#ef4444; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Decline</button>
+          ` : `<span class="${statusClass}" style="padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700;">${statusLabel}</span>`}
+          
+          <button onclick="deleteReceipt('${r.id}')" style="background:#ef4444; border:none; padding:6px 10px; border-radius:8px; color:white; font-weight:700; cursor:pointer; margin-left:6px;" title="Delete Receipt">
+            <i class="fa-solid fa-trash-can"></i>
           </button>
-          <div class="action-dropdown-menu" id="menu-${r.id}">
-            ${isPending ? `
-              <a href="#" onclick="event.preventDefault(); approveReceipt('${r.id}', '${r._collection || 'receipts'}')"><i class="fa-solid fa-circle-check" style="color:var(--accent);"></i> Approve</a>
-              <a href="#" onclick="event.preventDefault(); declineReceipt('${r.id}', '${r._collection || 'receipts'}')"><i class="fa-solid fa-circle-xmark" style="color:var(--danger);"></i> Decline</a>
-            ` : `<div class="dropdown-status-label">${statusLabel}</div>`}
-            <div class="dropdown-divider"></div>
-            <a href="#" onclick="event.preventDefault(); deleteReceipt('${r.id}')" style="color:var(--danger);"><i class="fa-solid fa-trash-can"></i> Delete</a>
-          </div>
         </div>
       </td>
     `;
@@ -2447,25 +2454,13 @@ function renderReceiptsTable(receipts) {
   }
 }
 
-// Action dropdown utility functions
-function toggleActionMenu(btn, id) {
-  // Close any other open menus
-  document.querySelectorAll('.action-dropdown-menu.show').forEach(m => {
-    if (m.id !== `menu-${id}`) m.classList.remove('show');
-  });
-  const menu = document.getElementById(`menu-${id}`);
-  if (menu) {
-    menu.classList.toggle('show');
-  }
+// Switch receipts display category using the top dropdown selector
+function switchReceiptCategory() {
+  const category = document.getElementById('receiptCategorySelect').value;
+  document.getElementById('receiptPanel_key').style.display = category === 'key' ? 'block' : 'none';
+  document.getElementById('receiptPanel_upgrade').style.display = category === 'upgrade' ? 'block' : 'none';
+  document.getElementById('receiptPanel_verification').style.display = category === 'verification' ? 'block' : 'none';
 }
-
-window.addEventListener('click', function(e) {
-  if (!e.target.closest('.action-dropdown')) {
-    document.querySelectorAll('.action-dropdown-menu.show').forEach(m => {
-      m.classList.remove('show');
-    });
-  }
-});
 
 function deleteReceipt(id) {
   Swal.fire({

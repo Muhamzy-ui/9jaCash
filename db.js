@@ -252,18 +252,7 @@ async function initDb() {
       } catch (e) {}
     }
 
-    // One-time clean: delete all receipts once to start from beginning as requested by admin
-    try {
-      const runFlag = await query("SELECT key FROM system_settings WHERE key = 'deposit_purged_final'");
-      if (!runFlag || runFlag.length === 0) {
-        console.log('🧹 Running one-time all receipts purge...');
-        await query("DELETE FROM receipts");
-        await query("INSERT INTO system_settings (key, value) VALUES ('deposit_purged_final', 'true')");
-        console.log('🧹 One-time purge complete and flag set.');
-      }
-    } catch (e) {
-      console.error('Error during one-time receipts purge:', e);
-    }
+
 
     console.log('✅ Database schemas verified/initialized with defaults.');
   } catch (err) {
