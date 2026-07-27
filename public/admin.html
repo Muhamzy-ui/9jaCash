@@ -518,18 +518,19 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
     </div>
   </div>
 
-  <div class="panel">
+  <!-- ─── PANEL 1: Payout Key Receipts ─── -->
+  <div class="panel" style="margin-bottom: 24px;">
     <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
-        <div class="panel-icon orange" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fa-solid fa-receipt"></i></div>
-        <div><div class="panel-title">Pending Payment Receipts</div><div class="panel-sub">Inspect uploaded transaction proofs</div></div>
+        <div class="panel-icon blue" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fa-solid fa-key"></i></div>
+        <div><div class="panel-title">Payout Key Receipts</div><div class="panel-sub">Inspect uploaded payout key transaction proofs</div></div>
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
-        <button id="bulkApproveReceiptsBtn" onclick="bulkApproveReceipts()" class="btn-success" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#10b981; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
-          <i class="fa-solid fa-check"></i> Approve Selected (<span id="bulkApproveCount">0</span>)
+        <button id="bulkApproveBtn_key" onclick="bulkAction('key', 'approve', 'key')" class="btn-success" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#10b981; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
+          <i class="fa-solid fa-check"></i> Approve Selected (<span id="bulkApproveCount_key">0</span>)
         </button>
-        <button id="bulkDeleteReceiptsBtn" onclick="bulkDeleteReceipts()" class="btn-danger" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#ef4444; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
-          <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="bulkDeleteCount">0</span>)
+        <button id="bulkDeleteBtn_key" onclick="bulkAction('key', 'delete', 'key')" class="btn-danger" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#ef4444; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
+          <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="bulkDeleteCount_key">0</span>)
         </button>
       </div>
     </div>
@@ -537,7 +538,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <table class="w-full text-left" style="width:100%; border-collapse:collapse; min-width:800px;">
         <thead>
           <tr style="border-bottom: 2px solid var(--border);">
-            <th style="padding:12px; font-size:11px; width:40px; text-align:center;"><input type="checkbox" id="selectAllReceipts" onchange="toggleSelectAllReceipts(this)" style="cursor:pointer; width:15px; height:15px; accent-color:#10b981;"></th>
+            <th style="padding:12px; font-size:11px; width:40px; text-align:center;"><input type="checkbox" id="selectAll_key" onchange="toggleSelectAll(this, 'key')" style="cursor:pointer; width:15px; height:15px; accent-color:#10b981;"></th>
             <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Date</th>
             <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">User</th>
             <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Type</th>
@@ -546,9 +547,85 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
             <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); text-align:right;">Actions</th>
           </tr>
         </thead>
-        <tbody id="receiptListTable">
+        <tbody id="receiptListTable_key">
           <tr>
-            <td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No new receipts submitted yet.</td>
+            <td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No new payout key receipts.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── PANEL 2: Plan Upgrade Receipts ─── -->
+  <div class="panel" style="margin-bottom: 24px;">
+    <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="panel-icon purple" style="background:rgba(139,92,246,0.1); color:#8b5cf6;"><i class="fa-solid fa-circle-up"></i></div>
+        <div><div class="panel-title">Plan Upgrade Receipts</div><div class="panel-sub">Inspect uploaded plan upgrade transaction proofs</div></div>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button id="bulkApproveBtn_upgrade" onclick="bulkAction('upgrade', 'approve', 'upgrade')" class="btn-success" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#10b981; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
+          <i class="fa-solid fa-check"></i> Approve Selected (<span id="bulkApproveCount_upgrade">0</span>)
+        </button>
+        <button id="bulkDeleteBtn_upgrade" onclick="bulkAction('upgrade', 'delete', 'upgrade')" class="btn-danger" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#ef4444; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
+          <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="bulkDeleteCount_upgrade">0</span>)
+        </button>
+      </div>
+    </div>
+    <div class="table-wrap overflow-x-auto">
+      <table class="w-full text-left" style="width:100%; border-collapse:collapse; min-width:800px;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding:12px; font-size:11px; width:40px; text-align:center;"><input type="checkbox" id="selectAll_upgrade" onchange="toggleSelectAll(this, 'upgrade')" style="cursor:pointer; width:15px; height:15px; accent-color:#10b981;"></th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Date</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">User</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Type</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Amount / Details</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Receipt Image</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="receiptListTable_upgrade">
+          <tr>
+            <td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No new plan upgrade receipts.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── PANEL 3: Account Verification Receipts ─── -->
+  <div class="panel" style="margin-bottom: 24px;">
+    <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="panel-icon green" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="fa-solid fa-user-check"></i></div>
+        <div><div class="panel-title">Verification Receipts</div><div class="panel-sub">Inspect uploaded account verification transaction proofs</div></div>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button id="bulkApproveBtn_verification" onclick="bulkAction('verification', 'approve', 'verification')" class="btn-success" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#10b981; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
+          <i class="fa-solid fa-check"></i> Approve Selected (<span id="bulkApproveCount_verification">0</span>)
+        </button>
+        <button id="bulkDeleteBtn_verification" onclick="bulkAction('verification', 'delete', 'verification')" class="btn-danger" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#ef4444; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
+          <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="bulkDeleteCount_verification">0</span>)
+        </button>
+      </div>
+    </div>
+    <div class="table-wrap overflow-x-auto">
+      <table class="w-full text-left" style="width:100%; border-collapse:collapse; min-width:800px;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding:12px; font-size:11px; width:40px; text-align:center;"><input type="checkbox" id="selectAll_verification" onchange="toggleSelectAll(this, 'verification')" style="cursor:pointer; width:15px; height:15px; accent-color:#10b981;"></th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Date</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">User</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Type</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Amount / Details</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted);">Receipt Image</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="receiptListTable_verification">
+          <tr>
+            <td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No new account verification receipts.</td>
           </tr>
         </tbody>
       </table>
@@ -2016,94 +2093,6 @@ function loadSuperStats() {
         const upgradeRev = data.upgradeRevenue || 0;
 
         renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold, today, sevenDays, month, year, keysRev, verRev, upgradeRev);
-
-        // Optional background fallback for legacy local data
-        if (window._9jaCash && window._9jaCash.db) {
-          const db = window._9jaCash.db;
-          Promise.all([
-            db.collection('users').get(),
-            db.collection('paymentReceipts').get(),
-            db.collection('verifications').get(),
-            db.collection('activation_payments').get().catch(() => ({ docs: [] }))
-          ])
-          .then(results => {
-            let legacyKeys = 0;
-            let legacyDeposits = 0;
-            const usersSnap = results[0];
-            const receiptsSnap = results[1];
-            const verificationsSnap = results[2];
-            const activationsSnap = results[3];
-
-            let legacyUsers = (usersSnap && usersSnap.docs) ? usersSnap.docs.length : (usersSnap ? usersSnap.size || 0 : 0);
-            
-            function getReceiptAmount(r) {
-              if (!r) return 0;
-              let val = parseFloat(r.amount || r.price || r.feeAmount || r.fee || 0);
-              if (!val && (r.type === 'account_verification' || r.type === 'verification' || r.flowType === 'verification')) {
-                val = 35200;
-              }
-              return isNaN(val) ? 0 : val;
-            }
-
-            function isReceiptApproved(r) {
-              if (!r || !r.status) return false;
-              const s = String(r.status).toLowerCase();
-              return s === 'approved' || s === 'verified' || s === 'completed' || s === 'success';
-            }
-
-            let usersWithKeyCount = 0;
-            const uDocs = (usersSnap && usersSnap.docs) ? usersSnap.docs : (Array.isArray(usersSnap) ? usersSnap : []);
-            uDocs.forEach(doc => {
-              const u = typeof doc.data === 'function' ? doc.data() : doc;
-              if (u && (u.payoutKey || u.payout_key) && u.payoutKey !== 'None' && u.payout_key !== 'None') {
-                usersWithKeyCount++;
-              }
-            });
-
-            const recDocs = (receiptsSnap && receiptsSnap.docs) ? receiptsSnap.docs : (Array.isArray(receiptsSnap) ? receiptsSnap : []);
-            recDocs.forEach(doc => {
-              const r = typeof doc.data === 'function' ? doc.data() : doc;
-              if (r && isReceiptApproved(r)) {
-                legacyDeposits += getReceiptAmount(r);
-                const rType = (r.type || '').toLowerCase();
-                const rFlow = (r.flowType || '').toLowerCase();
-                const rPlan = (r.plan || r.planName || '').toLowerCase();
-                if (rType.includes('key') || rFlow.includes('key') || rPlan.includes('key') || rType === 'verification' || rType === 'payout_key_purchase') {
-                  legacyKeys++;
-                }
-              }
-            });
-
-            const verDocs = (verificationsSnap && verificationsSnap.docs) ? verificationsSnap.docs : (Array.isArray(verificationsSnap) ? verificationsSnap : []);
-            verDocs.forEach(doc => {
-              const v = typeof doc.data === 'function' ? doc.data() : doc;
-              if (v && isReceiptApproved(v)) {
-                legacyKeys++;
-                legacyDeposits += getReceiptAmount(v);
-              }
-            });
-
-            const actDocs = (activationsSnap && activationsSnap.docs) ? activationsSnap.docs : (Array.isArray(activationsSnap) ? activationsSnap : []);
-            actDocs.forEach(doc => {
-              const a = typeof doc.data === 'function' ? doc.data() : doc;
-              if (a && isReceiptApproved(a)) {
-                legacyKeys++;
-                legacyDeposits += getReceiptAmount(a);
-              }
-            });
-
-            legacyKeys = Math.max(legacyKeys, usersWithKeyCount);
-
-            const combinedUsers = Math.max(sqlUsers, legacyUsers);
-            const combinedDeposits = Math.max(sqlApprovedReceipts, legacyDeposits);
-            const combinedKeys = Math.max(sqlKeysSold, legacyKeys);
-
-            renderStatsOnPage(combinedUsers, sqlPending, combinedDeposits, sqlApprovedWithdrawals, combinedKeys, today, sevenDays, month, year, keysRev, verRev, upgradeRev);
-          })
-          .catch(err => {
-            console.warn('Fallback stats calculation:', err);
-          });
-        }
       }
     })
     .catch(err => {
@@ -2228,12 +2217,11 @@ function parseLocaleDate(dateStr) {
 let allReceipts = [];
 
 function loadAllReceipts() {
-  const table = document.getElementById('receiptListTable');
   const badgeEl = document.getElementById('receiptsBadge');
   
-  if (table) {
-    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading receipts...</td></tr>';
-  }
+  document.getElementById('receiptListTable_key').innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading payout key receipts...</td></tr>';
+  document.getElementById('receiptListTable_upgrade').innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading plan upgrade receipts...</td></tr>';
+  document.getElementById('receiptListTable_verification').innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading verification receipts...</td></tr>';
   
   fetch(API_URL + '/api/receipts/list')
     .then(res => res.json())
@@ -2253,7 +2241,10 @@ function loadAllReceipts() {
     })
     .catch(err => {
       console.error('Error fetching receipts:', err);
-      table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No new receipts submitted yet.</td></tr>';
+      const errRow = '<tr><td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">Failed to load receipts.</td></tr>';
+      document.getElementById('receiptListTable_key').innerHTML = errRow;
+      document.getElementById('receiptListTable_upgrade').innerHTML = errRow;
+      document.getElementById('receiptListTable_verification').innerHTML = errRow;
     });
 }
 
@@ -2272,7 +2263,7 @@ function purgeAllReceipts() {
     if (res.isConfirmed) {
       Swal.fire({ title: 'Purging receipts...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
       
-      fetch(API_URL + '/api/receipts/purge', { method: 'DELETE' })
+      fetch(API_URL + '/api/receipts/purge', { method: 'POST' })
         .then(r => r.json())
         .then(data => {
           if (data.status) {
@@ -2291,13 +2282,16 @@ function purgeAllReceipts() {
 }
 
 function renderReceiptsTable(receipts) {
-  const table = document.getElementById('receiptListTable');
-  if (receipts.length === 0) {
-    table.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No new receipts submitted yet.</td></tr>';
-    return;
-  }
-  
-  table.innerHTML = '';
+  const tableKey = document.getElementById('receiptListTable_key');
+  const tableUpgrade = document.getElementById('receiptListTable_upgrade');
+  const tableVerification = document.getElementById('receiptListTable_verification');
+
+  tableKey.innerHTML = '';
+  tableUpgrade.innerHTML = '';
+  tableVerification.innerHTML = '';
+
+  let countKey = 0, countUpgrade = 0, countVerification = 0;
+
   receipts.forEach(function(r) {
     const isPending = r.status === 'pending_verification' || r.status === 'pending';
     let statusClass = 'badge-pending';
@@ -2319,12 +2313,31 @@ function renderReceiptsTable(receipts) {
       ? `Commission Paid: ₦${parseFloat(r.amount || 0).toLocaleString()}`
       : (r.plan ? `${r.plan} (₦${parseFloat(r.amount || 0).toLocaleString()})` : `Verify Fee (₦${parseFloat(r.feeAmount || 35200).toLocaleString()})`);
     
+    const rType = (r.type || '').toLowerCase();
+    const isKeyType = (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key' || rType === 'payoutkey' || (r.plan && r.plan.toLowerCase().includes('key')));
+    const isUpgradeType = (rType === 'upgrade');
+
+    let suffix = 'verification';
+    let targetTable = tableVerification;
+
+    if (isKeyType) {
+      suffix = 'key';
+      targetTable = tableKey;
+      countKey++;
+    } else if (isUpgradeType) {
+      suffix = 'upgrade';
+      targetTable = tableUpgrade;
+      countUpgrade++;
+    } else {
+      countVerification++;
+    }
+
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid var(--border)';
     
     tr.innerHTML = `
       <td style="padding:12px; text-align:center; vertical-align:middle;">
-        <input type="checkbox" class="receipt-select-chk" value="${r.id}" onchange="updateBulkDeleteButton()" style="cursor:pointer; width:15px; height:15px; accent-color:#10b981;">
+        <input type="checkbox" class="receipt-select-chk-${suffix}" value="${r.id}" onchange="updateBulkButtons('${suffix}')" style="cursor:pointer; width:15px; height:15px; accent-color:#10b981;">
       </td>
       <td style="padding:12px; font-size:12px; color:var(--text);">${r.date || '—'}</td>
       <td style="padding:12px; font-size:12px;">
@@ -2341,8 +2354,8 @@ function renderReceiptsTable(receipts) {
       <td style="padding:12px; font-size:12px; text-align:right;">
         <div style="display:inline-flex; gap:8px; align-items:center; justify-content:flex-end;">
           ${isPending ? `
-            <button onclick="approveReceipt('${r.id}', '${r._collection}')" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Approve</button>
-            <button onclick="declineReceipt('${r.id}', '${r._collection}')" style="background:#ef4444; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Decline</button>
+            <button onclick="approveReceipt('${r.id}', '${r._collection || 'receipts'}')" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Approve</button>
+            <button onclick="declineReceipt('${r.id}', '${r._collection || 'receipts'}')" style="background:#ef4444; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Decline</button>
           ` : `<span class="${statusClass}" style="padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700;">${statusLabel}</span>`}
           
           <button onclick="deleteReceipt('${r.id}')" style="background:#ef4444; border:none; padding:6px 10px; border-radius:8px; color:white; font-weight:700; cursor:pointer; margin-left:6px;" title="Delete Receipt">
@@ -2351,8 +2364,18 @@ function renderReceiptsTable(receipts) {
         </div>
       </td>
     `;
-    table.appendChild(tr);
+    targetTable.appendChild(tr);
   });
+
+  if (countKey === 0) {
+    tableKey.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No new payout key receipts.</td></tr>';
+  }
+  if (countUpgrade === 0) {
+    tableUpgrade.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No new plan upgrade receipts.</td></tr>';
+  }
+  if (countVerification === 0) {
+    tableVerification.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No new account verification receipts.</td></tr>';
+  }
 }
 
 function deleteReceipt(id) {
@@ -2390,142 +2413,115 @@ function deleteReceipt(id) {
   });
 }
 
-function toggleSelectAllReceipts(master) {
-  const checkboxes = document.querySelectorAll('.receipt-select-chk');
+function toggleSelectAll(master, suffix) {
+  const checkboxes = document.querySelectorAll(`.receipt-select-chk-${suffix}`);
   checkboxes.forEach(chk => {
     chk.checked = master.checked;
   });
-  updateBulkDeleteButton();
+  updateBulkButtons(suffix);
 }
 
-function updateBulkDeleteButton() {
-  const checked = document.querySelectorAll('.receipt-select-chk:checked');
+function updateBulkButtons(suffix) {
+  const checked = document.querySelectorAll(`.receipt-select-chk-${suffix}:checked`);
   const count = checked.length;
   
-  const delBtn = document.getElementById('bulkDeleteReceiptsBtn');
-  const delCountSpan = document.getElementById('bulkDeleteCount');
-  const appBtn = document.getElementById('bulkApproveReceiptsBtn');
-  const appCountSpan = document.getElementById('bulkApproveCount');
+  const delBtn = document.getElementById(`bulkDeleteBtn_${suffix}`);
+  const delCountSpan = document.getElementById(`bulkDeleteCount_${suffix}`);
+  const appBtn = document.getElementById(`bulkApproveBtn_${suffix}`);
+  const appCountSpan = document.getElementById(`bulkApproveCount_${suffix}`);
   
   if (delBtn && delCountSpan) {
-    if (count > 0) {
-      delBtn.style.display = 'inline-flex';
-      delCountSpan.textContent = count;
-    } else {
-      delBtn.style.display = 'none';
-      delCountSpan.textContent = '0';
-    }
+    delBtn.style.display = count > 0 ? 'inline-flex' : 'none';
+    delCountSpan.textContent = count;
   }
-
   if (appBtn && appCountSpan) {
-    if (count > 0) {
-      appBtn.style.display = 'inline-flex';
-      appCountSpan.textContent = count;
-    } else {
-      appBtn.style.display = 'none';
-      appCountSpan.textContent = '0';
-    }
+    appBtn.style.display = count > 0 ? 'inline-flex' : 'none';
+    appCountSpan.textContent = count;
   }
 }
 
-function bulkDeleteReceipts() {
-  const checked = document.querySelectorAll('.receipt-select-chk:checked');
+function bulkAction(type, action, suffix) {
+  const checked = document.querySelectorAll(`.receipt-select-chk-${suffix}:checked`);
   if (checked.length === 0) return;
   const ids = Array.from(checked).map(chk => chk.value);
-  
-  Swal.fire({
-    title: 'Delete Selected Receipts?',
-    text: `Are you sure you want to permanently delete these ${ids.length} selected receipts from the database?`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#ef4444',
-    cancelButtonColor: '#2c3b63',
-    confirmButtonText: 'Yes, Delete All',
-    cancelButtonText: 'Cancel',
-    background: '#131a2e',
-    color: '#f1f5f9'
-  }).then(res => {
-    if (res.isConfirmed) {
-      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-      fetch(API_URL + '/api/admin/receipts/bulk-delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.status) {
-          Swal.fire({ icon: 'success', title: 'Deleted', text: data.message, confirmButtonColor: '#10b981', background: '#131a2e', color: '#f1f5f9' });
-          
-          const master = document.getElementById('selectAllReceipts');
-          if (master) master.checked = false;
-          
-          const delBtn = document.getElementById('bulkDeleteReceiptsBtn');
-          if (delBtn) delBtn.style.display = 'none';
-          const appBtn = document.getElementById('bulkApproveReceiptsBtn');
-          if (appBtn) appBtn.style.display = 'none';
-          
-          loadAllReceipts();
-        } else {
-          showToast(data.error || 'Failed to delete selected receipts', 'error');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        showToast('Connection error', 'error');
-      });
-    }
-  });
-}
 
-function bulkApproveReceipts() {
-  const checked = document.querySelectorAll('.receipt-select-chk:checked');
-  if (checked.length === 0) return;
-  const ids = Array.from(checked).map(chk => chk.value);
-  
-  Swal.fire({
-    title: 'Approve Selected Receipts?',
-    text: `Are you sure you want to verify and approve these ${ids.length} selected receipts? This will credit their accounts and generate payout keys/upgrades immediately.`,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#10b981',
-    cancelButtonColor: '#2c3b63',
-    confirmButtonText: 'Yes, Approve All',
-    cancelButtonText: 'Cancel',
-    background: '#131a2e',
-    color: '#f1f5f9'
-  }).then(res => {
-    if (res.isConfirmed) {
-      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-      fetch(API_URL + '/api/admin/receipts/bulk-approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.status) {
-          Swal.fire({ icon: 'success', title: 'Approved', text: data.message, confirmButtonColor: '#10b981', background: '#131a2e', color: '#f1f5f9' });
-          
-          const master = document.getElementById('selectAllReceipts');
-          if (master) master.checked = false;
-          
-          const delBtn = document.getElementById('bulkDeleteReceiptsBtn');
-          if (delBtn) delBtn.style.display = 'none';
-          const appBtn = document.getElementById('bulkApproveReceiptsBtn');
-          if (appBtn) appBtn.style.display = 'none';
-          
-          loadAllReceipts();
-        } else {
-          showToast(data.error || 'Failed to approve selected receipts', 'error');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        showToast('Connection error', 'error');
-      });
-    }
-  });
+  if (action === 'delete') {
+    Swal.fire({
+      title: 'Delete Selected Receipts?',
+      text: `Are you sure you want to permanently delete these ${ids.length} selected receipts?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#2c3b63',
+      confirmButtonText: 'Yes, Delete All',
+      cancelButtonText: 'Cancel',
+      background: '#131a2e',
+      color: '#f1f5f9'
+    }).then(res => {
+      if (res.isConfirmed) {
+        Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        fetch(API_URL + '/api/admin/receipts/bulk-delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status) {
+            Swal.fire({ icon: 'success', title: 'Deleted', text: data.message, confirmButtonColor: '#10b981', background: '#131a2e', color: '#f1f5f9' });
+            const master = document.getElementById(`selectAll_${suffix}`);
+            if (master) master.checked = false;
+            updateBulkButtons(suffix);
+            loadAllReceipts();
+          } else {
+            showToast(data.error || 'Failed to delete selected receipts', 'error');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showToast('Connection error', 'error');
+        });
+      }
+    });
+  } else if (action === 'approve') {
+    Swal.fire({
+      title: 'Approve Selected Receipts?',
+      text: `Are you sure you want to verify and approve these ${ids.length} selected receipts? This will credit their accounts and generate payout keys/upgrades immediately.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#2c3b63',
+      confirmButtonText: 'Yes, Approve All',
+      cancelButtonText: 'Cancel',
+      background: '#131a2e',
+      color: '#f1f5f9'
+    }).then(res => {
+      if (res.isConfirmed) {
+        Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        fetch(API_URL + '/api/admin/receipts/bulk-approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status) {
+            Swal.fire({ icon: 'success', title: 'Approved', text: data.message, confirmButtonColor: '#10b981', background: '#131a2e', color: '#f1f5f9' });
+            const master = document.getElementById(`selectAll_${suffix}`);
+            if (master) master.checked = false;
+            updateBulkButtons(suffix);
+            loadAllReceipts();
+          } else {
+            showToast(data.error || 'Failed to approve selected receipts', 'error');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showToast('Connection error', 'error');
+        });
+      }
+    });
+  }
 }
 
 function viewReceiptImage(id) {

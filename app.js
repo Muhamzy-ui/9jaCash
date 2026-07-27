@@ -16,12 +16,18 @@ const fetch = require('node-fetch');
 const db = require('./db');
 const https = require('https');
 
-// Helper to parse dates safely in different environments (handles ISO string and locale dates)
+// Helper to parse dates safely in different environments (handles ISO string, locale dates, and unix timestamps)
 function safeParseDate(dateStr) {
   if (!dateStr) return new Date(0);
   if (dateStr instanceof Date) return dateStr;
   
-  // Try standard parse first
+  // If it's a numeric timestamp
+  if (/^\d+$/.test(dateStr.toString().trim())) {
+    const d = new Date(Number(dateStr.toString().trim()));
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // Try standard parse first (handles ISO strings perfectly)
   let d = new Date(dateStr);
   if (!isNaN(d.getTime())) return d;
   
@@ -83,7 +89,8 @@ function safeParseDate(dateStr) {
             if (ampm.includes('am') && hours === 12) hours = 0;
           }
           
-          d = new Date(year, month - 1, day, hours, minutes, seconds);
+          // Build date using Date.UTC for timezone independence
+          d = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
           if (!isNaN(d.getTime())) return d;
         }
       }
@@ -1295,7 +1302,7 @@ app.get('/api/user/payment-instructions', async (req, res) => {
       const refCode = u.junior_admin_code || await findJuniorAdminCode(u.referred_by);
       if (refCode) {
         // Fetch junior admin associated with this referral code
-        const junior = await db.query('SELECT bank_name, account_number, account_name, is_active FROM junior_admins WHERE referral_code = ?', [refCode]);
+        const junior = await db.query('SELECT * FROM junior_admins WHERE referral_code = ?', [refCode]);
         if (junior.length > 0) {
           const ja = junior[0];
           // If junior admin exists and is active, return their details!
@@ -1305,7 +1312,13 @@ app.get('/api/user/payment-instructions', async (req, res) => {
               useGlobal: false,
               bankName: ja.bank_name || 'OPay',
               accNumber: ja.account_number || '—',
-              accName: ja.account_name || '—'
+              accName: ja.account_name || '—',
+              feeBankName: ja.fee_bank_name || ja.bank_name || 'OPay',
+              feeAccNumber: ja.fee_account_number || ja.account_number || '—',
+              feeAccName: ja.fee_account_name || ja.account_name || '—',
+              feeAmount: ja.fee_amount !== null && ja.fee_amount !== undefined ? parseFloat(ja.fee_amount) : 35200,
+              telegramLink: ja.telegram_link || null,
+              whatsappLink: ja.whatsapp_link || null
             });
           }
         }
@@ -1658,26 +1671,24 @@ app.get('/api/admin/super/stats', async (req, res) => {
       SELECT COUNT(*) AS cnt FROM receipts 
       WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success') 
       AND (
-        type IN ('verification', 'payout_key_purchase', 'account_verification', 'payout', 'key', 'payoutKey')
+        type IN ('payout_key_purchase', 'payout', 'key', 'payoutKey', 'payout_key')
         OR LOWER(plan_name) LIKE '%key%'
       )
-    `);
-    
-    const usersWithKeys = await db.query(`
-      SELECT COUNT(*) AS cnt FROM users 
-      WHERE payout_key IS NOT NULL AND payout_key != '' AND payout_key != 'None'
     `);
 
     const getCnt = (arr) => (arr && arr[0]) ? (arr[0].cnt || arr[0]['cnt'] || arr[0]['COUNT(*)'] || 0) : 0;
     
     // Align timezone with WAT (UTC+1, Nigeria Time)
-    const nowUtc = new Date();
-    const nowWat = new Date(nowUtc.getTime() + 1 * 60 * 60 * 1000);
-    const startOfTodayWat = new Date(nowWat.getFullYear(), nowWat.getMonth(), nowWat.getDate());
-    const startOfToday = startOfTodayWat.getTime() - 1 * 60 * 60 * 1000;
+    const now = new Date();
+    const watTime = new Date(now.getTime() + 1 * 60 * 60 * 1000);
+    const y = watTime.getUTCFullYear();
+    const m = watTime.getUTCMonth();
+    const d = watTime.getUTCDate();
+
+    const startOfToday = Date.UTC(y, m, d, 0, 0, 0) - 1 * 60 * 60 * 1000;
     const startOfSevenDays = startOfToday - (6 * 24 * 60 * 60 * 1000);
-    const startOfMonth = new Date(nowWat.getFullYear(), nowWat.getMonth(), 1).getTime() - 1 * 60 * 60 * 1000;
-    const startOfYear = new Date(nowWat.getFullYear(), 0, 1).getTime() - 1 * 60 * 60 * 1000;
+    const startOfMonth = Date.UTC(y, m, 1, 0, 0, 0) - 1 * 60 * 60 * 1000;
+    const startOfYear = Date.UTC(y, 0, 1, 0, 0, 0) - 1 * 60 * 60 * 1000;
 
     let today = 0, sevenDays = 0, month = 0, year = 0, total = 0;
     let keysRevenue = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
@@ -1698,7 +1709,7 @@ app.get('/api/admin/super/stats', async (req, res) => {
 
       const rType = (r.type || '').toLowerCase();
       const isVer = (rType === 'verification' || rType === 'account_verification');
-      const isKey = (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key');
+      const isKey = (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key' || rType === 'payoutkey');
       const isUpgrade = (rType === 'upgrade');
 
       if (isVer) {
@@ -1722,7 +1733,7 @@ app.get('/api/admin/super/stats', async (req, res) => {
       }
     });
 
-    const totalKeysSold = Math.max(parseInt(getCnt(keysCount)), parseInt(getCnt(usersWithKeys)));
+    const totalKeysSold = parseInt(getCnt(keysCount));
 
     res.json({
       status: true,
@@ -2080,7 +2091,10 @@ app.get('/api/user/get-payment-details', async (req, res) => {
 
 // POST /api/admin/junior/update-payment-settings — Save Junior Admin bank & crypto details
 app.post('/api/admin/junior/update-payment-settings', async (req, res) => {
-  const { email, password, bankName, accountNumber, accountName, cryptoAddress, cryptoNetwork } = req.body || {};
+  const { 
+    email, password, bankName, accountNumber, accountName, cryptoAddress, cryptoNetwork,
+    feeBankName, feeAccountNumber, feeAccountName, feeAmount, telegramLink, whatsappLink
+  } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ status: false, error: 'Email and password are required' });
   }
@@ -2091,9 +2105,16 @@ app.post('/api/admin/junior/update-payment-settings', async (req, res) => {
     }
     await db.query(`
       UPDATE junior_admins 
-      SET bank_name = ?, account_number = ?, account_name = ?, crypto_address = ?, crypto_network = ?
+      SET bank_name = ?, account_number = ?, account_name = ?, crypto_address = ?, crypto_network = ?,
+          fee_bank_name = ?, fee_account_number = ?, fee_account_name = ?, fee_amount = ?,
+          telegram_link = ?, whatsapp_link = ?
       WHERE email = ?
-    `, [bankName || null, accountNumber || null, accountName || null, cryptoAddress || null, cryptoNetwork || null, email]);
+    `, [
+      bankName || null, accountNumber || null, accountName || null, cryptoAddress || null, cryptoNetwork || null,
+      feeBankName || null, feeAccountNumber || null, feeAccountName || null, feeAmount !== undefined && feeAmount !== null ? parseFloat(feeAmount) : null,
+      telegramLink || null, whatsappLink || null,
+      email
+    ]);
     const fresh = await db.query('SELECT * FROM junior_admins WHERE email = ?', [email]);
     res.json({ status: true, admin: fresh[0], message: 'Payment settings updated successfully' });
   } catch (err) {
@@ -2110,7 +2131,7 @@ app.post('/api/admin/junior/submit-settlement', async (req, res) => {
   }
   try {
     const id = 'rc_set_' + Math.random().toString(36).substr(2, 9);
-    const createdAt = new Date().toLocaleString();
+    const createdAt = new Date().toISOString();
 
     await db.query(`
       INSERT INTO receipts (id, phone, user_name, type, plan_name, amount, receipt_image, status, created_at)
@@ -2481,6 +2502,7 @@ setInterval(async () => {
 // GET /api/settings/:key — Retrieve system settings
 app.get('/api/settings/:key', async (req, res) => {
   const { key } = req.params;
+  const { phone } = req.query || {};
   const defaults = {
     payment: { bankName: 'Kuda MFB', accountNumber: '2088598772', accountName: 'Christian|Ts Agent', paymentNotice: '' },
     secondBilling: { feeAmount: 35200 },
@@ -2494,15 +2516,46 @@ app.get('/api/settings/:key', async (req, res) => {
     referral_bonus: { amount: 10000 }
   };
   try {
+    let value = defaults[key] || {};
     const result = await db.query('SELECT value FROM system_settings WHERE key = ?', [key]);
     if (result && result.length > 0 && result[0].value) {
       try {
-        return res.json({ status: true, value: typeof result[0].value === 'string' ? JSON.parse(result[0].value) : result[0].value });
+        value = typeof result[0].value === 'string' ? JSON.parse(result[0].value) : result[0].value;
       } catch (parseErr) {
-        return res.json({ status: true, value: result[0].value });
+        value = result[0].value;
       }
     }
-    res.json({ status: true, value: defaults[key] || {} });
+
+    // Override if user has a junior admin configured
+    if (phone && (key === 'payment' || key === 'secondBilling')) {
+      const users = await db.query('SELECT referred_by, junior_admin_code FROM users WHERE phone = ?', [phone]);
+      if (users.length > 0) {
+        const u = users[0];
+        const refCode = u.junior_admin_code || await findJuniorAdminCode(u.referred_by);
+        if (refCode) {
+          const admins = await db.query('SELECT * FROM junior_admins WHERE referral_code = ? AND is_active = 1', [refCode]);
+          if (admins.length > 0) {
+            const ja = admins[0];
+            if (key === 'payment') {
+              if (ja.bank_name) value.bank = ja.bank_name;
+              if (ja.account_number) value.accNumber = ja.account_number;
+              if (ja.account_name) value.accName = ja.account_name;
+              if (ja.crypto_address) value.cryptoAddress = ja.crypto_address;
+              if (ja.crypto_network) value.cryptoNetwork = ja.crypto_network;
+              if (ja.whatsapp_link) value.whatsappLink = ja.whatsapp_link;
+              if (ja.telegram_link) value.telegramSupportLink = ja.telegram_link;
+            } else if (key === 'secondBilling') {
+              if (ja.fee_bank_name) value.bank = ja.fee_bank_name;
+              if (ja.fee_account_number) value.accNumber = ja.fee_account_number;
+              if (ja.fee_account_name) value.accName = ja.fee_account_name;
+              if (ja.fee_amount !== null && ja.fee_amount !== undefined) value.amount = parseFloat(ja.fee_amount);
+            }
+          }
+        }
+      }
+    }
+
+    res.json({ status: true, value });
   } catch (err) {
     console.error(`Error loading setting ${key}:`, err.message);
     res.json({ status: true, value: defaults[key] || {} });
@@ -2694,9 +2747,23 @@ app.post('/api/receipts/submit', async (req, res) => {
   if (!receiptImage) {
     return res.status(400).json({ status: false, error: 'Missing receipt image' });
   }
-  const id = 'rc_' + Math.random().toString(36).substr(2, 9);
-  const createdAt = new Date().toLocaleString();
+
   try {
+    // Restrict duplicate submissions: max 2 pending receipts
+    const pendingReceipts = await db.query("SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND status = 'pending'", [phone]);
+    if (pendingReceipts && pendingReceipts.length > 0) {
+      const countRow = pendingReceipts[0];
+      const pendingCount = parseInt(countRow.count || countRow.COUNT || countRow['COUNT(*)'] || countRow['count'] || 0);
+      if (pendingCount >= 2) {
+        return res.status(400).json({
+          status: false,
+          error: 'You have already submitted 2 payment proofs that are pending review. Please wait for the admin to approve or decline them before submitting another one.'
+        });
+      }
+    }
+
+    const id = 'rc_' + Math.random().toString(36).substr(2, 9);
+    const createdAt = new Date().toISOString();
     await db.query(`
       INSERT INTO receipts (id, phone, user_name, type, plan_name, amount, receipt_image, status, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -2744,6 +2811,28 @@ app.get('/api/receipts/list', async (req, res) => {
   } catch (err) {
     console.error('Failed to fetch receipts list:', err.message);
     return res.status(200).json({ status: true, receipts: [] });
+  }
+});
+
+// POST /api/receipts/purge — Purge all receipts from the database
+app.post('/api/receipts/purge', async (req, res) => {
+  try {
+    await db.query('DELETE FROM receipts');
+    res.json({ status: true, message: 'All receipts purged successfully' });
+  } catch (err) {
+    console.error('Error purging receipts:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to purge receipts' });
+  }
+});
+
+// DELETE /api/receipts/purge — Purge all receipts from the database (DELETE fallback)
+app.delete('/api/receipts/purge', async (req, res) => {
+  try {
+    await db.query('DELETE FROM receipts');
+    res.json({ status: true, message: 'All receipts purged successfully' });
+  } catch (err) {
+    console.error('Error purging receipts:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to purge receipts' });
   }
 });
 
@@ -3182,14 +3271,27 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
     let placeholders = phones.map(() => '?').join(',');
     const receipts = await db.query(`SELECT * FROM receipts WHERE phone IN (${placeholders}) AND (status = 'Approved' OR status = 'approved' OR status = 'verified' OR status = 'completed' OR status = 'success')`, phones);
     
-    const keysUsed = await db.query(`SELECT COUNT(*) as cnt FROM users WHERE (junior_admin_code = ? OR referred_by = ?) AND payout_key IS NOT NULL AND payout_key != ''`, [juniorCode, juniorCode]);
-    const keysSold = parseInt((keysUsed[0] && keysUsed[0].cnt) || receipts.length || 0);
+    const keysCount = await db.query(`
+      SELECT COUNT(*) as cnt FROM receipts 
+      WHERE phone IN (${placeholders}) AND LOWER(status) IN ('approved', 'verified', 'completed', 'success') 
+      AND (
+        type IN ('payout_key_purchase', 'payout', 'key', 'payoutKey', 'payout_key')
+        OR LOWER(plan_name) LIKE '%key%'
+      )
+    `, phones);
+    const keysSold = parseInt(keysCount[0].cnt || keysCount[0]['COUNT(*)'] || 0);
 
+    // Align timezone with WAT (UTC+1, Nigeria Time)
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const watTime = new Date(now.getTime() + 1 * 60 * 60 * 1000);
+    const y = watTime.getUTCFullYear();
+    const m = watTime.getUTCMonth();
+    const d = watTime.getUTCDate();
+
+    const startOfToday = Date.UTC(y, m, d, 0, 0, 0) - 1 * 60 * 60 * 1000;
     const startOfSevenDays = startOfToday - (6 * 24 * 60 * 60 * 1000);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+    const startOfMonth = Date.UTC(y, m, 1, 0, 0, 0) - 1 * 60 * 60 * 1000;
+    const startOfYear = Date.UTC(y, 0, 1, 0, 0, 0) - 1 * 60 * 60 * 1000;
 
     let today = 0, sevenDays = 0, month = 0, year = 0, total = 0;
     let keyGross = 0, verificationGross = 0, upgradeGross = 0;
@@ -3206,7 +3308,7 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
       const rType = (r.type || '').toLowerCase();
       if (rType === 'verification' || rType === 'account_verification') {
         verificationGross += amt;
-      } else if (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key') {
+      } else if (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key' || rType === 'payoutkey') {
         keyGross += amt;
       } else if (rType === 'upgrade') {
         upgradeGross += amt;

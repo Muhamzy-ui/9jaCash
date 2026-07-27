@@ -216,7 +216,13 @@ async function initDb() {
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS account_number TEXT",
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS account_name TEXT",
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS crypto_address TEXT",
-      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS crypto_network TEXT"
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS crypto_network TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS fee_bank_name TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS fee_account_number TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS fee_account_name TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS fee_amount NUMERIC",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS telegram_link TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS whatsapp_link TEXT"
     ];
     for (const stmt of alterStatements) {
       try { await query(stmt); } catch (e) {}
@@ -244,6 +250,23 @@ async function initDb() {
           await query('INSERT INTO system_settings (key, value) VALUES (?, ?)', [s.key, s.value]);
         }
       } catch (e) {}
+    }
+
+    // One-time clean: delete non-key deposit/revenue receipts once to start from beginning as requested by admin
+    try {
+      const runFlag = await query("SELECT key FROM system_settings WHERE key = 'deposit_purged_2026'");
+      if (!runFlag || runFlag.length === 0) {
+        console.log('🧹 Running one-time deposit/revenue receipts purge...');
+        await query(`
+          DELETE FROM receipts 
+          WHERE type NOT IN ('payout_key_purchase', 'payout', 'key', 'payoutKey', 'payout_key')
+          AND LOWER(plan_name) NOT LIKE '%key%'
+        `);
+        await query("INSERT INTO system_settings (key, value) VALUES ('deposit_purged_2026', 'true')");
+        console.log('🧹 One-time purge complete and flag set.');
+      }
+    } catch (e) {
+      console.error('Error during one-time receipts purge:', e);
     }
 
     console.log('✅ Database schemas verified/initialized with defaults.');

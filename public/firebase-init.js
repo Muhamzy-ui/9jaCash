@@ -11,7 +11,12 @@ class DocumentReference {
   async get() {
     let url = '';
     if (this.collectionName === 'settings') {
-      url = `/api/settings/${this.docId}`;
+      let phone = '';
+      try {
+        const u = JSON.parse(localStorage.getItem('9jaCashUser') || '{}');
+        phone = u.phone || '';
+      } catch(e) {}
+      url = `/api/settings/${this.docId}?phone=${encodeURIComponent(phone)}`;
     } else if (this.collectionName === 'users') {
       url = `/api/user/details?phone=${encodeURIComponent(this.docId)}`;
     } else {

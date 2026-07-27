@@ -232,24 +232,29 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     </button>
   </div>
 
-  <!-- ─── SECTION 3: Telegram ─── -->
+  <!-- ─── SECTION 3: Support Links ─── -->
   <div class="section-card" style="animation-delay:0.15s;">
     <div class="card-header">
-      <div class="card-icon icon-blue"><i class="fa-brands fa-telegram"></i></div>
+      <div class="card-icon icon-blue"><i class="fa-solid fa-headset"></i></div>
       <div>
-        <div class="card-title">Telegram Support Channel</div>
-        <div class="card-sub">Link to your Telegram group or channel — shown to users for payment help and confirmation</div>
+        <div class="card-title">Support Links (Telegram &amp; WhatsApp)</div>
+        <div class="card-sub">Configure custom support links shown to your referred users on their dashboards, payment, and verification pages</div>
       </div>
     </div>
-    <div class="form-grid" style="margin-bottom:20px;">
+    <div class="form-grid cols-2" style="margin-bottom:20px;">
       <div class="field-group">
-        <label class="field-label">Channel / Group URL</label>
+        <label class="field-label">WhatsApp Support URL</label>
+        <input type="url" id="whatsappUrl" class="field-input" placeholder="https://wa.me/234..." />
+        <span class="help-text">Example: https://wa.me/2348012345678 — Leave blank to use global support</span>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Telegram Support URL</label>
         <input type="url" id="telegramUrl" class="field-input" placeholder="https://t.me/yourchannel" />
-        <span class="help-text">Example: https://t.me/9jaCashSupport — Leave blank to use the global support link</span>
+        <span class="help-text">Example: https://t.me/9jaCashSupport — Leave blank to use global support</span>
       </div>
     </div>
-    <button class="save-btn" id="saveTelegramBtn" onclick="saveTelegram()">
-      <i class="fa-solid fa-floppy-disk"></i> Save Telegram Link
+    <button class="save-btn" id="saveSupportBtn" onclick="saveSupportLinks()">
+      <i class="fa-solid fa-floppy-disk"></i> Save Support Links
     </button>
   </div>
 
@@ -379,123 +384,92 @@ function loadCurrentSettings() {
       document.getElementById('mainAccName').value = a.account_name || '';
       document.getElementById('cryptoAddress').value = a.crypto_address || '';
       document.getElementById('cryptoNetwork').value = a.crypto_network || '';
+      
+      // Database backed fee details
+      document.getElementById('feeAccNumber').value = a.fee_account_number || '';
+      document.getElementById('feeBankName').value = a.fee_bank_name || '';
+      document.getElementById('feeAccName').value = a.fee_account_name || '';
+      document.getElementById('feeAmount').value = a.fee_amount || '';
+      
+      // Database backed support links
+      document.getElementById('telegramUrl').value = a.telegram_link || '';
+      document.getElementById('whatsappUrl').value = a.whatsapp_link || '';
     }
   })
   .catch(err => console.error('Load settings error:', err));
+}
 
-  // Load locally stored fee/telegram
-  try {
-    const feeKey = '9jaCashFeeSettings_' + (adminSession.referral_code || '');
-    const fee = JSON.parse(localStorage.getItem(feeKey) || 'null');
-    if (fee) {
-      document.getElementById('feeAccNumber').value = fee.feeAccNumber || '';
-      document.getElementById('feeBankName').value = fee.feeBankName || '';
-      document.getElementById('feeAccName').value = fee.feeAccName || '';
-      document.getElementById('feeAmount').value = fee.feeAmount || '';
+// SAVE ALL SETTINGS
+function saveAllSettings(btnId, successMsg) {
+  const btn = document.getElementById(btnId);
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+
+  const payload = {
+    email: adminSession.email,
+    password: adminSession.password,
+    bankName: document.getElementById('mainBankName').value.trim(),
+    accountNumber: document.getElementById('mainAccNumber').value.trim(),
+    accountName: document.getElementById('mainAccName').value.trim(),
+    cryptoAddress: document.getElementById('cryptoAddress').value.trim(),
+    cryptoNetwork: document.getElementById('cryptoNetwork').value.trim(),
+    feeBankName: document.getElementById('feeBankName').value.trim(),
+    feeAccountNumber: document.getElementById('feeAccNumber').value.trim(),
+    feeAccountName: document.getElementById('feeAccName').value.trim(),
+    feeAmount: document.getElementById('feeAmount').value.trim() ? parseFloat(document.getElementById('feeAmount').value.trim()) : null,
+    telegramLink: document.getElementById('telegramUrl').value.trim(),
+    whatsappLink: document.getElementById('whatsappUrl').value.trim()
+  };
+
+  fetch(API_URL + '/api/admin/junior/update-payment-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+    if (data.status) {
+      showToast(successMsg + ' ✓');
+    } else {
+      showToast(data.error || 'Failed to save settings', 'error');
     }
-    const tgKey = '9jaCashTelegram_' + (adminSession.referral_code || '');
-    const tg = JSON.parse(localStorage.getItem(tgKey) || 'null');
-    if (tg) {
-      document.getElementById('telegramUrl').value = tg.telegramUrl || '';
-    }
-  } catch(e) {}
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+    showToast('Network error', 'error');
+  });
 }
 
 // SAVE MAIN ACCOUNT
 function saveMainAccount() {
-  const btn = document.getElementById('saveMainBtn');
   const accNumber = document.getElementById('mainAccNumber').value.trim();
   if (accNumber && (accNumber.length !== 10 || !/^\d{10}$/.test(accNumber))) {
     showToast('Account number must be exactly 10 digits', 'error'); return;
   }
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
-  fetch(API_URL + '/api/admin/junior/update-payment-settings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email: adminSession.email,
-      password: adminSession.password,
-      bankName: document.getElementById('mainBankName').value.trim(),
-      accountNumber: accNumber,
-      accountName: document.getElementById('mainAccName').value.trim(),
-      cryptoAddress: document.getElementById('cryptoAddress').value.trim(),
-      cryptoNetwork: document.getElementById('cryptoNetwork').value.trim()
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Main Account';
-    showToast(data.status ? 'Main account saved successfully ✓' : (data.error || 'Failed to save'), data.status ? '' : 'error');
-  })
-  .catch(() => { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Main Account'; showToast('Network error', 'error'); });
+  saveAllSettings('saveMainBtn', 'Main account saved successfully');
 }
 
 // SAVE TRANSFER FEE
 function saveTransferFee() {
-  const btn = document.getElementById('saveFeeBtn');
   const feeAccNumber = document.getElementById('feeAccNumber').value.trim();
   if (feeAccNumber && (feeAccNumber.length !== 10 || !/^\d{10}$/.test(feeAccNumber))) {
     showToast('Fee account number must be exactly 10 digits', 'error'); return;
   }
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
-  const feeSettings = {
-    feeAccNumber, feeBankName: document.getElementById('feeBankName').value.trim(),
-    feeAccName: document.getElementById('feeAccName').value.trim(),
-    feeAmount: document.getElementById('feeAmount').value.trim(),
-    updatedAt: new Date().toISOString(), adminEmail: adminSession.email
-  };
-  localStorage.setItem('9jaCashFeeSettings_' + (adminSession.referral_code || ''), JSON.stringify(feeSettings));
-  setTimeout(() => {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Transfer Fee Account';
-    showToast('Transfer fee account saved ✓');
-  }, 500);
+  saveAllSettings('saveFeeBtn', 'Transfer fee account saved');
 }
 
-// SAVE TELEGRAM
-function saveTelegram() {
-  const btn = document.getElementById('saveTelegramBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
-  localStorage.setItem('9jaCashTelegram_' + (adminSession.referral_code || ''), JSON.stringify({
-    telegramUrl: document.getElementById('telegramUrl').value.trim(),
-    updatedAt: new Date().toISOString(), adminEmail: adminSession.email
-  }));
-  setTimeout(() => {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Telegram Link';
-    showToast('Telegram link saved ✓');
-  }, 500);
+// SAVE TELEGRAM & WHATSAPP SUPPORT LINKS
+function saveSupportLinks() {
+  saveAllSettings('saveSupportBtn', 'Support links saved');
 }
 
 // SAVE CRYPTO
 function saveCrypto() {
-  const btn = document.getElementById('saveCryptoBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
-  fetch(API_URL + '/api/admin/junior/update-payment-settings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email: adminSession.email,
-      password: adminSession.password,
-      bankName: document.getElementById('mainBankName').value.trim(),
-      accountNumber: document.getElementById('mainAccNumber').value.trim(),
-      accountName: document.getElementById('mainAccName').value.trim(),
-      cryptoAddress: document.getElementById('cryptoAddress').value.trim(),
-      cryptoNetwork: document.getElementById('cryptoNetwork').value.trim()
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Crypto Wallet';
-    showToast(data.status ? 'Crypto wallet saved successfully ✓' : (data.error || 'Failed'), data.status ? '' : 'error');
-  })
-  .catch(() => { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Crypto Wallet'; showToast('Network error', 'error'); });
+  saveAllSettings('saveCryptoBtn', 'Crypto wallet saved successfully');
 }
 
 // INIT
