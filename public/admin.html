@@ -524,9 +524,14 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         <div class="panel-icon orange" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fa-solid fa-receipt"></i></div>
         <div><div class="panel-title">Pending Payment Receipts</div><div class="panel-sub">Inspect uploaded transaction proofs</div></div>
       </div>
-      <button id="bulkDeleteReceiptsBtn" onclick="bulkDeleteReceipts()" class="btn-danger" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#ef4444; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
-        <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="bulkDeleteCount">0</span>)
-      </button>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button id="bulkApproveReceiptsBtn" onclick="bulkApproveReceipts()" class="btn-success" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#10b981; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
+          <i class="fa-solid fa-check"></i> Approve Selected (<span id="bulkApproveCount">0</span>)
+        </button>
+        <button id="bulkDeleteReceiptsBtn" onclick="bulkDeleteReceipts()" class="btn-danger" style="display:none; padding:8px 16px; font-weight:800; border-radius:8px; background:#ef4444; color:white; border:none; cursor:pointer; font-size:11px; align-items:center; gap:6px; transition: all 0.2s;">
+          <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="bulkDeleteCount">0</span>)
+        </button>
+      </div>
     </div>
     <div class="table-wrap overflow-x-auto">
       <table class="w-full text-left" style="width:100%; border-collapse:collapse; min-width:800px;">
@@ -2395,16 +2400,30 @@ function toggleSelectAllReceipts(master) {
 
 function updateBulkDeleteButton() {
   const checked = document.querySelectorAll('.receipt-select-chk:checked');
-  const btn = document.getElementById('bulkDeleteReceiptsBtn');
-  const countSpan = document.getElementById('bulkDeleteCount');
+  const count = checked.length;
   
-  if (btn && countSpan) {
-    if (checked.length > 0) {
-      btn.style.display = 'inline-flex';
-      countSpan.textContent = checked.length;
+  const delBtn = document.getElementById('bulkDeleteReceiptsBtn');
+  const delCountSpan = document.getElementById('bulkDeleteCount');
+  const appBtn = document.getElementById('bulkApproveReceiptsBtn');
+  const appCountSpan = document.getElementById('bulkApproveCount');
+  
+  if (delBtn && delCountSpan) {
+    if (count > 0) {
+      delBtn.style.display = 'inline-flex';
+      delCountSpan.textContent = count;
     } else {
-      btn.style.display = 'none';
-      countSpan.textContent = '0';
+      delBtn.style.display = 'none';
+      delCountSpan.textContent = '0';
+    }
+  }
+
+  if (appBtn && appCountSpan) {
+    if (count > 0) {
+      appBtn.style.display = 'inline-flex';
+      appCountSpan.textContent = count;
+    } else {
+      appBtn.style.display = 'none';
+      appCountSpan.textContent = '0';
     }
   }
 }
@@ -2441,12 +2460,64 @@ function bulkDeleteReceipts() {
           const master = document.getElementById('selectAllReceipts');
           if (master) master.checked = false;
           
-          const btn = document.getElementById('bulkDeleteReceiptsBtn');
-          if (btn) btn.style.display = 'none';
+          const delBtn = document.getElementById('bulkDeleteReceiptsBtn');
+          if (delBtn) delBtn.style.display = 'none';
+          const appBtn = document.getElementById('bulkApproveReceiptsBtn');
+          if (appBtn) appBtn.style.display = 'none';
           
           loadAllReceipts();
         } else {
           showToast(data.error || 'Failed to delete selected receipts', 'error');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('Connection error', 'error');
+      });
+    }
+  });
+}
+
+function bulkApproveReceipts() {
+  const checked = document.querySelectorAll('.receipt-select-chk:checked');
+  if (checked.length === 0) return;
+  const ids = Array.from(checked).map(chk => chk.value);
+  
+  Swal.fire({
+    title: 'Approve Selected Receipts?',
+    text: `Are you sure you want to verify and approve these ${ids.length} selected receipts? This will credit their accounts and generate payout keys/upgrades immediately.`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Approve All',
+    cancelButtonText: 'Cancel',
+    background: '#131a2e',
+    color: '#f1f5f9'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/receipts/bulk-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Approved', text: data.message, confirmButtonColor: '#10b981', background: '#131a2e', color: '#f1f5f9' });
+          
+          const master = document.getElementById('selectAllReceipts');
+          if (master) master.checked = false;
+          
+          const delBtn = document.getElementById('bulkDeleteReceiptsBtn');
+          if (delBtn) delBtn.style.display = 'none';
+          const appBtn = document.getElementById('bulkApproveReceiptsBtn');
+          if (appBtn) appBtn.style.display = 'none';
+          
+          loadAllReceipts();
+        } else {
+          showToast(data.error || 'Failed to approve selected receipts', 'error');
         }
       })
       .catch(err => {

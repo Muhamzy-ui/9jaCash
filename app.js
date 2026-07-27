@@ -2799,7 +2799,160 @@ app.post('/api/admin/receipts/bulk-delete', async (req, res) => {
     console.error('Error bulk deleting receipts:', err.message);
     res.status(500).json({ status: false, error: 'Failed to bulk delete receipts' });
   }
+// POST /api/admin/receipts/bulk-approve — Bulk approve receipts by list of IDs
+app.post('/api/admin/receipts/bulk-approve', async (req, res) => {
+  const { ids } = req.body || {};
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ status: false, error: 'Missing or invalid IDs list' });
+  }
+  try {
+    for (const id of ids) {
+      const receipts = await db.query('SELECT * FROM receipts WHERE id = ?', [id]);
+      if (receipts.length === 0) continue;
+      const rc = receipts[0];
+      
+      // If it is already approved, skip it
+      if (rc.status === 'Approved' || rc.status === 'approved' || rc.status === 'verified') continue;
+
+      // Mark the receipt as Approved in the database
+      await db.query('UPDATE receipts SET status = ? WHERE id = ?', ['Approved', id]);
+
+      const users = await db.query('SELECT email, full_name, balance, referred_by FROM users WHERE phone = ?', [rc.phone]);
+      const u = users[0];
+
+      // 1. Account Verification Flow
+      if (rc.type === 'verification' || rc.type === 'account_verification') {
+        await db.query('UPDATE users SET is_verified = 1, balance = balance + 35000 WHERE phone = ?', [rc.phone]);
+        
+        const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
+        await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, rc.phone]);
+
+        // Credit referral bonus to referrer
+        const referrerPhone = u ? u.referred_by : null;
+        if (referrerPhone) {
+          let referralBonus = 10000;
+          try {
+            const refSet = await db.query("SELECT value FROM system_settings WHERE key = 'referral_bonus'");
+            if (refSet && refSet.length > 0 && refSet[0].value) {
+              const parsed = typeof refSet[0].value === 'string' ? JSON.parse(refSet[0].value) : refSet[0].value;
+              if (parsed && parsed.amount !== undefined) {
+                referralBonus = parseFloat(parsed.amount);
+              }
+            }
+          } catch (e) {
+            console.error("Error loading referral_bonus setting:", e);
+          }
+
+          const referrerUser = await db.query('SELECT phone, full_name FROM users WHERE phone = ?', [referrerPhone]);
+          if (referrerUser && referrerUser.length > 0) {
+            await db.query('UPDATE users SET balance = balance + ? WHERE phone = ?', [referralBonus, referrerPhone]);
+
+            const refNotifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+            await db.query(`
+              INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+              VALUES (?, ?, 'alert', 'Referral Bonus Credited! 🎁', ?, ?, ?)
+            `, [refNotifId, referrerPhone, `You have been credited with ₦${referralBonus.toLocaleString()} because your referral ${u.full_name || 'User'} (${rc.phone}) completed verification.`, referralBonus.toString(), new Date().toISOString()]);
+          }
+        }
+
+        // Notification
+        const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+        await db.query(`
+          INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+          VALUES (?, ?, 'alert', 'Account Verified Successfully! ✅', ?, ?, ?)
+        `, [notifId, rc.phone, `Your account has been fully verified. Your account balance was credited with ₦35,000. Your unique payout key is: ${keyStr}.`, rc.amount ? rc.amount.toString() : '0', new Date().toISOString()]);
+
+        // Email
+        if (u && u.email && !u.email.endsWith('@9jacash.com')) {
+          const emailHtml = compileEmailTemplate(
+            "Account Verification Approved! ✅",
+            `<p>Hi ${u.full_name || 'User'},</p>
+             <p>Your account verification payment has been verified and approved.</p>
+             <p>Your account is now fully verified (blue badge unlocked) and we have credited ₦35,000 to your balance!</p>
+             <p>Use the unique payout key below to complete your withdrawals:</p>
+             <div style="background: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
+               <span style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #10b981; font-weight: 700; margin-bottom: 8px;">Your Unique Payout Key</span>
+               <span style="font-family: monospace; font-size: 24px; font-weight: 800; color: #059669; letter-spacing: 2px;">${keyStr}</span>
+             </div>`,
+            "Go to Dashboard",
+            `${getBaseUrl(req)}/dashboard.html`,
+            "#10b981"
+          );
+          try { await sendResendEmail(u.email, "Account Verification Approved — 9jaCash", emailHtml); } catch (e) { console.error("Email error:", e); }
+        }
+      }
+      
+      // 2. Payout Key Purchase Flow
+      else if (rc.type === 'payout' || rc.type === 'key' || rc.type === 'payout_key_purchase' || rc.type === 'payout_key') {
+        const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
+        await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, rc.phone]);
+
+        // Notification
+        const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+        await db.query(`
+          INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+          VALUES (?, ?, 'alert', 'Payout Key Approved 🔑', ?, ?, ?)
+        `, [notifId, rc.phone, `Your withdrawal payout key payment has been verified. Your unique payout key is: ${keyStr}.`, rc.amount ? rc.amount.toString() : '0', new Date().toISOString()]);
+
+        // Email
+        if (u && u.email && !u.email.endsWith('@9jacash.com')) {
+          const welcomeHtml = compileEmailTemplate(
+            "Your Withdrawal Payout Key is Approved! 🔓",
+            `<p>Hi ${u.full_name || 'User'},</p>
+             <p>Your payment for the withdrawal payout key has been verified and approved.</p>
+             <p>Use the unique payout key below on the authorization screen to complete your withdrawal:</p>
+             <div style="background: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
+               <span style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #10b981; font-weight: 700; margin-bottom: 8px;">Your Unique Payout Key</span>
+               <span style="font-family: monospace; font-size: 24px; font-weight: 800; color: #059669; letter-spacing: 2px;">${keyStr}</span>
+             </div>`,
+            "Complete Withdrawal",
+            `${getBaseUrl(req)}/dashboard.html`,
+            "#10b981"
+          );
+          try { await sendResendEmail(u.email, "Withdrawal Payout Key Ready — 9jaCash", welcomeHtml); } catch (e) { console.error("Email error:", e); }
+        }
+      }
+
+      // 3. Plan Upgrade Flow
+      else if (rc.type === 'upgrade') {
+        const plan = rc.plan_name || 'Basic Miner';
+        let power = 2;
+        if (plan.includes('Silver')) power = 5;
+        else if (plan.includes('Gold')) power = 10;
+        else if (plan.includes('Diamond')) power = 25;
+
+        await db.query('UPDATE users SET plan_name = ?, mining_power = ? WHERE phone = ?', [plan, power, rc.phone]);
+
+        // Notification
+        const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+        await db.query(`
+          INSERT INTO user_notifications (id, phone, type, title, content, created_at)
+          VALUES (?, ?, 'alert', 'Plan Upgrade Approved 🚀', ?, ?)
+        `, [notifId, rc.phone, `Your payment for the ${plan} upgrade has been approved. Your mining power is now ${power}x.`, new Date().toISOString()]);
+
+        // Email
+        if (u && u.email && !u.email.endsWith('@9jacash.com')) {
+          const welcomeHtml = compileEmailTemplate(
+            "Plan Upgrade Approved! 🚀",
+            `<p>Hi ${u.full_name || 'User'},</p>
+             <p>Your payment for the plan upgrade (${plan}) has been verified and approved.</p>
+             <p>Your mining power has been set to <strong>${power}x</strong>.</p>
+             <p>Go to your dashboard to start mining at this higher speed!</p>`,
+            "Go to Dashboard",
+            `${getBaseUrl(req)}/dashboard.html`,
+            "#4f46e5"
+          );
+          try { await sendResendEmail(u.email, "Plan Upgrade Approved — 9jaCash", welcomeHtml); } catch (e) { console.error("Email error:", e); }
+        }
+      }
+    }
+    res.json({ status: true, message: `${ids.length} receipts approved successfully` });
+  } catch (err) {
+    console.error('Error bulk approving receipts:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to bulk approve receipts' });
+  }
 });
+
 
 // DELETE /api/receipts/purge — Purge all old receipts to start fresh with new recordings
 app.delete('/api/receipts/purge', async (req, res) => {
