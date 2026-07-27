@@ -254,6 +254,38 @@ async function initDb() {
 
 
 
+    // Seed restored receipts from user's screenshot if database receipts table is empty
+    try {
+      const existing = await query("SELECT COUNT(*) AS cnt FROM receipts");
+      const currentCount = parseInt(existing && existing[0] ? (existing[0].cnt || existing[0].COUNT || existing[0]['COUNT(*)'] || 0) : 0);
+      if (currentCount === 0) {
+        console.log("🌱 Seeding restored receipts from screenshot...");
+        const seeds = [
+          { id: 'rc_seed_1', phone: '08032040543', name: 'FATIA MOTENIOLA OLAWALE', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 12:48:25 PM' },
+          { id: 'rc_seed_2', phone: '08104398181', name: 'JOSHUA EMMANUEL AYOMIDE', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 12:46:34 PM' },
+          { id: 'rc_seed_3', phone: '09040297203', name: 'BENJAMIN NWABUNWANNE CHIBUZOR', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 1:23:12 PM' },
+          { id: 'rc_seed_4', phone: '09025948934', name: 'BLESSING JOSEPH', type: 'key', plan: 'Standard Key', amount: 15500, date: '7/26/2026, 12:28:43 PM' },
+          { id: 'rc_seed_5', phone: '09025948934', name: 'BLESSING JOSEPH', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 12:22:54 PM' },
+          { id: 'rc_seed_6', phone: '07073350533', name: 'CHIWENDU ANGELINA IMUCHUKWU', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 12:16:02 PM' },
+          { id: 'rc_seed_7', phone: '08113151262', name: 'OLAMIPOSI OLAKUNLE ALAFIA', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 12:15:22 PM' },
+          { id: 'rc_seed_8', phone: '08113151262', name: 'OLAMIPOSI OLAKUNLE ALAFIA', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 12:07:51 PM' },
+          { id: 'rc_seed_9', phone: '07045248158', name: 'AKINBOBOLA CELESTINAH REBECCA', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 1:14:45 PM' },
+          { id: 'rc_seed_10', phone: '09011231389', name: 'CHIBUEZE GABRIEL AGWU', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 1:07:10 PM' },
+          { id: 'rc_seed_11', phone: '08127029385', name: 'SAMUEL DAMILARE OMOLAJA', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 10:04:35 PM' },
+          { id: 'rc_seed_12', phone: '09048026341', name: 'BLESISNG ABEL', type: 'key', plan: 'Basic Key', amount: 8550, date: '7/26/2026, 10:02:38 PM' }
+        ];
+        for (const s of seeds) {
+          await query(`
+            INSERT INTO receipts (id, phone, user_name, type, plan_name, amount, receipt_image, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'pending', ?)
+          `, [s.id, s.phone, s.name, s.type, s.plan, s.amount, s.date]);
+        }
+        console.log("🌱 Seeding complete!");
+      }
+    } catch(e) {
+      console.error("❌ Seeding error:", e);
+    }
+
     console.log('✅ Database schemas verified/initialized with defaults.');
   } catch (err) {
     console.error('❌ Database initialization failed:', err.message);
