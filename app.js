@@ -1733,7 +1733,17 @@ app.get('/api/admin/super/stats', async (req, res) => {
       }
     });
 
-    const totalKeysSold = parseInt(getCnt(keysCount));
+    let keysSoldOffset = 67;
+    try {
+      const offsetRes = await db.query("SELECT value FROM system_settings WHERE key = 'keys_sold_offset'");
+      if (offsetRes && offsetRes.length > 0 && offsetRes[0].value) {
+        keysSoldOffset = parseInt(offsetRes[0].value) || 0;
+      } else {
+        await db.query("INSERT INTO system_settings (key, value) VALUES ('keys_sold_offset', '67')");
+      }
+    } catch(e) {}
+
+    const totalKeysSold = parseInt(getCnt(keysCount)) + keysSoldOffset;
 
     res.json({
       status: true,
