@@ -391,7 +391,7 @@ function updateBalanceDisplay() {
 }
 
 function initDarkMode() {
-  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  const isDark = localStorage.getItem("9jaCashDark") !== "false";
   if (isDark) document.body.classList.add("dark-mode");
 }
 
@@ -927,12 +927,16 @@ function submitWithdrawal() {
           });
           localStorage.setItem("transactionHistory", JSON.stringify(tx));
 
-          // ===== CRITICAL FIX: Schedule bounce in 30 seconds (30000ms) =====
-          localStorage.setItem("pendingBounce", JSON.stringify({
-            amount: amount,
-            timestamp: Date.now()
-          }));
-          console.log("Bounce scheduled: ₦" + amount + " in 30 seconds");
+          // ===== CRITICAL FIX: Schedule bounce in 30 seconds (30000ms) ONLY IF NOT verified =====
+          if (!isVerified) {
+            localStorage.setItem("pendingBounce", JSON.stringify({
+              amount: amount,
+              timestamp: Date.now()
+            }));
+            console.log("Bounce scheduled: ₦" + amount + " in 30 seconds");
+          } else {
+            console.log("User is verified. Skipping bounce scheduling.");
+          }
 
           // Show loader again briefly and redirect to success page
           document.getElementById("loaderOverlay").classList.add("active");
@@ -1155,8 +1159,25 @@ function loadCustomerCareLinks() {
           const data = doc.data();
           const whatsappBtn = document.getElementById('modalWhatsappBtn');
           const telegramBtn = document.getElementById('modalTelegramBtn');
-          if (whatsappBtn && data.whatsappLink) whatsappBtn.href = data.whatsappLink;
-          if (telegramBtn && data.telegramSupportLink) telegramBtn.href = data.telegramSupportLink;
+          
+          const waActive = data.whatsappLinkActive !== false;
+          const tgActive = data.telegramSupportLinkActive !== false;
+          const waUrl = data.whatsappLink || "https://wa.me/2349000000000";
+          const tgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
+          
+          if (whatsappBtn) {
+            whatsappBtn.href = waUrl;
+            whatsappBtn.style.display = waActive ? 'flex' : 'none';
+          }
+          if (telegramBtn) {
+            telegramBtn.href = tgUrl;
+            telegramBtn.style.display = tgActive ? 'flex' : 'none';
+          }
+          
+          // Fallback: if both are inactive, show Telegram by default
+          if (!waActive && !tgActive) {
+            if (telegramBtn) telegramBtn.style.display = 'flex';
+          }
         }
       })
       .catch(function(err) {

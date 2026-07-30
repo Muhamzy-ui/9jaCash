@@ -3,3 +3,4 @@ node_modules/
 *.log
 database.sqlite
 database.sqlite-journal
+scratch/

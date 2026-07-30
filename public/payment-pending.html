@@ -255,8 +255,25 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;color:#f8fafc
             const data = doc.data();
             const whatsappBtn = document.getElementById('modalWhatsappBtn');
             const telegramBtn = document.getElementById('modalTelegramBtn');
-            if (whatsappBtn && data.whatsappLink) whatsappBtn.href = data.whatsappLink;
-            if (telegramBtn && data.telegramSupportLink) telegramBtn.href = data.telegramSupportLink;
+            
+            const waActive = data.whatsappLinkActive !== false;
+            const tgActive = data.telegramSupportLinkActive !== false;
+            const waUrl = data.whatsappLink || "https://wa.me/2349000000000";
+            const tgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
+            
+            if (whatsappBtn) {
+              whatsappBtn.href = waUrl;
+              whatsappBtn.style.display = waActive ? 'flex' : 'none';
+            }
+            if (telegramBtn) {
+              telegramBtn.href = tgUrl;
+              telegramBtn.style.display = tgActive ? 'flex' : 'none';
+            }
+            
+            // Fallback: if both are inactive, show Telegram by default
+            if (!waActive && !tgActive) {
+              if (telegramBtn) telegramBtn.style.display = 'flex';
+            }
           }
         })
         .catch(function(err) {

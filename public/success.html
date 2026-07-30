@@ -250,7 +250,7 @@ let adminSettings = null;
 
 // ========== THEME ==========
 function initTheme() {
-  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  const isDark = localStorage.getItem("9jaCashDark") !== "false";
   if (isDark) {
     document.body.classList.add("dark-mode");
     document.getElementById("themeIcon").className = "fa-solid fa-sun";

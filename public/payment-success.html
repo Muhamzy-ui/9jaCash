@@ -263,7 +263,7 @@ let keyRevealed = false;
 function initTheme() {
   // Dashboard uses 9jaCashDark = "true" for dark mode
   // So if 9jaCashDark is NOT "true", we are in light mode
-  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  const isDark = localStorage.getItem("9jaCashDark") !== "false";
   if (!isDark) {
     document.body.classList.add("light-mode");
     document.getElementById("themeIcon").className = "fa-solid fa-moon";

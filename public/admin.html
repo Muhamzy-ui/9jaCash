@@ -380,7 +380,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
   <div class="nav-item" onclick="switchTab('withdrawals',this); loadSuperWithdrawals();" title="Withdrawals"><i class="fa-solid fa-money-bill-transfer"></i><span class="badge" id="withdrawalsBadge" style="background:#10b981; display:none;">0</span></div>
   <div class="nav-item" onclick="switchTab('juniors',this)" title="Junior Admins"><i class="fa-solid fa-users-gear"></i></div>
   <div class="nav-item" onclick="switchTab('redirects',this)" title="Redirects"><i class="fa-solid fa-route"></i></div>
-  <div class="nav-item" onclick="switchTab('videos',this); loadAllVideoSubmissions();" title="Video Submissions"><i class="fa-solid fa-video"></i><span class="badge" id="videosBadge" style="background:#8b5cf6; display:none;">0</span></div>
+  <div class="nav-item" onclick="switchTab('videos',this); loadAllVideoSubmissions(); loadPromoVideos();" title="Videos Panel"><i class="fa-solid fa-video"></i><span class="badge" id="videosBadge" style="background:#8b5cf6; display:none;">0</span></div>
   <div class="nav-bottom">
     <div class="logout-btn" onclick="doLogout()" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></div>
   </div>
@@ -436,6 +436,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px;"><i class="fa-solid fa-vault"></i></div>
         <select id="depositTimeframeSelect" onchange="updateDepositTimeframeDisplay()" style="background: #1e293b; color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer; outline: none; font-family: inherit;">
           <option value="today" selected>Today</option>
+          <option value="yesterday">Yesterday</option>
           <option value="sevenDays">Past 7 Days</option>
           <option value="month">This Month</option>
           <option value="year">This Year</option>
@@ -454,8 +455,18 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
     </div>
 
     <!-- Total Keys Sold Card -->
-    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15); padding: 16px;">
-      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-key"></i></div>
+    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15); padding: 16px; position: relative;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px;"><i class="fa-solid fa-key"></i></div>
+        <select id="keysSoldTimeframeSelect" onchange="updateKeysSoldTimeframeDisplay()" style="background: #1e293b; color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer; outline: none; font-family: inherit;">
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="sevenDays">Past 7 Days</option>
+          <option value="month">This Month</option>
+          <option value="year">This Year</option>
+          <option value="total" selected>All Time</option>
+        </select>
+      </div>
       <div class="stat-num blue" id="statKeysSold" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">0</div>
       <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Total Payout Keys Sold</div>
     </div>
@@ -860,6 +871,16 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <label class="form-label">WhatsApp Support URL (Customer Care)</label>
       <input type="url" id="whatsappLink" class="form-input" placeholder="https://wa.me/2349000000000">
     </div>
+    <div class="form-row" style="margin-top:16px;">
+      <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#94a3b8; cursor:pointer;">
+        <input type="checkbox" id="telegramSupportLinkActive" style="width:16px; height:16px; cursor:pointer;" checked>
+        Activate Telegram Support Link
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#94a3b8; cursor:pointer;">
+        <input type="checkbox" id="whatsappLinkActive" style="width:16px; height:16px; cursor:pointer;" checked>
+        Activate WhatsApp Support Link
+      </label>
+    </div>
   </div>
 
   <div class="panel">
@@ -1248,6 +1269,20 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       </table>
     </div>
   </div>
+  
+  <!-- Onboarding Scroll Videos (matching Image 1 / TikTok scroll request) -->
+  <div class="panel" style="margin-top: 24px;">
+    <div class="panel-header">
+      <div class="panel-icon blue" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fa-solid fa-film"></i></div>
+      <div>
+        <div class="panel-title">Onboarding &amp; Login Scroll Videos</div>
+        <div class="panel-sub">Manage the 4 TikTok-style scroll videos on Login/Start screens (max 5 minutes)</div>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 12px 0;" id="promoVideosGrid">
+      <!-- Generated dynamically by loadPromoVideos() -->
+    </div>
+  </div>
 </div>
 
 <!-- SAVE ALL -->
@@ -1589,6 +1624,8 @@ async function loadData(){
     document.getElementById('telegramLink').value=pay.telegramLink||'';
     document.getElementById('telegramSupportLink').value=pay.telegramSupportLink||'';
     document.getElementById('whatsappLink').value=pay.whatsappLink||'';
+    document.getElementById('telegramSupportLinkActive').checked = pay.telegramSupportLinkActive !== false;
+    document.getElementById('whatsappLinkActive').checked = pay.whatsappLinkActive !== false;
     document.getElementById('accNumber').value=pay.accNumber||'';
     document.getElementById('bankName').value=pay.bank||'';
     document.getElementById('accName').value=pay.accName||'';
@@ -1699,6 +1736,8 @@ async function saveAll(){
     telegramLink:document.getElementById('telegramLink').value.trim(),
     telegramSupportLink:document.getElementById('telegramSupportLink').value.trim(),
     whatsappLink:document.getElementById('whatsappLink').value.trim(),
+    telegramSupportLinkActive:document.getElementById('telegramSupportLinkActive').checked,
+    whatsappLinkActive:document.getElementById('whatsappLinkActive').checked,
     accNumber:document.getElementById('accNumber').value.trim(),
     bank:document.getElementById('bankName').value.trim(),
     accName:document.getElementById('accName').value.trim(),
@@ -2168,7 +2207,7 @@ function loadSuperStats() {
         const verRev = data.verificationRevenue || 0;
         const upgradeRev = data.upgradeRevenue || 0;
 
-        renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold, today, sevenDays, month, year, keysRev, verRev, upgradeRev);
+        renderStatsOnPage(sqlUsers, sqlPending, sqlApprovedReceipts, sqlApprovedWithdrawals, sqlKeysSold, today, sevenDays, month, year, keysRev, verRev, upgradeRev, data);
       }
     })
     .catch(err => {
@@ -2176,10 +2215,21 @@ function loadSuperStats() {
     });
 }
 
-let depositsCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
-let keysCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
-let verCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
-let upgradeCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+let depositsCache = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+let keysCache = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+let verCache = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+let upgradeCache = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+let keysSoldCache = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+
+function updateKeysSoldTimeframeDisplay() {
+  const select = document.getElementById('keysSoldTimeframeSelect');
+  if (!select) return;
+  const val = select.value;
+  const display = document.getElementById('statKeysSold');
+  if (display) {
+    display.textContent = (keysSoldCache[val] || 0).toLocaleString();
+  }
+}
 
 function updateDepositTimeframeDisplay() {
   const select = document.getElementById('depositTimeframeSelect');
@@ -2208,7 +2258,7 @@ function updateDepositTimeframeDisplay() {
   }
 }
 
-function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 0, sevenDays = 0, month = 0, year = 0, keysRev = 0, verRev = 0, upgradeRev = 0) {
+function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 0, sevenDays = 0, month = 0, year = 0, keysRev = 0, verRev = 0, upgradeRev = 0, data = {}) {
   document.getElementById('statUsers').textContent = users;
   document.getElementById('usersBadge').textContent = users;
   document.getElementById('statPending').textContent = pending;
@@ -2219,6 +2269,7 @@ function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 
   }
   
   depositsCache.today = today;
+  depositsCache.yesterday = data.yesterday || 0;
   depositsCache.sevenDays = sevenDays;
   depositsCache.month = month;
   depositsCache.year = year;
@@ -2228,6 +2279,7 @@ function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 
     if (dataVal && typeof dataVal === 'object') {
       return {
         today: dataVal.today || 0,
+        yesterday: dataVal.yesterday || 0,
         sevenDays: dataVal.sevenDays || 0,
         month: dataVal.month || 0,
         year: dataVal.year || 0,
@@ -2235,17 +2287,18 @@ function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 
       };
     }
     const val = Number(dataVal) || 0;
-    return { today: val, sevenDays: val, month: val, year: val, total: val };
+    return { today: val, yesterday: val, sevenDays: val, month: val, year: val, total: val };
   }
 
   keysCache = normalizeCache(keysRev);
   verCache = normalizeCache(verRev);
   upgradeCache = normalizeCache(upgradeRev);
+  keysSoldCache = normalizeCache(data.keysSold || keys);
 
   updateDepositTimeframeDisplay();
+  updateKeysSoldTimeframeDisplay();
 
   document.getElementById('statApprovedWithdrawals').textContent = '₦' + withdrawals.toLocaleString();
-  document.getElementById('statKeysSold').textContent = keys;
 }
 
 function parseLocaleDate(dateStr) {
@@ -3114,6 +3167,127 @@ function deleteVideo(id) {
       });
     }
   });
+}
+
+function loadPromoVideos() {
+  const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+  fetch(API_URL + '/api/login-videos')
+    .then(res => res.json())
+    .then(data => {
+      if (data.status && data.videos) {
+        const grid = document.getElementById('promoVideosGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        data.videos.forEach(v => {
+          const card = document.createElement('div');
+          card.style.background = 'rgba(255,255,255,0.02)';
+          card.style.border = '1px solid rgba(255,255,255,0.05)';
+          card.style.padding = '16px';
+          card.style.borderRadius = '12px';
+          card.style.margin = '0';
+          card.innerHTML = `
+            <div style="font-weight: 800; font-size: 13px; color: var(--accent); margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
+              <span>Slide Video #${v.id}</span>
+              <span style="font-size: 10px; color: var(--text-muted);">Max 5 mins</span>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label class="form-label" style="font-size: 11px;">Direct Video URL</label>
+              <input type="text" id="promoVideoUrl_${v.id}" class="form-input" value="${v.video_url || ''}" style="padding: 8px 12px; font-size: 12px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label class="form-label" style="font-size: 11px;">Or Upload Video File</label>
+              <input type="file" id="promoVideoFile_${v.id}" accept="video/*" class="form-input" style="padding: 8px 12px; font-size: 12px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 10px;">Likes</label>
+                <input type="number" id="promoVideoLikes_${v.id}" class="form-input" value="${v.likes_count || 0}" style="padding: 8px 10px; font-size: 12px;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 10px;">Favorites</label>
+                <input type="number" id="promoVideoFavs_${v.id}" class="form-input" value="${v.favorites_count || 0}" style="padding: 8px 10px; font-size: 12px;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 10px;">Shares</label>
+                <input type="number" id="promoVideoShares_${v.id}" class="form-input" value="${v.shares_count || 0}" style="padding: 8px 10px; font-size: 12px;">
+              </div>
+            </div>
+
+            <button onclick="savePromoVideo(${v.id}, this)" class="save-btn" style="width: 100%; padding: 10px; font-size: 12px; background: var(--accent); color: #000; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <i class="fa-solid fa-floppy-disk"></i> Save Slide #${v.id}
+            </button>
+          `;
+          grid.appendChild(card);
+        });
+      }
+    })
+    .catch(err => console.error("Error loading promo videos:", err));
+}
+
+function savePromoVideo(id, btn) {
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+  const videoUrlInput = document.getElementById(`promoVideoUrl_${id}`);
+  const likesInput = document.getElementById(`promoVideoLikes_${id}`);
+  const favsInput = document.getElementById(`promoVideoFavs_${id}`);
+  const sharesInput = document.getElementById(`promoVideoShares_${id}`);
+  const fileInput = document.getElementById(`promoVideoFile_${id}`);
+
+  const payload = {
+    id: id,
+    videoUrl: videoUrlInput.value.trim(),
+    likes: parseInt(likesInput.value) || 0,
+    favorites: parseInt(favsInput.value) || 0,
+    shares: parseInt(sharesInput.value) || 0
+  };
+
+  const file = fileInput.files[0];
+  if (file) {
+    if (file.size > 100 * 1024 * 1024) {
+      alert("Video file is too large! Max limit is 100MB.");
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      payload.videoData = e.target.result;
+      sendUpdateReq(payload);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    sendUpdateReq(payload);
+  }
+
+  function sendUpdateReq(body) {
+    const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+    fetch(API_URL + '/api/admin/login-video/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(res => res.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+        if (data.status) {
+          alert(`Slide #${id} updated successfully!`);
+          loadPromoVideos();
+        } else {
+          alert(`Error: ${data.error}`);
+        }
+      })
+      .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+        alert("Network error saving video slide.");
+      });
+  }
 }
 </script>
 </body>

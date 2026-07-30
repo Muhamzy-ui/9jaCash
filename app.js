@@ -300,8 +300,8 @@ db.initDb();
 
 // Middlewares
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 const path = require('path');
 app.use(express.static(path.join(__dirname, 'public'), { 
   extensions: ['html'],
@@ -1670,21 +1670,12 @@ app.get('/api/admin/super/stats', async (req, res) => {
     
     // Fetch all approved receipts for time-window calculations
     const receipts = await db.query(`
-      SELECT amount, type, created_at FROM receipts 
+      SELECT amount, type, plan_name, created_at FROM receipts 
       WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success')
     `);
 
     const approvedWithdrawals = await db.query("SELECT SUM(amount) AS total FROM withdrawals WHERE LOWER(status) IN ('approved', 'completed', 'success')");
     
-    const keysCount = await db.query(`
-      SELECT COUNT(*) AS cnt FROM receipts 
-      WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success') 
-      AND (
-        type IN ('payout_key_purchase', 'payout', 'key', 'payoutKey', 'payout_key')
-        OR LOWER(plan_name) LIKE '%key%'
-      )
-    `);
-
     const getCnt = (arr) => (arr && arr[0]) ? (arr[0].cnt || arr[0]['cnt'] || arr[0]['COUNT(*)'] || 0) : 0;
     
     // Align timezone with WAT (UTC+1, Nigeria Time)
@@ -1695,14 +1686,17 @@ app.get('/api/admin/super/stats', async (req, res) => {
     const d = watTime.getUTCDate();
 
     const startOfToday = Date.UTC(y, m, d, 0, 0, 0) - 1 * 60 * 60 * 1000;
+    const startOfYesterday = startOfToday - (24 * 60 * 60 * 1000);
+    const endOfYesterday = startOfToday;
     const startOfSevenDays = startOfToday - (6 * 24 * 60 * 60 * 1000);
-    const startOfMonth = Date.UTC(y, m, 1, 0, 0, 0) - 1 * 60 * 60 * 1000;
-    const startOfYear = Date.UTC(y, 0, 1, 0, 0, 0) - 1 * 60 * 60 * 1000;
+    const startOf30Days = startOfToday - (29 * 24 * 60 * 60 * 1000);
+    const startOf1Year = startOfToday - (365 * 24 * 60 * 60 * 1000);
 
-    let today = 0, sevenDays = 0, month = 0, year = 0, total = 0;
-    let keysRevenue = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
-    let verificationRevenue = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
-    let upgradeRevenue = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+    let today = 0, yesterday = 0, sevenDays = 0, month = 0, year = 0, total = 0;
+    let keysRevenue = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+    let verificationRevenue = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+    let upgradeRevenue = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+    let keysSold = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
 
     (receipts || []).forEach(r => {
       let amt = parseFloat(r.amount);
@@ -1711,34 +1705,63 @@ app.get('/api/admin/super/stats', async (req, res) => {
       }
       total += amt;
       const rTime = safeParseDate(r.created_at).getTime();
-      if (rTime >= startOfToday) today += amt;
+
+      // Total Deposits Revenue timeframe mapping
+      if (rTime >= startOfToday) {
+        today += amt;
+      } else if (rTime >= startOfYesterday && rTime < endOfYesterday) {
+        yesterday += amt;
+      }
       if (rTime >= startOfSevenDays) sevenDays += amt;
-      if (rTime >= startOfMonth) month += amt;
-      if (rTime >= startOfYear) year += amt;
+      if (rTime >= startOf30Days) month += amt;
+      if (rTime >= startOf1Year) year += amt;
 
       const rType = (r.type || '').toLowerCase();
       const isVer = (rType === 'verification' || rType === 'account_verification');
-      const isKey = (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key' || rType === 'payoutkey');
+      const isKey = (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key' || rType === 'payoutkey') || (r.plan_name && r.plan_name.toLowerCase().includes('key'));
       const isUpgrade = (rType === 'upgrade');
 
       if (isVer) {
         verificationRevenue.total += amt;
-        if (rTime >= startOfToday) verificationRevenue.today += amt;
+        if (rTime >= startOfToday) {
+          verificationRevenue.today += amt;
+        } else if (rTime >= startOfYesterday && rTime < endOfYesterday) {
+          verificationRevenue.yesterday += amt;
+        }
         if (rTime >= startOfSevenDays) verificationRevenue.sevenDays += amt;
-        if (rTime >= startOfMonth) verificationRevenue.month += amt;
-        if (rTime >= startOfYear) verificationRevenue.year += amt;
+        if (rTime >= startOf30Days) verificationRevenue.month += amt;
+        if (rTime >= startOf1Year) verificationRevenue.year += amt;
       } else if (isKey) {
         keysRevenue.total += amt;
-        if (rTime >= startOfToday) keysRevenue.today += amt;
+        if (rTime >= startOfToday) {
+          keysRevenue.today += amt;
+        } else if (rTime >= startOfYesterday && rTime < endOfYesterday) {
+          keysRevenue.yesterday += amt;
+        }
         if (rTime >= startOfSevenDays) keysRevenue.sevenDays += amt;
-        if (rTime >= startOfMonth) keysRevenue.month += amt;
-        if (rTime >= startOfYear) keysRevenue.year += amt;
+        if (rTime >= startOf30Days) keysRevenue.month += amt;
+        if (rTime >= startOf1Year) keysRevenue.year += amt;
+
+        // Keys sold counters
+        keysSold.total += 1;
+        if (rTime >= startOfToday) {
+          keysSold.today += 1;
+        } else if (rTime >= startOfYesterday && rTime < endOfYesterday) {
+          keysSold.yesterday += 1;
+        }
+        if (rTime >= startOfSevenDays) keysSold.sevenDays += 1;
+        if (rTime >= startOf30Days) keysSold.month += 1;
+        if (rTime >= startOf1Year) keysSold.year += 1;
       } else if (isUpgrade) {
         upgradeRevenue.total += amt;
-        if (rTime >= startOfToday) upgradeRevenue.today += amt;
+        if (rTime >= startOfToday) {
+          upgradeRevenue.today += amt;
+        } else if (rTime >= startOfYesterday && rTime < endOfYesterday) {
+          upgradeRevenue.yesterday += amt;
+        }
         if (rTime >= startOfSevenDays) upgradeRevenue.sevenDays += amt;
-        if (rTime >= startOfMonth) upgradeRevenue.month += amt;
-        if (rTime >= startOfYear) upgradeRevenue.year += amt;
+        if (rTime >= startOf30Days) upgradeRevenue.month += amt;
+        if (rTime >= startOf1Year) upgradeRevenue.year += amt;
       }
     });
 
@@ -1752,7 +1775,25 @@ app.get('/api/admin/super/stats', async (req, res) => {
       }
     } catch(e) {}
 
-    const totalKeysSold = parseInt(getCnt(keysCount)) + keysSoldOffset;
+    keysSold.total += keysSoldOffset;
+
+    res.json({
+      status: true,
+      totalUsers: parseInt(getCnt(uCount)),
+      totalJuniors: parseInt(getCnt(jCount)),
+      totalPendingWithdrawals: parseInt(getCnt(wCount)),
+      approvedReceiptsAmount: total,
+      today,
+      yesterday,
+      sevenDays,
+      month,
+      year,
+      keysRevenue,
+      verificationRevenue,
+      upgradeRevenue,
+      approvedWithdrawalsAmount: (approvedWithdrawals && approvedWithdrawals[0] && parseFloat(approvedWithdrawals[0].total || 0)) || 0,
+      keysSold: keysSold
+    });
 
     res.json({
       status: true,
@@ -2112,7 +2153,8 @@ app.get('/api/user/get-payment-details', async (req, res) => {
 app.post('/api/admin/junior/update-payment-settings', async (req, res) => {
   const { 
     email, password, bankName, accountNumber, accountName, cryptoAddress, cryptoNetwork,
-    feeBankName, feeAccountNumber, feeAccountName, feeAmount, telegramLink, whatsappLink
+    feeBankName, feeAccountNumber, feeAccountName, feeAmount, telegramLink, whatsappLink,
+    telegramActive, whatsappActive
   } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ status: false, error: 'Email and password are required' });
@@ -2126,12 +2168,15 @@ app.post('/api/admin/junior/update-payment-settings', async (req, res) => {
       UPDATE junior_admins 
       SET bank_name = ?, account_number = ?, account_name = ?, crypto_address = ?, crypto_network = ?,
           fee_bank_name = ?, fee_account_number = ?, fee_account_name = ?, fee_amount = ?,
-          telegram_link = ?, whatsapp_link = ?
+          telegram_link = ?, whatsapp_link = ?,
+          telegram_active = ?, whatsapp_active = ?
       WHERE email = ?
     `, [
       bankName || null, accountNumber || null, accountName || null, cryptoAddress || null, cryptoNetwork || null,
       feeBankName || null, feeAccountNumber || null, feeAccountName || null, feeAmount !== undefined && feeAmount !== null ? parseFloat(feeAmount) : null,
       telegramLink || null, whatsappLink || null,
+      telegramActive !== undefined ? (telegramActive ? 1 : 0) : 1,
+      whatsappActive !== undefined ? (whatsappActive ? 1 : 0) : 1,
       email
     ]);
     const fresh = await db.query('SELECT * FROM junior_admins WHERE email = ?', [email]);
@@ -2203,6 +2248,91 @@ app.post('/api/user/update-plan-power', async (req, res) => {
   } catch (err) {
     console.error('Update plan power error:', err.message);
     res.status(500).json({ status: false, error: 'Failed to update plan power' });
+  }
+});
+
+// ─── PROMO LOGIN/SIGNUP VIDEOS (TIKTOK STYLE) ──────────────────────────────────
+app.get('/api/login-videos', async (req, res) => {
+  try {
+    const list = await db.query('SELECT * FROM login_videos ORDER BY id ASC');
+    res.json({ status: true, videos: list });
+  } catch (err) {
+    res.status(500).json({ status: false, error: err.message });
+  }
+});
+
+app.post('/api/login-video/:id/like', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('UPDATE login_videos SET likes_count = likes_count + 1 WHERE id = ?', [id]);
+    const updated = await db.query('SELECT likes_count FROM login_videos WHERE id = ?', [id]);
+    res.json({ status: true, likes: updated[0] ? updated[0].likes_count : 0 });
+  } catch (err) {
+    res.status(500).json({ status: false, error: err.message });
+  }
+});
+
+app.post('/api/admin/login-video/update', async (req, res) => {
+  const { id, videoUrl, videoData, likes, favorites, shares } = req.body || {};
+  if (!id) {
+    return res.status(400).json({ status: false, error: 'Video ID is required' });
+  }
+  try {
+    let finalUrl = videoUrl || '';
+    
+    // If base64 video data is provided, upload/save it
+    if (videoData && videoData.startsWith('data:video/')) {
+      const fs = require('fs');
+      const path = require('path');
+      const matches = videoData.match(/^data:(video\/\w+);base64,(.+)$/);
+      if (!matches) {
+        return res.status(400).json({ status: false, error: 'Invalid video file format.' });
+      }
+      const ext = matches[1].split('/')[1];
+      const base64Data = matches[2];
+      const buffer = Buffer.from(base64Data, 'base64');
+      
+      const uploadsDir = path.join(__dirname, 'public', 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      const uniqueName = `promo_video_${id}_${Date.now()}.${ext}`;
+      const filePath = path.join(uploadsDir, uniqueName);
+      fs.writeFileSync(filePath, buffer);
+      finalUrl = `/uploads/${uniqueName}`;
+    }
+    
+    // Update the DB entry
+    const updateFields = [];
+    const params = [];
+    
+    if (finalUrl) {
+      updateFields.push('video_url = ?');
+      params.push(finalUrl);
+    }
+    if (likes !== undefined && likes !== null) {
+      updateFields.push('likes_count = ?');
+      params.push(parseInt(likes) || 0);
+    }
+    if (favorites !== undefined && favorites !== null) {
+      updateFields.push('favorites_count = ?');
+      params.push(parseInt(favorites) || 0);
+    }
+    if (shares !== undefined && shares !== null) {
+      updateFields.push('shares_count = ?');
+      params.push(parseInt(shares) || 0);
+    }
+    
+    if (updateFields.length > 0) {
+      params.push(id);
+      await db.query(`UPDATE login_videos SET ${updateFields.join(', ')} WHERE id = ?`, params);
+    }
+    
+    const fresh = await db.query('SELECT * FROM login_videos WHERE id = ?', [id]);
+    res.json({ status: true, message: 'Promo video updated successfully', video: fresh[0] });
+  } catch (err) {
+    console.error('Update promo video error:', err.message);
+    res.status(500).json({ status: false, error: err.message });
   }
 });
 
@@ -2545,6 +2675,11 @@ app.get('/api/settings/:key', async (req, res) => {
       }
     }
 
+    if (key === 'payment') {
+      if (value.whatsappLinkActive === undefined) value.whatsappLinkActive = true;
+      if (value.telegramSupportLinkActive === undefined) value.telegramSupportLinkActive = true;
+    }
+
     // Override if user has a junior admin configured
     if (phone && (key === 'payment' || key === 'secondBilling')) {
       const users = await db.query('SELECT referred_by, junior_admin_code FROM users WHERE phone = ?', [phone]);
@@ -2561,8 +2696,10 @@ app.get('/api/settings/:key', async (req, res) => {
               if (ja.account_name) value.accName = ja.account_name;
               if (ja.crypto_address) value.cryptoAddress = ja.crypto_address;
               if (ja.crypto_network) value.cryptoNetwork = ja.crypto_network;
-              if (ja.whatsapp_link) value.whatsappLink = ja.whatsapp_link;
-              if (ja.telegram_link) value.telegramSupportLink = ja.telegram_link;
+              value.whatsappLink = ja.whatsapp_link || null;
+              value.whatsappLinkActive = ja.whatsapp_active !== undefined ? !!ja.whatsapp_active : true;
+              value.telegramSupportLink = ja.telegram_link || null;
+              value.telegramSupportLinkActive = ja.telegram_active !== undefined ? !!ja.telegram_active : true;
             } else if (key === 'secondBilling') {
               if (ja.fee_bank_name) value.bank = ja.fee_bank_name;
               if (ja.fee_account_number) value.accNumber = ja.fee_account_number;

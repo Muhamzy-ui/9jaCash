@@ -8,6 +8,7 @@
 
 
 <script src="firebase-init.js"></script>
+<script src="tiktok-player.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -496,14 +497,22 @@ body.dark-mode .mark-read-btn:hover {
 </div>
 <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
 
-<!-- LIVE WITHDRAWAL POPUP -->
-<div id="liveWithdrawalPopup" style="position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150px); z-index: 10000; display: flex; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; max-width: 90%; width: 280px; opacity: 0;">
-  <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 18px; border: 1px solid rgba(16, 185, 129, 0.3); flex-shrink: 0;">
-    <i class="fa-solid fa-circle-check"></i>
+<!-- LIVE WITHDRAWAL POPUP (PREMIUM CARD REDESIGN matching Image 3) -->
+<div id="liveWithdrawalPopup" style="position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150px); z-index: 10000; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; max-width: 92%; width: 320px; opacity: 0;">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <!-- Avatar with initial -->
+    <div id="liveWithdrawalAvatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #1d4ed8); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 16px; flex-shrink: 0; text-transform: uppercase;">
+      M
+    </div>
+    <div style="text-align: left;">
+      <div style="font-size: 14px; font-weight: 800; color: #f8fafc;" id="liveWithdrawalUser">Mustafa</div>
+      <div style="font-size: 12px; font-weight: 500; color: #94a3b8;" id="liveWithdrawalAction">just withdrew ₦30,000</div>
+    </div>
   </div>
-  <div>
-    <div style="font-size: 11px; font-weight: 500; color: #94a3b8; margin-bottom: 2px;">Recent Withdrawal</div>
-    <div style="font-size: 13px; font-weight: 800; color: #f8fafc;" id="liveWithdrawalText">Emeka withdrew ₦30,000</div>
+  <!-- Paid Badge -->
+  <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 50px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+    <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+    Paid
   </div>
 </div>
 
@@ -513,6 +522,15 @@ body.dark-mode .mark-read-btn:hover {
   <button class="nav-mid" onclick="startMining()"><i class="fa-solid fa-hammer"></i></button>
   <button class="nav-item" onclick="window.location.href='tasks.html'"><i class="fa-solid fa-list-check"></i>Tasks</button>
   <button class="nav-item" onclick="window.location.href='profile.html'"><i class="fa-solid fa-user"></i>Profile</button>
+</div>
+<!-- Floating Watch how it works Button -->
+<div id="floatingWatchBtn" class="fixed bottom-[90px] right-4 z-[99] hidden">
+  <button onclick="playOnboardingVideoFromDashboard()" style="background: linear-gradient(135deg,#0284c7,#0369a1); border: 2px solid #bae6fd; box-shadow: 0 4px 15px rgba(2,132,199,0.3); border-radius: 50px; padding: 10px 18px; display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.3s; font-family: inherit;" class="hover:scale-[1.05] active:scale-[0.95]">
+    <span style="width: 20px; height: 20px; border-radius: 50%; background: #fff; color: #0284c7; display: flex; align-items: center; justify-content: center;">
+      <i class="fa-solid fa-play" style="font-size: 8px; margin-left: 1px;"></i>
+    </span>
+    Watch how it works
+  </button>
 </div>
 
 <!-- VIDEO CHALLENGE MODAL -->
@@ -843,6 +861,13 @@ function checkPendingBounceOnLoad() {
   const stored = localStorage.getItem("pendingBounce");
   if (!stored) return;
   try {
+    const isUserVer = userData && (userData.is_verified === 1 || userData.is_verified === true || userData.is_verified === "1" || userData.isVerified === true);
+    if (isUserVer) {
+      console.log("User is verified. Disabling automatic bounce reversal.");
+      localStorage.removeItem("pendingBounce");
+      return;
+    }
+
     const data = JSON.parse(stored);
     const timestamp = data.timestamp || 0;
     const now = Date.now();
@@ -1572,6 +1597,7 @@ window.addEventListener("DOMContentLoaded", function() {
   document.getElementById("miningPower").textContent = (userData.miningPower || 1) + "x";
   updatePlanUI();
   initCheckin(); initClaim(); syncFromBackend(); checkDailyReset(); initTutorial(); initLiveWithdrawalPopups();
+  initWatchHowItWorks();
 
   // Auto trigger startMining if navigated with ?mine=true
   const urlParams = new URLSearchParams(window.location.search);
@@ -1683,7 +1709,24 @@ function initLiveWithdrawalPopups() {
     const randomName = names[Math.floor(Math.random() * names.length)];
     const randomK = Math.floor(Math.random() * (1000 - 50 + 1)) + 50;
     const randomAmount = "₦" + (randomK * 1000).toLocaleString("en-NG");
-    document.getElementById('liveWithdrawalText').textContent = `${randomName} successfully withdrew ${randomAmount}`;
+    
+    const userEl = document.getElementById('liveWithdrawalUser');
+    const actionEl = document.getElementById('liveWithdrawalAction');
+    const avatarEl = document.getElementById('liveWithdrawalAvatar');
+    
+    if (userEl) userEl.textContent = randomName;
+    if (actionEl) actionEl.textContent = `just withdrew ${randomAmount}`;
+    if (avatarEl) {
+      avatarEl.textContent = randomName.substring(0, 1).toUpperCase();
+      const gradients = [
+        'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+        'linear-gradient(135deg, #10b981, #047857)',
+        'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+        'linear-gradient(135deg, #ec4899, #be185d)',
+        'linear-gradient(135deg, #f59e0b, #b45309)'
+      ];
+      avatarEl.style.background = gradients[Math.floor(Math.random() * gradients.length)];
+    }
     
     // Slide in
     popup.style.transform = 'translate(-50%, 0)';
@@ -1701,6 +1744,35 @@ function initLiveWithdrawalPopups() {
 
   // Start the first popup after 10 seconds
   setTimeout(triggerPopup, 10000);
+}
+
+function initWatchHowItWorks() {
+  const hasWatched = localStorage.getItem("hasWatchedVideo") === "true";
+  const btn = document.getElementById("floatingWatchBtn");
+  if (!btn) return;
+  if (!hasWatched) {
+    btn.classList.remove("hidden");
+  }
+}
+
+function playOnboardingVideoFromDashboard() {
+  const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+  fetch(API_URL + '/api/login-videos')
+    .then(res => res.json())
+    .then(data => {
+      if (data.status && data.videos && data.videos.length > 0) {
+        showTikTokModal(data.videos, 0, function() {
+          localStorage.setItem("hasWatchedVideo", "true");
+          const btn = document.getElementById("floatingWatchBtn");
+          if (btn) btn.classList.add("hidden");
+        });
+      } else {
+        showToast('No promo videos uploaded yet.', 'error');
+      }
+    })
+    .catch(() => {
+      showToast('Error loading video player.', 'error');
+    });
 }
 
 function logoutUser() {
@@ -1790,8 +1862,25 @@ function loadCustomerCareLinks() {
           const data = doc.data();
           const whatsappBtn = document.getElementById('modalWhatsappBtn');
           const telegramBtn = document.getElementById('modalTelegramBtn');
-          if (whatsappBtn && data.whatsappLink) whatsappBtn.href = data.whatsappLink;
-          if (telegramBtn && data.telegramSupportLink) telegramBtn.href = data.telegramSupportLink;
+          
+          const waActive = data.whatsappLinkActive !== false;
+          const tgActive = data.telegramSupportLinkActive !== false;
+          const waUrl = data.whatsappLink || "https://wa.me/2349000000000";
+          const tgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
+          
+          if (whatsappBtn) {
+            whatsappBtn.href = waUrl;
+            whatsappBtn.style.display = waActive ? 'flex' : 'none';
+          }
+          if (telegramBtn) {
+            telegramBtn.href = tgUrl;
+            telegramBtn.style.display = tgActive ? 'flex' : 'none';
+          }
+          
+          // Fallback: if both are inactive, show Telegram by default
+          if (!waActive && !tgActive) {
+            if (telegramBtn) telegramBtn.style.display = 'flex';
+          }
         }
       })
       .catch(function(err) {

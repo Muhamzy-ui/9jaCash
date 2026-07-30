@@ -333,7 +333,7 @@ let totalWithdrawalAmount = 0;
 
 // ========== INIT DARK MODE ==========
 function initDarkMode() {
-  const isDark = localStorage.getItem("9jaCashDark") === "true";
+  const isDark = localStorage.getItem("9jaCashDark") !== "false";
   if (isDark) document.body.classList.add("dark-mode");
 }
 

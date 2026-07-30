@@ -206,6 +206,18 @@ async function initDb() {
       )
     `);
 
+    // 8. Login Videos Table
+    await query(`
+      CREATE TABLE IF NOT EXISTS login_videos (
+        id INTEGER PRIMARY KEY,
+        video_url TEXT,
+        likes_count INTEGER DEFAULT 255700,
+        favorites_count INTEGER DEFAULT 12000,
+        shares_count INTEGER DEFAULT 8500,
+        created_at TEXT
+      )
+    `);
+
     // Dynamic Alter Columns for backwards compatibility
     const alterStatements = [
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS junior_admin_code TEXT",
@@ -222,7 +234,9 @@ async function initDb() {
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS fee_account_name TEXT",
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS fee_amount NUMERIC",
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS telegram_link TEXT",
-      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS whatsapp_link TEXT"
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS whatsapp_link TEXT",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS telegram_active INTEGER DEFAULT 1",
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS whatsapp_active INTEGER DEFAULT 1"
     ];
     for (const stmt of alterStatements) {
       try { await query(stmt); } catch (e) {}
@@ -252,7 +266,29 @@ async function initDb() {
       } catch (e) {}
     }
 
-
+    // Seed default login videos if missing
+    try {
+      const existingVideos = await query('SELECT COUNT(*) AS cnt FROM login_videos');
+      const videoCount = parseInt(existingVideos && existingVideos[0] ? (existingVideos[0].cnt || existingVideos[0].COUNT || existingVideos[0]['COUNT(*)'] || 0) : 0);
+      if (videoCount === 0) {
+        console.log("🌱 Seeding default login videos...");
+        const defaultVideos = [
+          { id: 1, url: 'https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-flowers-against-the-sky-42861-large.mp4', likes: 255700, favorites: 12000, shares: 8500 },
+          { id: 2, url: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-42171-large.mp4', likes: 182400, favorites: 9800, shares: 6200 },
+          { id: 3, url: 'https://assets.mixkit.co/videos/preview/mixkit-motion-graphics-of-a-bitcoin-rotating-42188-large.mp4', likes: 310500, favorites: 15400, shares: 11000 },
+          { id: 4, url: 'https://assets.mixkit.co/videos/preview/mixkit-crypto-mining-concept-with-glowing-circuits-42217-large.mp4', likes: 220100, favorites: 10500, shares: 7400 }
+        ];
+        for (const v of defaultVideos) {
+          await query(`
+            INSERT INTO login_videos (id, video_url, likes_count, favorites_count, shares_count, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `, [v.id, v.url, v.likes, v.favorites, v.shares, new Date().toISOString()]);
+        }
+        console.log("🌱 Seeding default login videos complete!");
+      }
+    } catch (e) {
+      console.error("❌ Seeding login videos error:", e);
+    }
 
     // Seed restored receipts from user's screenshot if database receipts table is empty
     try {
