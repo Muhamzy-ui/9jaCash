@@ -357,20 +357,20 @@
 
   // Pool of comments for dynamic generation
   const NIGERIAN_NAMES = [
-    "chinedu_mine", "funmi_9ja", "tunde_cash", "alabi_investor", "ngozi_wealth",
-    "mustapha_wat", "joy_payout", "emeka_miner", "yetunde_gold", "ibrahim_kuda",
+    "chinedu_9ja", "funmi_9ja", "tunde_cash", "alabi_investor", "ngozi_wealth",
+    "mustapha_wat", "joy_payout", "emeka_earn", "yetunde_gold", "ibrahim_kuda",
     "bose_cashout", "chioma_vfd", "kelechi_opay", "abubakar_key", "bolanle_9ja",
-    "eze_invest", "favour_payout", "chike_mining", "solomon_rich", "amara_cash"
+    "eze_invest", "favour_payout", "chike_payout", "solomon_rich", "amara_cash"
   ];
 
   const NIGERIAN_COMMENTS = [
     "Legit platform! I just withdrew ₦50,000 yesterday, cash landed under 2 mins.",
-    "This Cloud Mining 2.0 is highly paying. Very fast key verification.",
+    "This 9jaCash is highly paying. Very fast key verification.",
     "Amina support is very active, helped me unlock my basic plan.",
     "9jaCash is working o! Make sure you link your account correctly.",
     "Who else is making money here? I started with ₦40,000, now on ₦160,000 return.",
     "I was skeptical before, but Christian admin verified my payout key and my money landed.",
-    "Finally, a mining app that pays instantly to Nigerian banks.",
+    "Finally, a payout platform that pays instantly to Nigerian banks.",
     "The dark mode is so clean! Love the UI experience.",
     "Fast payouts, linked my Access bank account and it verified automatically.",
     "If your withdrawal is pending, just buy the payout key and submit proof. Cash is guaranteed.",
@@ -378,7 +378,7 @@
     "No jokes, I have made over ₦120,000 this week from referral bonuses.",
     "Verified account is the key to unlimited withdrawals. Highly recommended.",
     "This platform is a lifesaver. Direct TRC20 secure network.",
-    "My streak is 7 days already, daily check-in is boosting my mining power.",
+    "My streak is 7 days already, daily check-in is boosting my payout status.",
     "Moniepoint payment receipt was approved in minutes. Very responsive.",
     "Kuda bank alert received! Thanks 9jaCash team.",
     "God bless the admins of this site, payment is smooth.",
@@ -617,7 +617,7 @@
           <!-- Video Details -->
           <div class="tt-info">
             <div class="tt-username">@9jaCash_Official <span>Official</span></div>
-            <div class="tt-desc">How to earn ₦50,000 daily with Cloud Mining 2.0 secure TRC20 network. Verified payouts and payout keys. 🚀💸 #9jaCash #LegitMining #MakeMoney</div>
+            <div class="tt-desc">${video.caption || "How to earn ₦50,000 daily with 9jaCash secure payment system. Verified payouts and payout keys. 🚀💸 #9jaCash #PayoutKey #MakeMoney"}</div>
             <div class="tt-music">
               <i class="fa-solid fa-compact-disc"></i> original sound - 9jaCash Testimonial
             </div>

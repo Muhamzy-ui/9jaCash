@@ -459,12 +459,12 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
         <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px;"><i class="fa-solid fa-key"></i></div>
         <select id="keysSoldTimeframeSelect" onchange="updateKeysSoldTimeframeDisplay()" style="background: #1e293b; color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer; outline: none; font-family: inherit;">
-          <option value="today">Today</option>
+          <option value="today" selected>Today</option>
           <option value="yesterday">Yesterday</option>
           <option value="sevenDays">Past 7 Days</option>
           <option value="month">This Month</option>
           <option value="year">This Year</option>
-          <option value="total" selected>All Time</option>
+          <option value="total">All Time</option>
         </select>
       </div>
       <div class="stat-num blue" id="statKeysSold" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">0</div>
@@ -3201,6 +3201,11 @@ function loadPromoVideos() {
               <input type="file" id="promoVideoFile_${v.id}" accept="video/*" class="form-input" style="padding: 8px 12px; font-size: 12px;">
             </div>
 
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label class="form-label" style="font-size: 11px;">Video Caption</label>
+              <textarea id="promoVideoCaption_${v.id}" class="form-input" style="padding: 8px 12px; font-size: 12px; height: 56px; resize: none; font-family: inherit;">${v.caption || ''}</textarea>
+            </div>
+
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
               <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label" style="font-size: 10px;">Likes</label>
@@ -3237,13 +3242,15 @@ function savePromoVideo(id, btn) {
   const favsInput = document.getElementById(`promoVideoFavs_${id}`);
   const sharesInput = document.getElementById(`promoVideoShares_${id}`);
   const fileInput = document.getElementById(`promoVideoFile_${id}`);
+  const captionInput = document.getElementById(`promoVideoCaption_${id}`);
 
   const payload = {
     id: id,
     videoUrl: videoUrlInput.value.trim(),
     likes: parseInt(likesInput.value) || 0,
     favorites: parseInt(favsInput.value) || 0,
-    shares: parseInt(sharesInput.value) || 0
+    shares: parseInt(sharesInput.value) || 0,
+    caption: captionInput ? captionInput.value.trim() : ""
   };
 
   const file = fileInput.files[0];

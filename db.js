@@ -236,7 +236,8 @@ async function initDb() {
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS telegram_link TEXT",
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS whatsapp_link TEXT",
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS telegram_active INTEGER DEFAULT 1",
-      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS whatsapp_active INTEGER DEFAULT 1"
+      "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS whatsapp_active INTEGER DEFAULT 1",
+      "ALTER TABLE login_videos ADD COLUMN IF NOT EXISTS caption TEXT"
     ];
     for (const stmt of alterStatements) {
       try { await query(stmt); } catch (e) {}
@@ -266,26 +267,29 @@ async function initDb() {
       } catch (e) {}
     }
 
-    // Seed default login videos if missing
+    // Seed or update default login videos
     try {
-      const existingVideos = await query('SELECT COUNT(*) AS cnt FROM login_videos');
-      const videoCount = parseInt(existingVideos && existingVideos[0] ? (existingVideos[0].cnt || existingVideos[0].COUNT || existingVideos[0]['COUNT(*)'] || 0) : 0);
-      if (videoCount === 0) {
-        console.log("🌱 Seeding default login videos...");
-        const defaultVideos = [
-          { id: 1, url: 'https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-flowers-against-the-sky-42861-large.mp4', likes: 255700, favorites: 12000, shares: 8500 },
-          { id: 2, url: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-42171-large.mp4', likes: 182400, favorites: 9800, shares: 6200 },
-          { id: 3, url: 'https://assets.mixkit.co/videos/preview/mixkit-motion-graphics-of-a-bitcoin-rotating-42188-large.mp4', likes: 310500, favorites: 15400, shares: 11000 },
-          { id: 4, url: 'https://assets.mixkit.co/videos/preview/mixkit-crypto-mining-concept-with-glowing-circuits-42217-large.mp4', likes: 220100, favorites: 10500, shares: 7400 }
-        ];
-        for (const v of defaultVideos) {
+      const defaultVideos = [
+        { id: 1, url: 'https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-flowers-against-the-sky-42861-large.mp4', likes: 355700, favorites: 12000, shares: 8500, caption: '9jaCash is paying out massive commissions daily! Withdraw securely to any verified Nigerian bank account. 🗝🚀 #9jaCash #PayoutKey #MakeMoney' },
+        { id: 2, url: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-42171-large.mp4', likes: 182400, favorites: 9800, shares: 6200, caption: 'How to buy payout keys and request balance release on 9jaCash. Fast, secured, and automated payments. 💸📈 #9jaCash #Verify #Naira' },
+        { id: 3, url: 'https://assets.mixkit.co/videos/preview/mixkit-motion-graphics-of-a-bitcoin-rotating-42188-large.mp4', likes: 210500, favorites: 15400, shares: 11000, caption: 'Fastest cash outs in Nigeria! Get your referral bonuses and earnings credited immediately. 🇳🇬💰 #9jaCash #ReferralBonus #Fintech' },
+        { id: 4, url: 'https://assets.mixkit.co/videos/preview/mixkit-crypto-mining-concept-with-glowing-circuits-42217-large.mp4', likes: 220100, favorites: 10500, shares: 7400, caption: 'Unlock your financial potential with 9jaCash. Request your payouts and get them instantly confirmed. 🎯🗝 #9jaCash #NairaEarners #SecurePayout' }
+      ];
+      for (const v of defaultVideos) {
+        const row = await query('SELECT id FROM login_videos WHERE id = ?', [v.id]);
+        if (!row || row.length === 0) {
           await query(`
-            INSERT INTO login_videos (id, video_url, likes_count, favorites_count, shares_count, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-          `, [v.id, v.url, v.likes, v.favorites, v.shares, new Date().toISOString()]);
+            INSERT INTO login_videos (id, video_url, likes_count, favorites_count, shares_count, caption, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `, [v.id, v.url, v.likes, v.favorites, v.shares, v.caption, new Date().toISOString()]);
+        } else {
+          // Force update to correct caption and likes if already seeded
+          await query(`
+            UPDATE login_videos SET likes_count = ?, caption = ? WHERE id = ?
+          `, [v.likes, v.caption, v.id]);
         }
-        console.log("🌱 Seeding default login videos complete!");
       }
+      console.log("🌱 Seed and update default login videos complete!");
     } catch (e) {
       console.error("❌ Seeding login videos error:", e);
     }

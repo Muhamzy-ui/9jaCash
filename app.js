@@ -2273,7 +2273,7 @@ app.post('/api/login-video/:id/like', async (req, res) => {
 });
 
 app.post('/api/admin/login-video/update', async (req, res) => {
-  const { id, videoUrl, videoData, likes, favorites, shares } = req.body || {};
+  const { id, videoUrl, videoData, likes, favorites, shares, caption } = req.body || {};
   if (!id) {
     return res.status(400).json({ status: false, error: 'Video ID is required' });
   }
@@ -2321,6 +2321,10 @@ app.post('/api/admin/login-video/update', async (req, res) => {
     if (shares !== undefined && shares !== null) {
       updateFields.push('shares_count = ?');
       params.push(parseInt(shares) || 0);
+    }
+    if (caption !== undefined && caption !== null) {
+      updateFields.push('caption = ?');
+      params.push(caption.toString());
     }
     
     if (updateFields.length > 0) {
