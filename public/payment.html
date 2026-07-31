@@ -334,7 +334,7 @@ body.light-mode .flow-badge{background:#f1f5f9;color:#64748b;border-color:#e2e8f
 <!-- Warnings section (matching Image 4) -->
 <div class="anim d5" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; text-align: left;">
   <div style="color: #fbbf24; font-size: 18px; flex-shrink: 0;"><i class="fa-solid fa-circle-info"></i></div>
-  <div style="font-size: 13px; color: #f59e0b; line-height: 1.5; font-weight: 500;">
+  <div style="font-size: 13px; color: #f59e0b; line-height: 1.5; font-weight: 500;" id="pendingWarningText">
     Transfer the exact amount above and upload your receipt below. You can only have one pending payout key 🗝 purchase at a time.
   </div>
 </div>
@@ -597,6 +597,15 @@ function updateAmountDisplay() {
     payHint.innerHTML = '<span>' + (paymentData.plan || "Payout Key") + '</span> • ' + limitText + ' withdrawals';
   } else {
     payHint.textContent = "Complete your payment to proceed";
+  }
+
+  const warningText = document.getElementById("pendingWarningText");
+  if (warningText) {
+    if (flowType === "upgrade") {
+      warningText.innerHTML = "Transfer the exact amount above and upload your receipt below. You can only have one pending account upgrade at a time.";
+    } else {
+      warningText.innerHTML = "Transfer the exact amount above and upload your receipt below. You can only have one pending payout key 🗝 purchase at a time.";
+    }
   }
 }
 

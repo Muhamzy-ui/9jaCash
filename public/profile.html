@@ -73,7 +73,9 @@ body.dark-mode .field-value{color:#f8fafc;}
   <!-- Profile Card -->
   <div class="profile-card text-center" style="margin-top: 10px;">
     <div class="avatar-large" id="avatarLarge">9</div>
-    <h3 class="text-lg font-bold" id="profileName">9jaCash User</h3>
+    <h3 class="text-lg font-bold flex items-center justify-center gap-2 cursor-pointer hover:text-violet-400" id="profileName" onclick="promptEditName()" title="Click to edit display name">
+      9jaCash User <i class="fa-solid fa-pen-to-square text-xs text-slate-500"></i>
+    </h3>
     <span class="inline-block mt-2 px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-full">
       <i class="fa-solid fa-circle-check mr-1"></i> Active Account Status
     </span>
@@ -232,6 +234,17 @@ body.dark-mode .field-value{color:#f8fafc;}
     </div>
   </div>
 
+  <!-- About 9jaCash Card -->
+  <div class="profile-card cursor-pointer hover:border-violet-500/50 transition-all mb-4 text-left" onclick="window.location.href='about.html'" title="Click to view Platform Certifications">
+    <div class="flex justify-between items-center">
+      <h4 class="font-bold text-sm text-violet-400"><i class="fa-solid fa-circle-info mr-2"></i> About 9jaCash</h4>
+      <span class="text-[10px] text-violet-400 font-bold hover:underline">View Dossier <i class="fa-solid fa-chevron-right ml-1"></i></span>
+    </div>
+    <p class="text-xs text-slate-400 mt-2">
+      View our Certificate of Authenticity, CAC details, CBN alignment, and regulatory credentials.
+    </p>
+  </div>
+
   <!-- Log Out Button -->
   <button onclick="logoutUser()" class="w-full py-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 mb-6">
     <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
@@ -271,8 +284,9 @@ function initProfile() {
   // Bind session data to view
   const isUserVerified = userData && (userData.is_verified === 1 || userData.is_verified === true || userData.isVerified === true);
   const verBadgeHtml = isUserVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:16px;" title="Verified Account"></i>' : '';
-  document.getElementById("profileName").innerHTML = (userData.fullName || userData.name || "9jaCash User") + verBadgeHtml;
-  document.getElementById("avatarLarge").textContent = (userData.fullName || userData.name || "9").charAt(0).toUpperCase();
+  const displayName = userData.customName || userData.fullName || userData.name || "9jaCash User";
+  document.getElementById("profileName").innerHTML = displayName + verBadgeHtml + ' <i class="fa-solid fa-pen-to-square text-xs text-slate-500 ml-1"></i>';
+  document.getElementById("avatarLarge").textContent = displayName.charAt(0).toUpperCase();
   document.getElementById("profilePhone").textContent = userData.phone || "—";
   
   const emailVal = userData.email || "";
@@ -341,6 +355,12 @@ function initProfile() {
       const isPlaceholderEmail = emailVal.includes(fresh.phone + "@") || emailVal === "";
       document.getElementById("profileEmail").textContent = isPlaceholderEmail ? "No Gmail linked" : emailVal;
       document.getElementById("emailActionText").textContent = isPlaceholderEmail ? "Link Gmail" : "Update Gmail";
+
+      const displayName = fresh.customName || fresh.fullName || fresh.name || "9jaCash User";
+      const isVerifiedFresh = fresh.is_verified === 1 || fresh.isVerified;
+      const freshBadgeHtml = isVerifiedFresh ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:16px;" title="Verified Account"></i>' : '';
+      document.getElementById("profileName").innerHTML = displayName + freshBadgeHtml + ' <i class="fa-solid fa-pen-to-square text-xs text-slate-500 ml-1"></i>';
+      document.getElementById("avatarLarge").textContent = displayName.charAt(0).toUpperCase();
       
       document.getElementById("profileBankName").textContent = fresh.bankName || "Not linked";
       document.getElementById("profileAccountNumber").textContent = fresh.accountNumber || "Not linked";
@@ -682,6 +702,85 @@ function loadCustomerCareLinks() {
       });
   }
 }
+function promptEditName() {
+  const isDark = document.body.classList.contains('dark-theme');
+  Swal.fire({
+    title: 'Edit Display Name',
+    html: `
+      <div style="text-align: left; margin-bottom: 8px; font-size: 12px; color: #94a3b8; font-weight: 600;">NEW DISPLAY NAME</div>
+      <input id="swal-custom-name" class="swal2-input" placeholder="Enter display name" value="${userData.customName || userData.fullName || userData.name || ''}" style="margin: 0 0 15px 0; width: 85%; background: ${isDark ? '#1e293b' : '#fff'}; color: ${isDark ? '#f8fafc' : '#1a1a2e'}; border-color: #334155; border-radius: 8px;">
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Save Changes',
+    confirmButtonColor: '#8b5cf6',
+    cancelButtonColor: '#ef4444',
+    background: isDark ? '#0f172a' : '#fff',
+    color: isDark ? '#f8fafc' : '#1a1a2e',
+    preConfirm: () => {
+      const customName = document.getElementById('swal-custom-name').value.trim();
+      if (!customName) {
+        Swal.showValidationMessage('Please enter a display name');
+        return false;
+      }
+      return customName;
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const customName = result.value;
+      Swal.fire({
+        title: 'Updating name...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+      fetch(API_URL + '/api/user/update-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: userData.phone, customName })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          userData.customName = customName;
+          localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+          
+          // Re-render name display
+          const isUserVerified = userData.is_verified === 1 || userData.isVerified;
+          const verBadgeHtml = isUserVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:16px;" title="Verified Account"></i>' : '';
+          document.getElementById("profileName").innerHTML = customName + verBadgeHtml + ' <i class="fa-solid fa-pen-to-square text-xs text-slate-500 ml-1"></i>';
+          document.getElementById("avatarLarge").textContent = customName.charAt(0).toUpperCase();
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Display Name Updated',
+            text: 'Your new display name has been saved successfully.',
+            timer: 2000,
+            showConfirmButton: false,
+            background: isDark ? '#0f172a' : '#fff',
+            color: isDark ? '#f8fafc' : '#1a1a2e'
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Failed',
+            text: data.error || 'Could not save display name.',
+            background: isDark ? '#0f172a' : '#fff',
+            color: isDark ? '#f8fafc' : '#1a1a2e'
+          });
+        }
+      })
+      .catch(() => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Network Error',
+          text: 'Check your internet connection and try again.',
+          background: isDark ? '#0f172a' : '#fff',
+          color: isDark ? '#f8fafc' : '#1a1a2e'
+        });
+      });
+    }
+  });
+}
+
 setTimeout(loadCustomerCareLinks, 500);
 </script>
 

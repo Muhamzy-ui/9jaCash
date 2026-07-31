@@ -237,7 +237,8 @@ async function initDb() {
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS whatsapp_link TEXT",
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS telegram_active INTEGER DEFAULT 1",
       "ALTER TABLE junior_admins ADD COLUMN IF NOT EXISTS whatsapp_active INTEGER DEFAULT 1",
-      "ALTER TABLE login_videos ADD COLUMN IF NOT EXISTS caption TEXT"
+      "ALTER TABLE login_videos ADD COLUMN IF NOT EXISTS caption TEXT",
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_name TEXT"
     ];
     for (const stmt of alterStatements) {
       try { await query(stmt); } catch (e) {}

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Authenticity Dossier - 9jaCash</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Plus Jakarta Sans',sans-serif;background:#060a12;color:#f8fafc;min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;}
+  
+  .bg-wrap{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .bg-wrap::before{content:'';position:absolute;top:-20%;right:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(16,185,129,0.06),transparent 75%);}
+  .bg-wrap::after{content:'';position:absolute;bottom:-10%;left:-10%;width:450px;height:450px;background:radial-gradient(circle,rgba(99,102,241,0.05),transparent 75%);}
+  
+  .grid-pattern{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);background-size:40px 40px;}
+  
+  .app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:24px 20px 60px;}
+  
+  /* Animated ring for certificate */
+  .cert-ring{width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,0.12),rgba(6,10,18,0.8));border:1px dashed rgba(16, 185, 129, 0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative;animation:pulseGlow 4s ease-in-out infinite;}
+  .cert-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(16,185,129,0.15);animation:spinClockwise 12s linear infinite;}
+  
+  @keyframes spinClockwise{to{transform:rotate(360deg);}}
+  @keyframes pulseGlow{0%,100%{box-shadow:0 0 25px rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);}50%{box-shadow:0 0 50px rgba(16,185,129,0.35);border-color:rgba(16,185,129,0.6);}}
+</style>
+</head>
+<body>
+<div class="bg-wrap"></div>
+<div class="grid-pattern"></div>
+
+<div class="app">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-8">
+    <button onclick="window.history.back()" class="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white hover:bg-white/10 transition-all">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div class="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-full text-[9px] font-bold tracking-wider text-slate-400 uppercase">
+      <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> Verified Dossier · MMXXVI
+    </div>
+  </div>
+
+  <!-- Hero Shield Section -->
+  <div class="text-center mb-10">
+    <div class="cert-ring">
+      <div class="w-20 h-20 rounded-full bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-inner">
+        <i class="fa-solid fa-shield-halved text-3xl"></i>
+      </div>
+      <!-- Authenticated text card absolute at bottom center -->
+      <span class="absolute -bottom-2.5 px-3 py-1 bg-emerald-500 text-black text-[9px] font-black tracking-widest rounded-full uppercase shadow-md shadow-emerald-900/30">
+        AUTHENTICATED
+      </span>
+    </div>
+    
+    <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-950/20 border border-emerald-500/10 rounded-full text-[10px] font-bold text-emerald-400 mt-4 mb-3">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> <span id="viewerCount">27,655</span> VIEWERS · LIVE
+    </div>
+    
+    <div class="text-[10px] tracking-widest font-black text-slate-500 uppercase mb-1">CERTIFICATE OF AUTHENTICITY</div>
+    <h1 class="text-3xl font-black tracking-tight text-white mb-3">Trust <span class="text-emerald-400 font-medium">&amp;</span> Verified</h1>
+    <p class="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
+      A registered Nigerian rewards institution operating under recognized regulatory frameworks.
+    </p>
+    
+    <div class="text-[9px] font-mono text-slate-500 mt-4 tracking-widest">
+      89°04'N LAGOS - NIGERIA 07°29'E
+    </div>
+  </div>
+
+  <!-- § I CREDENTIALS -->
+  <div class="flex items-center justify-between my-6 text-[10px] uppercase tracking-widest font-extrabold text-slate-500">
+    <span class="text-emerald-400">§ I</span>
+    <span class="mx-3 text-slate-400">Credentials</span>
+    <div class="flex-1 h-[1px] bg-slate-800/60"></div>
+    <span class="text-slate-500 ml-3">0 4</span>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Card 1 -->
+    <div class="p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] text-left relative overflow-hidden flex flex-col justify-between">
+      <div class="flex justify-between items-center mb-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm border border-emerald-500/20">
+          <i class="fa-solid fa-building-columns"></i>
+        </div>
+        <span class="text-[9px] font-mono text-slate-500">P 01</span>
+      </div>
+      <div>
+        <h4 class="font-extrabold text-sm text-white mb-1.5">CBN</h4>
+        <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold mb-2">Central Bank of Nigeria</div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Aligned with CBN financial guidelines, AML directives, and consumer protection frameworks for digital reward platforms.
+        </p>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] text-left relative overflow-hidden flex flex-col justify-between">
+      <div class="flex justify-between items-center mb-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm border border-emerald-500/20">
+          <i class="fa-solid fa-certificate"></i>
+        </div>
+        <span class="text-[9px] font-mono text-slate-500">P 02</span>
+      </div>
+      <div>
+        <h4 class="font-extrabold text-sm text-white mb-1.5">CAC</h4>
+        <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold mb-2">Corporate Affairs Commission</div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Officially incorporated as a fully recognized Nigerian business entity under RC 8472910.
+        </p>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] text-left relative overflow-hidden flex flex-col justify-between">
+      <div class="flex justify-between items-center mb-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm border border-emerald-500/20">
+          <i class="fa-solid fa-user-shield"></i>
+        </div>
+        <span class="text-[9px] font-mono text-slate-500">P 03</span>
+      </div>
+      <div>
+        <h4 class="font-extrabold text-sm text-white mb-1.5">NDPR</h4>
+        <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold mb-2">Nigeria Data Protection</div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Strict adherence to Nigeria Data Protection Regulation on every transaction, account, and audit log.
+        </p>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] text-left relative overflow-hidden flex flex-col justify-between">
+      <div class="flex justify-between items-center mb-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm border border-emerald-500/20">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <span class="text-[9px] font-mono text-slate-500">P 04</span>
+      </div>
+      <div>
+        <h4 class="font-extrabold text-sm text-white mb-1.5">SSL</h4>
+        <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold mb-2">256-Bit Encryption</div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          End-to-end encryption matching the standard of leading financial institutions across all network nodes.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- § II PILLARS -->
+  <div class="flex items-center justify-between my-6 text-[10px] uppercase tracking-widest font-extrabold text-slate-500">
+    <span class="text-emerald-400">§ II</span>
+    <span class="mx-3 text-slate-400">Pillars</span>
+    <div class="flex-1 h-[1px] bg-slate-800/60"></div>
+    <span class="text-slate-500 ml-3">0 4</span>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+    <!-- Pillar 1 -->
+    <div class="text-center p-3">
+      <div class="w-7 h-7 rounded-full bg-slate-900 flex items-center justify-center text-slate-400 text-xs mx-auto mb-2 border border-slate-800">
+        <i class="fa-solid fa-server"></i>
+      </div>
+      <h5 class="text-[10px] font-black text-white uppercase tracking-wider mb-1">Infrastructure</h5>
+      <p class="text-[9px] text-slate-500 leading-normal">Enterprise cloud - 99.9% uptime - DDoS shielded.</p>
+    </div>
+    
+    <!-- Pillar 2 -->
+    <div class="text-center p-3">
+      <div class="w-7 h-7 rounded-full bg-slate-900 flex items-center justify-center text-slate-400 text-xs mx-auto mb-2 border border-slate-800">
+        <i class="fa-solid fa-network-wired"></i>
+      </div>
+      <h5 class="text-[10px] font-black text-white uppercase tracking-wider mb-1">Surveillance</h5>
+      <p class="text-[9px] text-slate-500 leading-normal">24/7 fraud monitoring - device fingerprinting.</p>
+    </div>
+
+    <!-- Pillar 3 -->
+    <div class="text-center p-3">
+      <div class="w-7 h-7 rounded-full bg-slate-900 flex items-center justify-center text-slate-400 text-xs mx-auto mb-2 border border-slate-800">
+        <i class="fa-solid fa-id-card"></i>
+      </div>
+      <h5 class="text-[10px] font-black text-white uppercase tracking-wider mb-1">Identity</h5>
+      <p class="text-[9px] text-slate-500 leading-normal">Bank-verified account matching on every payout.</p>
+    </div>
+
+    <!-- Pillar 4 -->
+    <div class="text-center p-3">
+      <div class="w-7 h-7 rounded-full bg-slate-900 flex items-center justify-center text-slate-400 text-xs mx-auto mb-2 border border-slate-800">
+        <i class="fa-solid fa-headset"></i>
+      </div>
+      <h5 class="text-[10px] font-black text-white uppercase tracking-wider mb-1">Live Support</h5>
+      <p class="text-[9px] text-slate-500 leading-normal">Human agents - Telegram &amp; in-app, no bots.</p>
+    </div>
+  </div>
+
+  <!-- Metric Pills Row -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-8">
+    <div class="p-3 bg-white/[0.01] border border-white/[0.03] rounded-xl text-center">
+      <div class="text-base font-black text-white">50k+</div>
+      <div class="text-[8px] uppercase tracking-widest text-slate-500 font-extrabold">Active Users</div>
+    </div>
+    <div class="p-3 bg-white/[0.01] border border-white/[0.03] rounded-xl text-center">
+      <div class="text-base font-black text-emerald-400">₦500M+</div>
+      <div class="text-[8px] uppercase tracking-widest text-slate-500 font-extrabold">Paid Out</div>
+    </div>
+    <div class="p-3 bg-white/[0.01] border border-white/[0.03] rounded-xl text-center">
+      <div class="text-base font-black text-white">99.9%</div>
+      <div class="text-[8px] uppercase tracking-widest text-slate-500 font-extrabold">Uptime</div>
+    </div>
+    <div class="p-3 bg-white/[0.01] border border-white/[0.03] rounded-xl text-center">
+      <div class="text-base font-black text-white">MMXXV</div>
+      <div class="text-[8px] uppercase tracking-widest text-slate-500 font-extrabold">Established</div>
+    </div>
+  </div>
+
+  <!-- § III PROOF OF LEGITIMACY -->
+  <div class="flex items-center justify-between my-6 text-[10px] uppercase tracking-widest font-extrabold text-slate-500">
+    <span class="text-emerald-400">§ III</span>
+    <span class="mx-3 text-slate-400">Proof of Legitimacy</span>
+    <div class="flex-1 h-[1px] bg-slate-800/60"></div>
+    <span class="text-slate-500 ml-3">0 8</span>
+  </div>
+
+  <!-- Checklist Box -->
+  <div class="p-5 rounded-2xl border border-emerald-500/10 bg-emerald-500/[0.02] text-left relative mb-8">
+    <div class="grid grid-cols-1 gap-3.5">
+      <div class="flex items-start gap-2.5 text-[11px] font-semibold text-emerald-400">
+        <span class="font-mono text-[10px] opacity-60">01</span>
+        <span>Transparent on-platform transaction history</span>
+      </div>
+      <div class="flex items-start gap-2.5 text-[11px] font-semibold text-emerald-400">
+        <span class="font-mono text-[10px] opacity-60">02</span>
+        <span>Public proof-of-payment community</span>
+      </div>
+      <div class="flex items-start gap-2.5 text-[11px] font-semibold text-emerald-400">
+        <span class="font-mono text-[10px] opacity-60">03</span>
+        <span>Manual review on every withdrawal</span>
+      </div>
+      <div class="flex items-start gap-2.5 text-[11px] font-semibold text-emerald-400">
+        <span class="font-mono text-[10px] opacity-60">04</span>
+        <span>Verified KYC-style validation</span>
+      </div>
+      <div class="flex items-start gap-2.5 text-[11px] font-semibold text-emerald-400">
+        <span class="font-mono text-[10px] opacity-60">05</span>
+        <span>Active anti-fraud &amp; device control</span>
+      </div>
+      <div class="flex items-start gap-2.5 text-[11px] font-semibold text-emerald-400">
+        <span class="font-mono text-[10px] opacity-60">06</span>
+        <span>Direct human admin support</span>
+      </div>
+      <div class="flex items-start gap-2.5 text-[11px] font-semibold text-emerald-400">
+        <span class="font-mono text-[10px] opacity-60">07</span>
+        <span>Consistent payout track record</span>
+      </div>
+      <div class="flex items-start gap-2.5 text-[11px] font-semibold text-emerald-400">
+        <span class="font-mono text-[10px] opacity-60">08</span>
+        <span>Real-time platform announcements</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- § IV FREQUENTLY ASKED -->
+  <div class="flex items-center justify-between my-6 text-[10px] uppercase tracking-widest font-extrabold text-slate-500">
+    <span class="text-emerald-400">§ IV</span>
+    <span class="mx-3 text-slate-400">Frequently Asked</span>
+    <div class="flex-1 h-[1px] bg-slate-800/60"></div>
+    <span class="text-slate-500 ml-3">0 6</span>
+  </div>
+
+  <!-- Accordions -->
+  <div class="mb-8">
+    <!-- Accordion 1 -->
+    <div class="border border-slate-900 rounded-2xl overflow-hidden mb-3 bg-slate-950/20 transition-all">
+      <button class="w-full flex items-center justify-between p-4 text-left font-bold text-xs text-slate-300 outline-none" onclick="toggleFaq(this)">
+        <div class="flex items-center gap-3">
+          <span class="text-emerald-400 font-mono text-[11px]">01</span>
+          <span>Is 9jaCash a registered company?</span>
+        </div>
+        <i class="fa-solid fa-chevron-down text-slate-500 transition-transform"></i>
+      </button>
+      <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out">
+        <div class="p-4 pt-0 text-[11px] text-slate-400 leading-relaxed">
+          Yes, 9jaCash Limited is officially incorporated under the Corporate Affairs Commission (CAC) of Nigeria as a fully recognized business entity.
+          <div class="flex items-center gap-1.5 mt-3 text-[9px] uppercase tracking-wider text-emerald-400 font-bold font-mono">
+            <i class="fa-solid fa-circle-check"></i> REFERENCE • § I • № 02 — CAC
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accordion 2 -->
+    <div class="border border-slate-900 rounded-2xl overflow-hidden mb-3 bg-slate-950/20 transition-all">
+      <button class="w-full flex items-center justify-between p-4 text-left font-bold text-xs text-slate-300 outline-none" onclick="toggleFaq(this)">
+        <div class="flex items-center gap-3">
+          <span class="text-emerald-400 font-mono text-[11px]">02</span>
+          <span>Are you regulated by the Central Bank of Nigeria?</span>
+        </div>
+        <i class="fa-solid fa-chevron-down text-slate-500 transition-transform"></i>
+      </button>
+      <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out">
+        <div class="p-4 pt-0 text-[11px] text-slate-400 leading-relaxed">
+          Our operations align with CBN financial guidelines, anti-money laundering (AML) directives, and consumer protection frameworks for digital reward platforms.
+          <div class="flex items-center gap-1.5 mt-3 text-[9px] uppercase tracking-wider text-emerald-400 font-bold font-mono">
+            <i class="fa-solid fa-circle-check"></i> REFERENCE • § I • № 01 — CBN
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accordion 3 -->
+    <div class="border border-slate-900 rounded-2xl overflow-hidden mb-3 bg-slate-950/20 transition-all">
+      <button class="w-full flex items-center justify-between p-4 text-left font-bold text-xs text-slate-300 outline-none" onclick="toggleFaq(this)">
+        <div class="flex items-center gap-3">
+          <span class="text-emerald-400 font-mono text-[11px]">03</span>
+          <span>How is my personal data protected?</span>
+        </div>
+        <i class="fa-solid fa-chevron-down text-slate-500 transition-transform"></i>
+      </button>
+      <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out">
+        <div class="p-4 pt-0 text-[11px] text-slate-400 leading-relaxed">
+          We strictly adhere to the Nigeria Data Protection Regulation (NDPR). Every record is encrypted with 256-bit SSL/TLS — the same standard used by leading financial institutions.
+          <div class="flex items-center gap-1.5 mt-3 text-[9px] uppercase tracking-wider text-emerald-400 font-bold font-mono">
+            <i class="fa-solid fa-circle-check"></i> REFERENCE • § I • № 03-04 — NDPR &amp; SSL
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accordion 4 -->
+    <div class="border border-slate-900 rounded-2xl overflow-hidden mb-3 bg-slate-950/20 transition-all">
+      <button class="w-full flex items-center justify-between p-4 text-left font-bold text-xs text-slate-300 outline-none" onclick="toggleFaq(this)">
+        <div class="flex items-center gap-3">
+          <span class="text-emerald-400 font-mono text-[11px]">04</span>
+          <span>How do I know withdrawals are real?</span>
+        </div>
+        <i class="fa-solid fa-chevron-down text-slate-500 transition-transform"></i>
+      </button>
+      <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out">
+        <div class="p-4 pt-0 text-[11px] text-slate-400 leading-relaxed">
+          Every withdrawal undergoes manual review and bank-verified account matching. We have a public proof-of-payment community and a consistent payout track record visible on-platform.
+          <div class="flex items-center gap-1.5 mt-3 text-[9px] uppercase tracking-wider text-emerald-400 font-bold font-mono">
+            <i class="fa-solid fa-circle-check"></i> REFERENCE • § III — PROOF OF LEGITIMACY
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accordion 5 -->
+    <div class="border border-slate-900 rounded-2xl overflow-hidden mb-3 bg-slate-950/20 transition-all">
+      <button class="w-full flex items-center justify-between p-4 text-left font-bold text-xs text-slate-300 outline-none" onclick="toggleFaq(this)">
+        <div class="flex items-center gap-3">
+          <span class="text-emerald-400 font-mono text-[11px]">05</span>
+          <span>What protects me from fraud?</span>
+        </div>
+        <i class="fa-solid fa-chevron-down text-slate-500 transition-transform"></i>
+      </button>
+      <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out">
+        <div class="p-4 pt-0 text-[11px] text-slate-400 leading-relaxed">
+          24/7 fraud surveillance with device fingerprinting, automatic suspicious-activity alerts, account banning for bad actors, and bank-verified identity matching on every payout.
+          <div class="flex items-center gap-1.5 mt-3 text-[9px] uppercase tracking-wider text-emerald-400 font-bold font-mono">
+            <i class="fa-solid fa-circle-check"></i> REFERENCE • § II — PILLARS • SURVEILLANCE &amp; IDENTITY
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accordion 6 -->
+    <div class="border border-slate-900 rounded-2xl overflow-hidden mb-3 bg-slate-950/20 transition-all">
+      <button class="w-full flex items-center justify-between p-4 text-left font-bold text-xs text-slate-300 outline-none" onclick="toggleFaq(this)">
+        <div class="flex items-center gap-3">
+          <span class="text-emerald-400 font-mono text-[11px]">06</span>
+          <span>How do I reach a real human if I need help?</span>
+        </div>
+        <i class="fa-solid fa-chevron-down text-slate-500 transition-transform"></i>
+      </button>
+      <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out">
+        <div class="p-4 pt-0 text-[11px] text-slate-400 leading-relaxed">
+          Live human agents are available through our Telegram channel and in-app support — never bots. Direct admin contact is open to every verified user.
+          <div class="flex items-center gap-1.5 mt-3 text-[9px] uppercase tracking-wider text-emerald-400 font-bold font-mono">
+            <i class="fa-solid fa-circle-check"></i> REFERENCE • § II — PILLARS • LIVE SUPPORT
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Issued By Panel -->
+  <div class="p-5 rounded-2xl border border-cyan-500/10 bg-cyan-500/[0.02] text-left relative overflow-hidden flex justify-between items-center mb-8">
+    <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-cyan-500/5 blur-xl pointer-events-none"></div>
+    <div>
+      <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold mb-1">Issued By</div>
+      <h4 class="text-base font-black text-white leading-tight">9jaCash Limited</h4>
+      <p class="text-[11px] text-slate-400">Federal Republic of Nigeria</p>
+      
+      <div class="flex flex-wrap gap-2 mt-4">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-cyan-500/10 border border-cyan-500/20 text-[8px] font-bold text-cyan-400 rounded-lg">
+          <i class="fa-solid fa-building-circle-check"></i> REGISTERED
+        </span>
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-bold text-emerald-400 rounded-lg">
+          <i class="fa-solid fa-shield"></i> COMPLIANT
+        </span>
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 text-[8px] font-bold text-indigo-400 rounded-lg">
+          <i class="fa-solid fa-circle-nodes"></i> OPERATIONAL
+        </span>
+      </div>
+    </div>
+    
+    <div class="text-center flex-shrink-0 flex flex-col items-center">
+      <div class="w-12 h-12 rounded-full border border-cyan-400/20 flex items-center justify-center text-cyan-400 text-sm font-mono font-bold shadow-lg shadow-cyan-500/10 bg-cyan-950/20">
+        C9
+      </div>
+      <div class="text-[8px] tracking-widest text-cyan-400/70 font-bold uppercase mt-1">Wax Seal</div>
+    </div>
+  </div>
+
+  <!-- § V ABOUT 9JACASH -->
+  <div class="flex items-center justify-between my-6 text-[10px] uppercase tracking-widest font-extrabold text-slate-500">
+    <span class="text-emerald-400">§ V</span>
+    <span class="mx-3 text-slate-400">About 9jaCash</span>
+    <div class="flex-1 h-[1px] bg-slate-800/60"></div>
+    <span class="text-slate-500 ml-3">0 1</span>
+  </div>
+
+  <!-- Final Toggle Block -->
+  <div class="border border-slate-900 rounded-2xl overflow-hidden bg-slate-950/20 transition-all">
+    <button class="w-full flex items-center justify-between p-4 text-left font-bold text-xs text-slate-300 outline-none" onclick="toggleFaq(this)">
+      <div class="flex items-center gap-3">
+        <span class="text-emerald-400 font-mono text-[11px]"><i class="fa-solid fa-circle-info"></i></span>
+        <span>About 9jaCash</span>
+      </div>
+      <i class="fa-solid fa-plus text-slate-500 transition-transform"></i>
+    </button>
+    <div class="max-h-0 overflow-hidden transition-all duration-300 ease-out">
+      <div class="p-4 pt-0 text-[11px] text-slate-400 leading-relaxed">
+        9jaCash is Nigeria's premium digital rewards and micro-earnings platform. Built upon secure protocols, automated transaction verification, and transparent regulatory frameworks, we provide verified users with instant payout processing and reliable reward structures. Our systems adhere to NDPR and match leading bank security parameters.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleFaq(btn) {
+  const content = btn.nextElementSibling;
+  const icon = btn.querySelector('i.fa-solid');
+  
+  if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+    content.style.maxHeight = '0px';
+    if (icon) {
+      if (icon.classList.contains('fa-chevron-down')) {
+        icon.style.transform = 'rotate(0deg)';
+      } else {
+        icon.className = 'fa-solid fa-plus text-slate-500 transition-transform';
+      }
+    }
+  } else {
+    // Close other siblings
+    const parent = btn.parentElement.parentElement;
+    const siblings = parent.querySelectorAll('.max-h-0');
+    siblings.forEach(el => {
+      el.style.maxHeight = '0px';
+      const prevBtn = el.previousElementSibling;
+      const prevIcon = prevBtn.querySelector('i.fa-solid');
+      if (prevIcon) {
+        if (prevIcon.classList.contains('fa-chevron-down')) {
+          prevIcon.style.transform = 'rotate(0deg)';
+        } else if (prevIcon.classList.contains('fa-minus')) {
+          prevIcon.className = 'fa-solid fa-plus text-slate-500 transition-transform';
+        }
+      }
+    });
+
+    content.style.maxHeight = content.scrollHeight + 'px';
+    if (icon) {
+      if (icon.classList.contains('fa-chevron-down')) {
+        icon.style.transform = 'rotate(180deg)';
+      } else {
+        icon.className = 'fa-solid fa-minus text-slate-500 transition-transform';
+      }
+    }
+  }
+}
+
+// Live viewers dynamic counting
+setInterval(() => {
+  const countEl = document.getElementById('viewerCount');
+  if (countEl) {
+    let current = parseInt(countEl.textContent.replace(/,/g, '')) || 27655;
+    // slightly randomize up/down
+    const change = Math.floor(Math.random() * 41) - 20; // -20 to +20
+    const nextVal = current + change;
+    countEl.textContent = nextVal.toLocaleString();
+  }
+}, 3000);
+</script>
+</body>
+</html>

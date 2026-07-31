@@ -456,6 +456,19 @@ body.dark-mode .mark-read-btn:hover {
 <button class="cta-btn anim d4" id="checkinBtn" onclick="doCheckin()">
   <i class="fa-solid fa-calendar-check"></i> Check In Now
 </button>
+
+<!-- About 9jaCash link card -->
+<div class="card anim d4 p-4 mb-4 cursor-pointer hover:border-violet-500/50 transition-all flex items-center justify-between" onclick="window.location.href='about.html'" style="background: rgba(139, 92, 246, 0.03); border: 1px solid rgba(139, 92, 246, 0.12); margin-top: 12px; border-radius: 16px;">
+  <div class="flex items-center gap-3">
+    <div style="background: rgba(139, 92, 246, 0.08); color: #8b5cf6; font-size: 14px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px;"><i class="fa-solid fa-certificate"></i></div>
+    <div style="text-align: left;">
+      <div style="font-size: 13px; font-weight: 700; color: #fff;">Platform Authenticity Dossier</div>
+      <div style="font-size: 11px; color: #94a3b8;">CBN guidelines, CAC, and NDPR credentials</div>
+    </div>
+  </div>
+  <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+</div>
+
 <div class="stats-grid anim d5">
   <div class="stat-box">
     <div class="stat-icon" style="background:#ecfdf5;color:#10b981;"><i class="fa-solid fa-coins"></i></div>
@@ -1577,8 +1590,9 @@ window.addEventListener("DOMContentLoaded", function() {
   document.getElementById("greeting").textContent = greet + " 👋";
   const isUserVer = userData && (userData.is_verified === 1 || userData.is_verified === true || userData.isVerified === true);
   const verCheckmark = isUserVer ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:14px;" title="Verified Account"></i>' : '';
-  document.getElementById("userName").innerHTML = (userData.name || userData.fullName || "9jaCash User") + verCheckmark;
-  document.getElementById("userAvatar").textContent = (userData.name || userData.fullName || "9").charAt(0).toUpperCase();
+  const displayName = userData.customName || userData.name || userData.fullName || "9jaCash User";
+  document.getElementById("userName").innerHTML = displayName + verCheckmark;
+  document.getElementById("userAvatar").textContent = displayName.charAt(0).toUpperCase();
   document.getElementById("bankNameText").textContent = userData.bankName || "No bank linked";
   document.getElementById("bankMeta").textContent = maskNum(userData.accountNumber) + " | " + (userData.fullName || userData.name || "Unknown");
   
@@ -1687,7 +1701,10 @@ function syncFromBackend() {
 
       const verCheckmark = isUserVer ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:14px;" title="Verified Account"></i>' : '';
       const uNameEl = document.getElementById("userName");
-      if (uNameEl) uNameEl.innerHTML = (fresh.full_name || fresh.name || fresh.fullName || "9jaCash User") + verCheckmark;
+      const displayNameSync = fresh.customName || fresh.full_name || fresh.name || fresh.fullName || "9jaCash User";
+      if (uNameEl) uNameEl.innerHTML = displayNameSync + verCheckmark;
+      const uAvatarEl = document.getElementById("userAvatar");
+      if (uAvatarEl) uAvatarEl.textContent = displayNameSync.charAt(0).toUpperCase();
 
       checkAndShowVerifyButton();
     }

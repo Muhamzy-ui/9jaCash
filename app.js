@@ -2819,6 +2819,7 @@ app.post('/api/user/sync', async (req, res) => {
       full_name: u.full_name,
       fullName: u.full_name,
       name: u.full_name,
+      customName: u.custom_name || '',
       email: u.email,
       bankName: u.bank_name,
       accountNumber: u.account_number,
@@ -2872,6 +2873,7 @@ app.get('/api/user/details', async (req, res) => {
         phone: u.phone,
         fullName: u.full_name,
         name: u.full_name,
+        customName: u.custom_name || '',
         email: u.email,
         bankName: u.bank_name,
         accountNumber: u.account_number,
@@ -3623,6 +3625,26 @@ app.post('/api/user/update-payout-key', async (req, res) => {
     res.json({ status: true, message: 'Payout key updated' });
   } catch (err) {
     res.status(500).json({ status: false, error: err.message });
+  }
+});
+
+// POST /api/user/update-name — Allows user to update their custom display name
+app.post('/api/user/update-name', async (req, res) => {
+  const { phone, customName } = req.body || {};
+  if (!phone) {
+    return res.status(400).json({ status: false, error: 'Phone number is required.' });
+  }
+  try {
+    await db.query('UPDATE users SET custom_name = ? WHERE phone = ?', [customName || '', phone]);
+    const uRows = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+    let nameVal = customName || '';
+    if (uRows && uRows.length > 0) {
+      nameVal = uRows[0].custom_name || '';
+    }
+    return res.json({ status: true, customName: nameVal });
+  } catch (err) {
+    console.error('Error updating name:', err);
+    return res.status(500).json({ status: false, error: 'Failed to update name.' });
   }
 });
 
