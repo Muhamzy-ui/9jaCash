@@ -127,13 +127,78 @@ body.dark-mode .telegram-float{background:linear-gradient(135deg,#0088cc,#00a8e8
 .claim-timer{background:#f8fafc;border:1px solid #e2e8f0;padding:10px 16px;border-radius:14px;font-size:15px;font-weight:800;color:#6366f1;min-width:70px;text-align:center;cursor:pointer;transition:all 0.3s;}
 .claim-timer.ready{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,0.2);}
 .claim-timer.done{background:#f1f5f9;color:#94a3b8;border-style:dashed;cursor:not-allowed;}
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #f1f5f9;padding:10px 20px 24px;display:flex;justify-content:space-around;align-items:center;z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,0.04);transition:all 0.3s ease;}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:#94a3b8;text-decoration:none;font-size:10px;font-weight:600;transition:all 0.3s;border:none;background:none;cursor:pointer;}
-.nav-item i{font-size:20px;}
-.nav-item.active{color:#6366f1;}
-.nav-mid{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-top:-20px;box-shadow:0 4px 16px rgba(99,102,241,0.3);border:4px solid #f8fafc;transition:all 0.3s;}
-.nav-mid:active{transform:scale(0.95);}
-body.dark-mode .nav-mid{border-color:#0f172a;}
+.bottom-nav {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  height: 64px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 10000;
+  max-width: 448px;
+  margin: 0 auto;
+  padding: 0 6px;
+  border-radius: 40px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+  transition: all 0.3s ease;
+}
+body.dark-mode .bottom-nav {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+  cursor: pointer;
+  height: 48px;
+  min-width: 58px;
+  border-radius: 24px;
+}
+.nav-item i {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+.nav-item.active {
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+}
+body.dark-mode .nav-item.active {
+  color: #818cf8;
+  background: rgba(129, 140, 248, 0.08);
+}
+.nav-mid {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.nav-mid:active {
+  transform: scale(0.92);
+}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1e293b;color:#fff;padding:14px 24px;border-radius:16px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;z-index:200;transition:all 0.4s;box-shadow:0 10px 40px rgba(0,0,0,0.15);border:1px solid #334155;}
 .toast.show{transform:translateX(-50%) translateY(0);}
 .toast i{color:#10b981;}
@@ -412,9 +477,20 @@ body.dark-mode .mark-read-btn:hover {
   <div class="bank-info">
     <div class="bank-name" id="bankNameText">Loading...</div>
     <div class="bank-meta" id="bankMeta">**** **** | Loading...</div>
-  </div>
-  <button class="bank-edit" onclick="editBank()"><i class="fa-solid fa-pen"></i></button>
 </div>
+
+<!-- Referral Stats Grid Card matching Screenshot 2 -->
+<div class="stats-grid anim d3" style="grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; margin-top: 12px;" id="referralStatsArea">
+  <div class="stat-box" style="padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;">
+    <div style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fa-solid fa-user-group text-indigo-400"></i> Referrals</div>
+    <div class="stat-num" id="referralsCountText" style="font-size: 20px; font-weight: 800; color: var(--text-color, #fff);">0</div>
+  </div>
+  <div class="stat-box" style="padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;">
+    <div style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display:flex; align-items:center; justify-content:center; gap:4px;"><i class="fa-solid fa-sack-dollar text-emerald-400"></i> Earnings</div>
+    <div class="stat-num" id="referralEarningsText" style="font-size: 20px; font-weight: 800; color: #10b981;">₦0</div>
+  </div>
+</div>
+
 <!-- VERIFY BUTTON: ONLY shows after withdrawal has been bounced back and money returned -->
 <div class="verify-btn-wrap" id="verifyBankWrap">
   <button class="verify-btn" onclick="verifyBankLink()" id="verifyBankBtn">
@@ -483,22 +559,57 @@ body.dark-mode .mark-read-btn:hover {
     <div class="stat-num" id="streakCount" style="color:#f59e0b;">0</div><div class="stat-label">Streak</div>
   </div>
 </div>
-<div class="sec-title anim d5" id="referralTitle"><i class="fa-solid fa-share-nodes text-[#6366f1]"></i> Refer & Earn</div>
-<div class="card anim d5 mb-5 p-5 relative overflow-hidden" id="referralArea" style="background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(168,85,247,0.05)); border: 1px dashed rgba(99,102,241,0.3);">
-  <div class="flex items-center gap-3 mb-3">
-    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center text-white text-lg shadow-md shadow-indigo-100">
-      <i class="fa-solid fa-gift"></i>
-    </div>
-    <div>
-      <h4 class="font-bold text-[14px] leading-tight">Your Referral Link</h4>
-      <p class="text-[11px] text-[#64748b]">Share this link to earn rewards when users register!</p>
-    </div>
-  </div>
-  <div class="flex items-center gap-2 bg-[#f8fafc] dark:bg-[#0f172a] p-2.5 rounded-xl border border-[#e2e8f0] dark:border-[#334155]">
-    <input type="text" id="referralLinkInput" readonly class="flex-1 bg-transparent border-none outline-none text-xs font-bold font-mono text-[#6366f1]" style="min-width: 0;" />
-    <button onclick="copyReferralLink()" class="px-3 py-1.5 rounded-lg bg-[#6366f1] hover:bg-[#4f46e5] text-white text-[11px] font-bold transition-all flex items-center gap-1 flex-shrink-0">
-      <i class="fa-regular fa-copy"></i> Copy
+<div class="sec-title anim d5" id="referralTitle"><i class="fa-solid fa-share-nodes text-emerald-400"></i> Referral Program</div>
+<div class="card anim d5 mb-5 p-5 relative overflow-hidden" id="referralArea" style="background: var(--card-bg, #1e293b); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px;">
+  <!-- Title label inside card -->
+  <div style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; text-align: left;">Your Referral Link</div>
+  
+  <!-- Referral Link Box -->
+  <div class="flex items-center gap-2 bg-[#f8fafc] dark:bg-[#0f172a] p-3 rounded-xl border border-[#e2e8f0] dark:border-[#334155] mb-4">
+    <input type="text" id="referralLinkInput" readonly class="flex-1 bg-transparent border-none outline-none text-xs font-bold font-mono text-emerald-500" style="min-width: 0;" />
+    <button onclick="copyReferralLink()" style="background: none; border: none; color: #10b981; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;" class="hover:scale-110 transition-all" title="Copy Link">
+      <i class="fa-regular fa-copy"></i>
     </button>
+  </div>
+
+  <!-- Giant copy button with green-to-blue gradient -->
+  <button onclick="copyLinkCodeMessage()" class="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-all hover:opacity-90 active:scale-[0.98] mb-4 flex items-center justify-center gap-2" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); cursor: pointer;">
+    <i class="fa-regular fa-copy"></i> Copy Link, Code &amp; Message
+  </button>
+
+  <!-- Social media share bar -->
+  <div class="flex justify-between items-center text-[11px] text-slate-400 font-bold mb-3">
+    <span>Share with multiple friends 🚀</span>
+    <span onclick="shareMore()" class="text-emerald-400 cursor-pointer flex items-center gap-1 hover:underline"><i class="fa-solid fa-share-nodes"></i> More</span>
+  </div>
+
+  <!-- Social Icons row -->
+  <div class="flex justify-around items-center gap-2 pt-2">
+    <!-- Telegram -->
+    <a href="javascript:void(0)" onclick="shareTelegram()" class="flex flex-col items-center gap-1.5 text-center decoration-none" style="color: inherit;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: #0088cc; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; box-shadow: 0 4px 10px rgba(0,136,204,0.3);"><i class="fa-brands fa-telegram"></i></div>
+      <span style="font-size: 10px; font-weight: 700; color: #94a3b8;">Telegram</span>
+    </a>
+    <!-- WhatsApp -->
+    <a href="javascript:void(0)" onclick="shareWhatsapp()" class="flex flex-col items-center gap-1.5 text-center decoration-none" style="color: inherit;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; box-shadow: 0 4px 10px rgba(37,211,102,0.3);"><i class="fa-brands fa-whatsapp"></i></div>
+      <span style="font-size: 10px; font-weight: 700; color: #94a3b8;">WhatsApp</span>
+    </a>
+    <!-- Instagram -->
+    <a href="javascript:void(0)" onclick="shareInstagram()" class="flex flex-col items-center gap-1.5 text-center decoration-none" style="color: inherit;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; box-shadow: 0 4px 10px rgba(220,39,67,0.3);"><i class="fa-brands fa-instagram"></i></div>
+      <span style="font-size: 10px; font-weight: 700; color: #94a3b8;">Instagram</span>
+    </a>
+    <!-- LinkedIn -->
+    <a href="javascript:void(0)" onclick="shareLinkedin()" class="flex flex-col items-center gap-1.5 text-center decoration-none" style="color: inherit;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: #0077b5; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; box-shadow: 0 4px 10px rgba(0,119,181,0.3);"><i class="fa-brands fa-linkedin"></i></div>
+      <span style="font-size: 10px; font-weight: 700; color: #94a3b8;">LinkedIn</span>
+    </a>
+    <!-- TikTok -->
+    <a href="javascript:void(0)" onclick="shareTiktok()" class="flex flex-col items-center gap-1.5 text-center decoration-none" style="color: inherit;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: #000000; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"><i class="fa-brands fa-tiktok"></i></div>
+      <span style="font-size: 10px; font-weight: 700; color: #94a3b8;">TikTok</span>
+    </a>
   </div>
 </div>
 <div class="sec-title anim d5" id="activityTitle"><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</div>
@@ -530,10 +641,10 @@ body.dark-mode .mark-read-btn:hover {
 </div>
 
 <div class="bottom-nav">
-  <button class="nav-item active" onclick="setNav(this)"><i class="fa-solid fa-house"></i>Home</button>
+  <button class="nav-item active" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-house"></i>Home</button>
   <button class="nav-item" onclick="window.location.href='upgrade.html'"><i class="fa-solid fa-rocket"></i>Upgrade</button>
   <button class="nav-mid" onclick="startMining()"><i class="fa-solid fa-hammer"></i></button>
-  <button class="nav-item" onclick="window.location.href='tasks.html'"><i class="fa-solid fa-list-check"></i>Tasks</button>
+  <button class="nav-item" onclick="window.location.href='about.html'"><i class="fa-solid fa-circle-info"></i>About</button>
   <button class="nav-item" onclick="window.location.href='profile.html'"><i class="fa-solid fa-user"></i>Profile</button>
 </div>
 <!-- Floating Watch how it works Button -->
@@ -1608,6 +1719,18 @@ window.addEventListener("DOMContentLoaded", function() {
   
   updateBalance();
   document.getElementById("totalMined").textContent = "₦" + (userData.totalMined || 0).toLocaleString();
+
+  // Populate referrals count and earnings
+  const refCount = userData.referralsCount || 0;
+  const activeRefCount = userData.activeReferrals || 0;
+  const refEarnings = userData.referralEarnings || 0;
+  
+  const refCountEl = document.getElementById("referralsCountText");
+  if (refCountEl) refCountEl.textContent = refCount;
+  const refEarningsEl = document.getElementById("referralEarningsText");
+  if (refEarningsEl) refEarningsEl.textContent = "₦" + refEarnings.toLocaleString();
+  const activeRefEl = document.getElementById("activeReferralCountText");
+  if (activeRefEl) activeRefEl.textContent = activeRefCount;
   document.getElementById("miningPower").textContent = (userData.miningPower || 1) + "x";
   updatePlanUI();
   initCheckin(); initClaim(); syncFromBackend(); checkDailyReset(); initTutorial(); initLiveWithdrawalPopups();
@@ -1658,6 +1781,71 @@ function copyReferralLink() {
     });
 }
 
+function copyLinkCodeMessage() {
+  const input = document.getElementById("referralLinkInput");
+  if (!input) return;
+  const link = input.value;
+  const message = `Hey! I'm making money daily on 9jaCash. Register with my link and start earning ₦10,000 per referral: ${link}`;
+  navigator.clipboard.writeText(message)
+    .then(function() {
+      showToast("Link, Code & Message copied!");
+    })
+    .catch(function() {
+      showToast("Failed to copy message");
+    });
+}
+
+function shareTelegram() {
+  const input = document.getElementById("referralLinkInput");
+  if (!input) return;
+  const link = input.value;
+  const text = `Hey! I'm making money daily on 9jaCash. Register with my link and start earning ₦10,000 per referral:`;
+  const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
+function shareWhatsapp() {
+  const input = document.getElementById("referralLinkInput");
+  if (!input) return;
+  const link = input.value;
+  const text = `Hey! I'm making money daily on 9jaCash. Register with my link and start earning ₦10,000 per referral: ${link}`;
+  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
+function shareInstagram() {
+  copyReferralLink();
+  showToast("Link copied! Paste it in your Instagram Bio/Story.");
+}
+
+function shareLinkedin() {
+  const input = document.getElementById("referralLinkInput");
+  if (!input) return;
+  const link = input.value;
+  const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`;
+  window.open(url, '_blank');
+}
+
+function shareTiktok() {
+  copyReferralLink();
+  showToast("Link copied! Add it to your TikTok website link.");
+}
+
+function shareMore() {
+  const input = document.getElementById("referralLinkInput");
+  if (!input) return;
+  const link = input.value;
+  if (navigator.share) {
+    navigator.share({
+      title: '9jaCash Referral',
+      text: 'Join 9jaCash and earn ₦10,000 per referral!',
+      url: link
+    }).catch(() => {});
+  } else {
+    copyLinkCodeMessage();
+  }
+}
+
 // ========== BACKEND SQL DATA SYNC ==========
 function syncFromBackend() {
   if (!userData) return;
@@ -1693,6 +1881,13 @@ function syncFromBackend() {
       updateBalance();
       document.getElementById("totalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
       updatePlanUI();
+
+      const refCountEl = document.getElementById("referralsCountText");
+      if (refCountEl) refCountEl.textContent = fresh.referralsCount || 0;
+      const refEarningsEl = document.getElementById("referralEarningsText");
+      if (refEarningsEl) refEarningsEl.textContent = "₦" + (fresh.referralEarnings || 0).toLocaleString();
+      const activeRefEl = document.getElementById("activeReferralCountText");
+      if (activeRefEl) activeRefEl.textContent = fresh.activeReferrals || 0;
       
       const isUserVer = fresh.is_verified === 1 || fresh.is_verified === true || fresh.isVerified === true || fresh.is_verified === "1";
       if (isUserVer) {

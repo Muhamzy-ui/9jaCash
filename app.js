@@ -2814,6 +2814,12 @@ app.post('/api/user/sync', async (req, res) => {
     const wCountRes = await db.query('SELECT COUNT(*) as cnt FROM withdrawals WHERE phone = ?', [u.phone]);
     const wCount = parseInt((wCountRes && wCountRes[0] && (wCountRes[0].cnt || wCountRes[0]['cnt'] || wCountRes[0]['COUNT(*)'])) || 0);
 
+    const refCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ?', [u.phone]);
+    const refCount = parseInt((refCountRes && refCountRes[0] && (refCountRes[0].cnt || refCountRes[0]['COUNT(*)'])) || 0);
+    const activeRefCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ? AND is_verified = 1', [u.phone]);
+    const activeRefCount = parseInt((activeRefCountRes && activeRefCountRes[0] && (activeRefCountRes[0].cnt || activeRefCountRes[0]['COUNT(*)'])) || 0);
+    const referralEarnings = activeRefCount * 10000;
+
     const freshUser = {
       phone: u.phone,
       full_name: u.full_name,
@@ -2832,7 +2838,10 @@ app.post('/api/user/sync', async (req, res) => {
       payoutKey: u.payout_key || '',
       juniorAdminCode: u.junior_admin_code || '',
       referredBy: u.referred_by || '',
-      withdrawalCount: wCount
+      withdrawalCount: wCount,
+      referralsCount: refCount,
+      activeReferrals: activeRefCount,
+      referralEarnings: referralEarnings
     };
     res.json({ status: true, user: freshUser });
   } catch (err) {
@@ -2867,6 +2876,12 @@ app.get('/api/user/details', async (req, res) => {
     const wCountRes = await db.query('SELECT COUNT(*) as cnt FROM withdrawals WHERE phone = ?', [u.phone]);
     const wCount = parseInt((wCountRes && wCountRes[0] && (wCountRes[0].cnt || wCountRes[0]['cnt'] || wCountRes[0]['COUNT(*)'])) || 0);
 
+    const refCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ?', [u.phone]);
+    const refCount = parseInt((refCountRes && refCountRes[0] && (refCountRes[0].cnt || refCountRes[0]['COUNT(*)'])) || 0);
+    const activeRefCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ? AND is_verified = 1', [u.phone]);
+    const activeRefCount = parseInt((activeRefCountRes && activeRefCountRes[0] && (activeRefCountRes[0].cnt || activeRefCountRes[0]['COUNT(*)'])) || 0);
+    const referralEarnings = activeRefCount * 10000;
+
     res.json({
       status: true,
       user: {
@@ -2888,7 +2903,10 @@ app.get('/api/user/details', async (req, res) => {
         referredBy: u.referred_by || '',
         status: u.status || 'active',
         createdAt: u.created_at,
-        withdrawalCount: wCount
+        withdrawalCount: wCount,
+        referralsCount: refCount,
+        activeReferrals: activeRefCount,
+        referralEarnings: referralEarnings
       }
     });
   } catch (err) {

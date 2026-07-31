@@ -139,13 +139,78 @@ body.dark-mode .header-title{color:#f8fafc;}
 .toast.show{transform:translateX(-50%) translateY(0);}
 .toast i{color:#10b981;}
 
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #f1f5f9;padding:10px 20px 24px;display:flex;justify-content:space-around;align-items:center;z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,0.04);transition:all 0.3s ease;}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:#94a3b8;text-decoration:none;font-size:10px;font-weight:600;transition:all 0.3s;border:none;background:none;cursor:pointer;}
-.nav-item i{font-size:20px;}
-.nav-item.active{color:#6366f1;}
-.nav-mid{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-top:-20px;box-shadow:0 4px 16px rgba(99,102,241,0.3);border:4px solid #f8fafc;transition:all 0.3s;}
-.nav-mid:active{transform:scale(0.95);}
-body.dark-mode .nav-mid{border-color:#0f172a;}
+.bottom-nav {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  height: 64px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 10000;
+  max-width: 448px;
+  margin: 0 auto;
+  padding: 0 6px;
+  border-radius: 40px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+  transition: all 0.3s ease;
+}
+body.dark-mode .bottom-nav {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+  cursor: pointer;
+  height: 48px;
+  min-width: 58px;
+  border-radius: 24px;
+}
+.nav-item i {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+.nav-item.active {
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+}
+body.dark-mode .nav-item.active {
+  color: #818cf8;
+  background: rgba(129, 140, 248, 0.08);
+}
+.nav-mid {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.nav-mid:active {
+  transform: scale(0.92);
+}
 
 @keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 .anim{animation:slideUp 0.6s ease both;}
@@ -336,8 +401,8 @@ body.dark-mode .nav-mid{border-color:#0f172a;}
 <div class="bottom-nav">
   <button class="nav-item" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-house"></i>Home</button>
   <button class="nav-item active" onclick="window.location.href='upgrade.html'"><i class="fa-solid fa-rocket"></i>Upgrade</button>
-  <button class="nav-mid" onclick="window.location.href='dashboard.html?mine=true'"><i class="fa-solid fa-hammer"></i></button>
-  <button class="nav-item" onclick="window.location.href='tasks.html'"><i class="fa-solid fa-list-check"></i>Tasks</button>
+  <button class="nav-mid" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-hammer"></i></button>
+  <button class="nav-item" onclick="window.location.href='about.html'"><i class="fa-solid fa-circle-info"></i>About</button>
   <button class="nav-item" onclick="window.location.href='profile.html'"><i class="fa-solid fa-user"></i>Profile</button>
 </div>
 
