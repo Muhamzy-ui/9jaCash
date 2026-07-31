@@ -2814,6 +2814,25 @@ app.post('/api/user/sync', async (req, res) => {
     const wCountRes = await db.query('SELECT COUNT(*) as cnt FROM withdrawals WHERE phone = ?', [u.phone]);
     const wCount = parseInt((wCountRes && wCountRes[0] && (wCountRes[0].cnt || wCountRes[0]['cnt'] || wCountRes[0]['COUNT(*)'])) || 0);
 
+    // Fetch referrals statistics
+    const refCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ?', [u.phone]);
+    const referralsCount = parseInt((refCountRes && refCountRes[0] && (refCountRes[0].cnt || refCountRes[0]['cnt'] || refCountRes[0]['COUNT(*)'])) || 0);
+
+    const activeRefCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ? AND is_verified = 1', [u.phone]);
+    const activeReferralsCount = parseInt((activeRefCountRes && activeRefCountRes[0] && (activeRefCountRes[0].cnt || activeRefCountRes[0]['cnt'] || activeRefCountRes[0]['COUNT(*)'])) || 0);
+
+    let referralBonus = 10000;
+    try {
+      const refSet = await db.query("SELECT value FROM system_settings WHERE key = 'referral_bonus'");
+      if (refSet && refSet.length > 0) {
+        const parsed = JSON.parse(refSet[0].value);
+        referralBonus = parseFloat(parsed.amount || 10000);
+      }
+    } catch(e) {
+      console.error("Error fetching referral bonus in sync:", e);
+    }
+    const referralEarnings = activeReferralsCount * referralBonus;
+
     const freshUser = {
       phone: u.phone,
       full_name: u.full_name,
@@ -2832,7 +2851,10 @@ app.post('/api/user/sync', async (req, res) => {
       payoutKey: u.payout_key || '',
       juniorAdminCode: u.junior_admin_code || '',
       referredBy: u.referred_by || '',
-      withdrawalCount: wCount
+      withdrawalCount: wCount,
+      referralsCount: referralsCount,
+      activeReferralsCount: activeReferralsCount,
+      referralEarnings: referralEarnings
     };
     res.json({ status: true, user: freshUser });
   } catch (err) {

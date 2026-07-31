@@ -841,6 +841,123 @@
       background: #1e293b;
       border-color: #334155;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+     }
+
+    /* REDESIGNED TIMED SOCIAL POPUP */
+    .social-popup {
+      position: fixed;
+      bottom: 96px;
+      left: 16px;
+      right: 16px;
+      max-width: 448px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      z-index: 9999;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(120%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .social-popup.show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    body.dark-mode .social-popup {
+      background: #1e293b;
+      border-color: #334155;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+    .social-popup-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+    .social-popup-close:hover {
+      color: #ef4444;
+    }
+    .social-popup-content {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .social-popup-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .social-popup-icon.telegram {
+      background: linear-gradient(135deg, #0088cc, #229ed9);
+      box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
+    }
+    .social-popup-icon.whatsapp {
+      background: linear-gradient(135deg, #25d366, #128c7e);
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+    }
+    .social-popup-info {
+      flex: 1;
+      text-align: left;
+    }
+    .social-popup-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    body.dark-mode .social-popup-title {
+      color: #f8fafc;
+    }
+    .social-popup-desc {
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+    body.dark-mode .social-popup-desc {
+      color: #94a3b8;
+    }
+    .social-popup-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 50px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform 0.2s;
+    }
+    .social-popup-btn:active {
+      transform: scale(0.95);
+    }
+    .social-popup-btn.telegram {
+      background: linear-gradient(135deg, #0088cc, #25d366);
+      box-shadow: 0 4px 12px rgba(0, 136, 204, 0.25);
+    }
+    .social-popup-btn.whatsapp {
+      background: linear-gradient(135deg, #25d366, #0088cc);
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
     }
 
     .nav-item {
@@ -1693,6 +1810,31 @@
         <i class="fa-solid fa-list-check"></i><span>Tasks</span>
       </button>
     </div>
+
+    <!-- Referrals & Earnings metrics cards (Redesigned clone matching user request) -->
+    <div style="display: flex; gap: 12px; margin-top: 16px; margin-bottom: 8px;" class="anim d3">
+      <!-- Referrals Count Card -->
+      <div class="stat-box" style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; padding: 16px; border-radius: 18px; text-align: left;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(99, 102, 241, 0.08); color: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+            <i class="fa-solid fa-user-group"></i>
+          </div>
+          <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b; tracking-wider;">Referrals</span>
+        </div>
+        <div style="font-size: 24px; font-weight: 900; color: #1e293b;" class="text-white" id="referralsCountVal">0</div>
+      </div>
+      <!-- Referral Earnings Card -->
+      <div class="stat-box" style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; padding: 16px; border-radius: 18px; text-align: left;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(16, 185, 129, 0.08); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+          <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b; tracking-wider;">Earnings</span>
+        </div>
+        <div style="font-size: 24px; font-weight: 900; color: #10b981;" id="referralEarningsVal">₦0</div>
+      </div>
+    </div>
+
     <div class="linked-card anim d3" id="bankArea">
       <div class="bank-icon"><i class="fa-solid fa-building-columns"></i></div>
       <div class="bank-info">
@@ -1791,6 +1933,83 @@
         <div class="stat-label">Streak</div>
       </div>
     </div>
+
+    <div class="sec-title anim d5" id="referralTitle">
+      <i class="fa-solid fa-share-nodes text-[#10b981]"></i> Referral Program
+    </div>
+    <div class="card anim d5 mb-5 p-5 relative overflow-hidden" id="referralArea"
+      style="background: linear-gradient(135deg, rgba(16,185,129,0.03), rgba(99,102,241,0.03)); border: 1px solid rgba(16,185,129,0.15); border-radius: 20px;">
+      
+      <!-- Label -->
+      <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; tracking-wider; color: #94a3b8; margin-bottom: 8px;">
+        Your Referral Link
+      </div>
+
+      <!-- Input and Copy Icon Button -->
+      <div class="flex items-center gap-2 bg-[#f8fafc] dark:bg-[#0f172a] p-2.5 rounded-xl border border-[#e2e8f0] dark:border-[#334155] mb-4">
+        <input type="text" id="referralLinkInput" readonly
+          class="flex-1 bg-transparent border-none outline-none text-xs font-bold font-mono text-[#10b981] dark:text-[#34d399]"
+          style="min-width: 0;" />
+        <button onclick="copyReferralLink()"
+          style="background: linear-gradient(135deg, #10b981, #34d399); border: none; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; transition: transform 0.2s;"
+          class="hover:scale-105 active:scale-95">
+          <i class="fa-regular fa-copy" style="font-size: 16px;"></i>
+        </button>
+      </div>
+
+      <!-- Copy Link, Code & Message Large Button -->
+      <button onclick="copyReferralMessage()"
+        style="width: 100%; padding: 14px; border-radius: 50px; background: linear-gradient(135deg, #10b981, #3b82f6); border: none; color: white; font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(16,185,129,0.2);"
+        class="hover:scale-[1.02] active:scale-[0.98] mb-4">
+        <i class="fa-solid fa-copy"></i> Copy Link, Code & Message
+      </button>
+
+      <!-- Sub-label -->
+      <p style="font-size: 11px; color: #94a3b8; text-align: center; font-weight: 600; margin-bottom: 14px;">
+        Share with multiple friends 🚀
+      </p>
+
+      <!-- Social Icons Grid -->
+      <div style="display: flex; justify-content: space-around; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <!-- Telegram -->
+        <a id="shareTelegram" href="#" target="_blank" style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; cursor: pointer; min-width: 54px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #0088cc; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 4px 10px rgba(0,136,204,0.3);">
+            <i class="fa-brands fa-telegram"></i>
+          </div>
+          <span style="font-size: 9px; font-weight: 700; color: #64748b; dark:color: #94a3b8;">Telegram</span>
+        </a>
+        <!-- WhatsApp -->
+        <a id="shareWhatsApp" href="#" target="_blank" style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; cursor: pointer; min-width: 54px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 4px 10px rgba(37,211,102,0.3);">
+            <i class="fa-brands fa-whatsapp"></i>
+          </div>
+          <span style="font-size: 9px; font-weight: 700; color: #64748b; dark:color: #94a3b8;">WhatsApp</span>
+        </a>
+        <!-- Instagram -->
+        <a id="shareInstagram" href="#" target="_blank" style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; cursor: pointer; min-width: 54px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 4px 10px rgba(220,39,67,0.3);">
+            <i class="fa-brands fa-instagram"></i>
+          </div>
+          <span style="font-size: 9px; font-weight: 700; color: #64748b; dark:color: #94a3b8;">Instagram</span>
+        </a>
+        <!-- LinkedIn -->
+        <a id="shareLinkedIn" href="#" target="_blank" style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; cursor: pointer; min-width: 54px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #0077b5; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 4px 10px rgba(0,119,181,0.3);">
+            <i class="fa-brands fa-linkedin-in"></i>
+          </div>
+          <span style="font-size: 9px; font-weight: 700; color: #64748b; dark:color: #94a3b8;">LinkedIn</span>
+        </a>
+        <!-- TikTok -->
+        <a id="shareTikTok" href="#" target="_blank" style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; cursor: pointer; min-width: 54px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #000000; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15);">
+            <i class="fa-brands fa-tiktok"></i>
+          </div>
+          <span style="font-size: 9px; font-weight: 700; color: #64748b; dark:color: #94a3b8;">TikTok</span>
+        </a>
+      </div>
+
+    </div>
+
     <div class="sec-title anim d5"><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</div>
     <div class="activity-list anim d5" id="activityList">
       <div class="activity-item" style="justify-content:center;padding:20px 0;">
@@ -1798,6 +2017,23 @@
       </div>
     </div>
   </div>
+  <!-- TIMED SOCIAL JOIN POPUP -->
+  <div id="socialJoinPopup" class="social-popup">
+    <button class="social-popup-close" onclick="dismissSocialPopup()"><i class="fa-solid fa-xmark"></i></button>
+    <div class="social-popup-content">
+      <div class="social-popup-icon" id="socialPopupIcon">
+        <i class="fa-brands fa-telegram"></i>
+      </div>
+      <div class="social-popup-info">
+        <h5 class="social-popup-title" id="socialPopupTitle">📢 Join Our Telegram Channel</h5>
+        <p class="social-popup-desc">Get exclusive updates, tips & bonus alerts. Don't miss out! 🚀</p>
+        <a href="#" target="_blank" class="social-popup-btn" id="socialPopupBtn">
+          <i class="fa-brands fa-telegram"></i> Join Now
+        </a>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
   <div class="bottom-nav">
     <button class="nav-item active" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-house"></i>Home</button>
@@ -2572,6 +2808,7 @@
     // ========== INIT ==========
     window.addEventListener("DOMContentLoaded", function () {
       initFirebase(); initDarkMode(); loadTelegramConfig(); initNotifySystem();
+      initSocialPopup();
       const hour = new Date().getHours();
       let greet = "Good evening";
       if (hour < 12) greet = "Good morning"; else if (hour < 17) greet = "Good afternoon";
@@ -2589,24 +2826,9 @@
       updateBalance();
       document.getElementById("totalMined").textContent = "₦" + (userData.totalMined || 0).toLocaleString();
       document.getElementById("miningPower").textContent = (userData.miningPower || 1) + "x";
-      initCheckin(); initClaim(); loadActivity(); checkDailyReset(); initTutorial();
-      initWatchHowItWorks();
-
-      if (db && userData && userData.phone) {
-        db.collection("users").doc(userData.phone).get()
-          .then(function (doc) {
-            if (doc.exists) {
-              const fresh = doc.data();
-              userData = fresh;
-              localStorage.setItem("9jaCashUser", JSON.stringify(userData));
-              balance = fresh.balance || balance;
-              updateBalance();
-              document.getElementById("totalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
-              loadActivity();
-            }
-          })
-          .catch(function (err) { });
-      }
+      initCheckin(); initClaim(); loadActivity(); checkDailyReset(); initTutorial(); initWatchHowItWorks();
+      syncFromBackend();
+      updateReferralsUI();
     });
 
     function runResumeChecks() {
@@ -2627,6 +2849,150 @@
       }
     });
     window.addEventListener("pageshow", runResumeChecks);
+
+    // ========== REFERRAL REDESIGN HELPERS & BACKEND SYNC ==========
+    function copyReferralLink() {
+      const input = document.getElementById("referralLinkInput");
+      if (!input) return;
+      input.select();
+      input.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(input.value)
+        .then(function () {
+          showToast("Referral link copied!");
+        })
+        .catch(function () {
+          showToast("Failed to copy link");
+        });
+    }
+
+    function copyReferralMessage() {
+      const refLink = window.location.origin + "/start.html?ref=" + (userData.phone || "");
+      const msg = `Hey! I'm making solid daily income on 9jaCash, Nigeria's premier rewards platform! 🇳🇬 Join using my link and start earning: ${refLink}`;
+      
+      navigator.clipboard.writeText(msg)
+        .then(function() {
+          showToast("Invite link & message copied! 🚀");
+        })
+        .catch(function() {
+          const tempInput = document.createElement("input");
+          tempInput.value = msg;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand("copy");
+          document.body.removeChild(tempInput);
+          showToast("Invite link & message copied! 🚀");
+        });
+    }
+
+    function initReferralSharing(refLink) {
+      const text = encodeURIComponent("Hey! I'm making solid daily income on 9jaCash, Nigeria's premier rewards platform! 🇳🇬 Join using my link and start earning: ");
+      const link = encodeURIComponent(refLink);
+      
+      const tg = document.getElementById("shareTelegram");
+      if (tg) tg.href = `https://t.me/share/url?url=${link}&text=${text}`;
+      
+      const wa = document.getElementById("shareWhatsApp");
+      if (wa) wa.href = `https://api.whatsapp.com/send?text=${text}%20${link}`;
+      
+      const li = document.getElementById("shareLinkedIn");
+      if (li) li.href = `https://www.linkedin.com/sharing/share-offsite/?url=${link}`;
+      
+      const ig = document.getElementById("shareInstagram");
+      if (ig) {
+        ig.removeAttribute("target");
+        ig.href = "javascript:void(0)";
+        ig.onclick = copyReferralMessage;
+      }
+      const tt = document.getElementById("shareTikTok");
+      if (tt) {
+        tt.removeAttribute("target");
+        tt.href = "javascript:void(0)";
+        tt.onclick = copyReferralMessage;
+      }
+    }
+
+    function updateReferralsUI() {
+      if (!userData) return;
+      const count = userData.referralsCount || 0;
+      const earnings = userData.referralEarnings || 0;
+      
+      const countEl = document.getElementById("referralsCountVal");
+      if (countEl) countEl.textContent = count;
+      
+      const earningsEl = document.getElementById("referralEarningsVal");
+      if (earningsEl) earningsEl.textContent = "₦" + earnings.toLocaleString();
+      
+      const refLink = window.location.origin + "/start.html?ref=" + (userData.phone || "");
+      const refInput = document.getElementById("referralLinkInput");
+      if (refInput) refInput.value = refLink;
+      
+      initReferralSharing(refLink);
+    }
+
+    function updatePlanUI() {
+      const plan = userData.planName || userData.plan || 'Free Miner';
+      const badge = document.getElementById("planBadge");
+      if (!badge) return;
+      badge.textContent = plan;
+      if (plan.includes('Basic')) {
+        badge.style.background = 'rgba(59, 130, 246, 0.15)';
+        badge.style.color = '#3b82f6';
+        badge.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+      } else if (plan.includes('Silver')) {
+        badge.style.background = 'rgba(156, 163, 175, 0.15)';
+        badge.style.color = '#94a3b8';
+        badge.style.border = '1px solid rgba(156, 163, 175, 0.3)';
+      } else if (plan.includes('Gold')) {
+        badge.style.background = 'rgba(234, 179, 8, 0.15)';
+        badge.style.color = '#eab308';
+        badge.style.border = '1px solid rgba(234, 179, 8, 0.3)';
+      }
+    }
+
+    function syncFromBackend() {
+      if (!userData) return;
+      const userPhone = userData.phone || userData.userId || userData.phoneNumber || userData.email;
+      if (!userPhone) return;
+
+      const localBalance = parseFloat(localStorage.getItem("walletBalance")) || balance || 0;
+      const localTotalMined = userData.totalMined || 0;
+      const localWithdrawalCount = userData.withdrawalCount || 0;
+
+      fetch(API_URL + '/api/user/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: userPhone,
+          balance: localBalance,
+          totalMined: localTotalMined,
+          withdrawalCount: localWithdrawalCount
+        })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.status && data.user) {
+            const fresh = data.user;
+            userData = Object.assign({}, userData, fresh);
+            localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+            balance = parseFloat(fresh.balance) || 0;
+            updateBalance();
+            document.getElementById("totalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
+            updatePlanUI();
+            updateReferralsUI();
+
+            const isUserVer = fresh.is_verified === 1 || fresh.is_verified === true || fresh.isVerified === true || fresh.is_verified === "1";
+            if (isUserVer) {
+              localStorage.removeItem("9jaCashVerificationPending");
+            }
+
+            const verCheckmark = isUserVer ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:14px;" title="Verified Account"></i>' : '';
+            const uNameEl = document.getElementById("userName");
+            const displayNameSync = fresh.customName || fresh.full_name || fresh.name || fresh.fullName || "9jaCash User";
+            if (uNameEl) uNameEl.innerHTML = displayNameSync + verCheckmark;
+          }
+        })
+        .catch(function (err) { });
+    }
 
     function initWatchHowItWorks() {
       const hasWatched = localStorage.getItem("hasWatchedVideo") === "true";
@@ -2655,6 +3021,101 @@
         .catch(() => {
           Swal.fire('Error', 'Error loading video player.', 'error');
         });
+    }
+
+    // ========== TIMED SOCIAL JOIN POPUP SYSTEM ==========
+    let socialPopupCheckInterval = null;
+
+    function initSocialPopup() {
+      if (db) {
+        db.collection('settings').doc('payment').get()
+          .then(function(doc) {
+            if (doc.exists) {
+              const data = doc.data();
+              const waActive = data.whatsappLinkActive !== false;
+              const tgActive = data.telegramSupportLinkActive !== false;
+              const waUrl = data.whatsappLink || "https://wa.me/2349000000000";
+              const tgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
+              setupSocialPopupData(waActive, tgActive, waUrl, tgUrl);
+            } else {
+              setupSocialPopupData(false, true, "", "https://t.me/apex_customercare");
+            }
+          })
+          .catch(function(err) {
+            setupSocialPopupData(false, true, "", "https://t.me/apex_customercare");
+          });
+      } else {
+        setupSocialPopupData(false, true, "", "https://t.me/apex_customercare");
+      }
+    }
+
+    function setupSocialPopupData(waActive, tgActive, waUrl, tgUrl) {
+      const popup = document.getElementById("socialJoinPopup");
+      const iconWrap = document.getElementById("socialPopupIcon");
+      const title = document.getElementById("socialPopupTitle");
+      const btn = document.getElementById("socialPopupBtn");
+
+      if (!popup || !iconWrap || !title || !btn) return;
+
+      let activeUrl = "";
+      let isWhatsApp = false;
+
+      if (waActive && !tgActive) {
+        activeUrl = waUrl;
+        isWhatsApp = true;
+      } else if (tgActive) {
+        activeUrl = tgUrl;
+        isWhatsApp = false;
+      } else {
+        return;
+      }
+
+      if (isWhatsApp) {
+        iconWrap.className = "social-popup-icon whatsapp";
+        iconWrap.innerHTML = '<i class="fa-brands fa-whatsapp"></i>';
+        title.innerHTML = '📢 Join Our WhatsApp Group';
+        btn.className = "social-popup-btn whatsapp";
+        btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Join Now';
+        btn.href = activeUrl;
+      } else {
+        iconWrap.className = "social-popup-icon telegram";
+        iconWrap.innerHTML = '<i class="fa-brands fa-telegram"></i>';
+        title.innerHTML = '📢 Join Our Telegram Channel';
+        btn.className = "social-popup-btn telegram";
+        btn.innerHTML = '<i class="fa-brands fa-telegram"></i> Join Now';
+        btn.href = activeUrl;
+      }
+
+      checkAndShowSocialPopup();
+      if (socialPopupCheckInterval) clearInterval(socialPopupCheckInterval);
+      socialPopupCheckInterval = setInterval(checkAndShowSocialPopup, 15000);
+    }
+
+    function checkAndShowSocialPopup() {
+      const popup = document.getElementById("socialJoinPopup");
+      if (!popup) return;
+
+      const lastDismissed = localStorage.getItem("9jaCashSocialPopupDismissedTime");
+      const now = Date.now();
+
+      if (!lastDismissed) {
+        setTimeout(function() {
+          popup.classList.add("show");
+        }, 3000);
+      } else {
+        const timeDiff = now - parseInt(lastDismissed);
+        if (timeDiff >= 600000) {
+          popup.classList.add("show");
+        }
+      }
+    }
+
+    function dismissSocialPopup() {
+      const popup = document.getElementById("socialJoinPopup");
+      if (popup) {
+        popup.classList.remove("show");
+      }
+      localStorage.setItem("9jaCashSocialPopupDismissedTime", Date.now().toString());
     }
   </script>
   <!-- Dedicated Notifications Modal -->

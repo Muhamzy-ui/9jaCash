@@ -19,11 +19,122 @@
 
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background: #060a12;
-      color: #f8fafc;
+      background: #f8fafc;
+      color: #1e293b;
       min-height: 100vh;
       overflow-x: hidden;
       -webkit-tap-highlight-color: transparent;
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode {
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    /* Override tailwind text/bg colors in light/dark mode */
+    .text-white {
+      color: #1e293b !important;
+      transition: color 0.3s ease;
+    }
+    body.dark-mode .text-white {
+      color: #ffffff !important;
+    }
+
+    .text-slate-300 {
+      color: #334155 !important;
+      transition: color 0.3s ease;
+    }
+    body.dark-mode .text-slate-300 {
+      color: #cbd5e1 !important;
+    }
+
+    .text-slate-400 {
+      color: #475569 !important;
+      transition: color 0.3s ease;
+    }
+    body.dark-mode .text-slate-400 {
+      color: #94a3b8 !important;
+    }
+
+    /* Grid layout cards */
+    .grid > div {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      transition: all 0.3s ease;
+    }
+    body.dark-mode .grid > div {
+      background: #1e293b !important;
+      border: 1px solid #334155 !important;
+    }
+
+    /* Accordion FAQ items */
+    .border-slate-900 {
+      border-color: #e2e8f0 !important;
+    }
+    body.dark-mode .border-slate-900 {
+      border-color: #334155 !important;
+    }
+
+    .bg-slate-950\/20 {
+      background-color: #ffffff !important;
+    }
+    body.dark-mode .bg-slate-950\/20 {
+      background-color: rgba(2, 6, 23, 0.2) !important;
+    }
+
+    /* Back button */
+    .border-white\/10 {
+      border-color: #e2e8f0 !important;
+      background-color: #ffffff !important;
+      color: #1e293b !important;
+    }
+    body.dark-mode .border-white\/10 {
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      background-color: rgba(255, 255, 255, 0.05) !important;
+      color: #ffffff !important;
+    }
+
+    /* Verified dossier pill */
+    .bg-slate-900 {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      color: #475569 !important;
+    }
+    body.dark-mode .bg-slate-900 {
+      background-color: #0f172a !important;
+      border-color: #1e293b !important;
+      color: #94a3b8 !important;
+    }
+
+    /* CBN/CAC card icons */
+    .bg-emerald-500\/10 {
+      background-color: rgba(16, 185, 129, 0.1) !important;
+    }
+    .text-emerald-400 {
+      color: #059669 !important;
+    }
+    body.dark-mode .text-emerald-400 {
+      color: #34d399 !important;
+    }
+
+    /* Bottom Issued By card */
+    .border-cyan-500\/10 {
+      border-color: #e2e8f0 !important;
+      background-color: #ffffff !important;
+    }
+    body.dark-mode .border-cyan-500\/10 {
+      border-color: rgba(6, 182, 212, 0.1) !important;
+      background-color: rgba(6, 182, 212, 0.02) !important;
+    }
+
+    .bg-cyan-950\/20 {
+      background-color: rgba(8, 145, 178, 0.1) !important;
+      color: #0891b2 !important;
+    }
+    body.dark-mode .bg-cyan-950\/20 {
+      background-color: rgba(8, 145, 178, 0.2) !important;
+      color: #22d3ee !important;
     }
 
     .bg-wrap {
@@ -31,25 +142,12 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
+      transition: background 0.3s ease;
     }
-
-    .bg-wrap::before {
-      content: '';
-      position: absolute;
-      top: -20%;
-      right: -10%;
-      width: 500px;
-      height: 500px;
+    body.dark-mode .bg-wrap::before {
       background: radial-gradient(circle, rgba(16, 185, 129, 0.06), transparent 75%);
     }
-
-    .bg-wrap::after {
-      content: '';
-      position: absolute;
-      bottom: -10%;
-      left: -10%;
-      width: 450px;
-      height: 450px;
+    body.dark-mode .bg-wrap::after {
       background: radial-gradient(circle, rgba(99, 102, 241, 0.05), transparent 75%);
     }
 
@@ -58,8 +156,11 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      background-image: linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-image: linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
       background-size: 40px 40px;
+    }
+    body.dark-mode .grid-pattern {
+      background-image: linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
     }
 
     .app {
@@ -75,14 +176,18 @@
       width: 110px;
       height: 110px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.12), rgba(6, 10, 18, 0.8));
-      border: 1px dashed rgba(16, 185, 129, 0.4);
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.08), rgba(248, 250, 252, 0.9));
+      border: 1px dashed rgba(16, 185, 129, 0.3);
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 16px;
       position: relative;
       animation: pulseGlow 4s ease-in-out infinite;
+    }
+    body.dark-mode .cert-ring {
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.8));
+      border-color: rgba(16, 185, 129, 0.4);
     }
 
     .cert-ring::before {
@@ -669,6 +774,16 @@
   </div>
 
   <script>
+    function initDarkMode() {
+      const isDark = localStorage.getItem("9jaCashDark") !== "false";
+      if (isDark) {
+        document.body.classList.add("dark-mode");
+      } else {
+        document.body.classList.remove("dark-mode");
+      }
+    }
+    initDarkMode();
+
     function toggleFaq(btn) {
       const content = btn.nextElementSibling;
       const icon = btn.querySelector('i.fa-solid');
