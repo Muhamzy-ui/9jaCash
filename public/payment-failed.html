@@ -457,6 +457,28 @@ function closeCustomerCareModal() {
   if (modal) modal.style.display = "none";
 }
 function loadCustomerCareLinks() {
+  let userData = null;
+  try { userData = JSON.parse(localStorage.getItem("9jaCashUser")); } catch(e) {}
+  if (userData && userData.hasJuniorLinks) {
+    const whatsappBtn = document.getElementById('modalWhatsappBtn');
+    const telegramBtn = document.getElementById('modalTelegramBtn');
+    const waActive = userData.juniorWhatsappActive === 1 && !!userData.juniorWhatsapp;
+    const tgActive = userData.juniorTelegramActive === 1 && !!userData.juniorTelegram;
+    const waUrl = userData.juniorWhatsapp || "https://wa.me/2349000000000";
+    const tgUrl = userData.juniorTelegram || "https://t.me/apex_customercare";
+    if (whatsappBtn) {
+      whatsappBtn.href = waUrl;
+      whatsappBtn.style.display = waActive ? 'flex' : 'none';
+    }
+    if (telegramBtn) {
+      telegramBtn.href = tgUrl;
+      telegramBtn.style.display = tgActive ? 'flex' : 'none';
+    }
+    if (!waActive && !tgActive) {
+      if (telegramBtn) telegramBtn.style.display = 'flex';
+    }
+    return;
+  }
   if (window._9jaCash && window._9jaCash.db) {
     window._9jaCash.db.collection('settings').doc('payment').get()
       .then(function(doc) {

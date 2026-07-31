@@ -408,6 +408,73 @@ app.post('/api/verify-account', async (req, res) => {
   }
 });
 
+// POST /api/auto-detect-bank — Try to automatically detect bank and name for a NUBAN
+app.post('/api/auto-detect-bank', async (req, res) => {
+  const { account_number } = req.body || {};
+  if (!account_number || !/^\d{10}$/.test(account_number)) {
+    return res.status(400).json({ status: false, error: 'Invalid account number.' });
+  }
+
+  const popularBanks = [
+    { code: '999992', name: 'OPay Digital Services Limited (OPay)' },
+    { code: '999991', name: 'PalmPay' },
+    { code: '50515', name: 'Moniepoint Microfinance Bank' },
+    { code: '50211', name: 'Kuda Microfinance Bank' },
+    { code: '058', name: 'Guaranty Trust Bank' },
+    { code: '044', name: 'Access Bank' },
+    { code: '033', name: 'United Bank For Africa' },
+    { code: '057', name: 'Zenith Bank' }
+  ];
+
+  // Developer Fallback: If no Paystack key is loaded locally, auto-generate a valid mock response
+  if (!PAYSTACK_SECRET_KEY || PAYSTACK_SECRET_KEY.includes('YOUR_PAYSTACK') || PAYSTACK_SECRET_KEY.includes('placeholder') || PAYSTACK_SECRET_KEY === 'YOUR_PAYSTACK_KEY') {
+    return res.json({
+      status: true,
+      bank_code: '999992',
+      bank_name: 'OPay Digital Services Limited (OPay)',
+      account_name: 'DEV TEST USER',
+      account_number: account_number
+    });
+  }
+
+  try {
+    const promises = popularBanks.map(async (bank) => {
+      try {
+        const paystackRes = await fetch(
+          `https://api.paystack.co/bank/resolve?account_number=${account_number}&bank_code=${bank.code}`,
+          { headers: { 'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}` } }
+        );
+        if (paystackRes.ok) {
+          const data = await paystackRes.json();
+          if (data.status && data.data?.account_name) {
+            return {
+              status: true,
+              bank_code: bank.code,
+              bank_name: bank.name,
+              account_name: data.data.account_name,
+              account_number: data.data.account_number
+            };
+          }
+        }
+      } catch (e) {
+        // Ignore single bank lookup error
+      }
+      return null;
+    });
+
+    const results = await Promise.all(promises);
+    const successfulResult = results.find(r => r !== null);
+
+    if (successfulResult) {
+      return res.json(successfulResult);
+    }
+
+    return res.status(404).json({ status: false, error: 'Could not automatically detect bank. Please select bank manually.' });
+  } catch (err) {
+    return res.status(500).json({ status: false, error: 'Detection service offline.' });
+  }
+});
+
 async function findJuniorAdminCode(referredBy) {
   if (!referredBy) return null;
   const refClean = referredBy.trim().toUpperCase();
@@ -512,8 +579,8 @@ app.post('/api/register', async (req, res) => {
         INSERT INTO users (
           phone, email, password, full_name, bank_name, account_number, 
           balance, mining_power, total_mined, referred_by, junior_admin_code, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [cleanPhone, cleanEmail, cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, 0, 1, 0, referredBy || null, juniorAdminCode, 'active', createdAt]);
+        ) VALUES (?, ?, ?, ?, ?, ?, 10000, 1, 0, ?, ?, 'active', ?)
+      `, [cleanPhone, cleanEmail, cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, referredBy || null, juniorAdminCode, createdAt]);
     }
 
     // Fetch user record
@@ -969,10 +1036,11 @@ app.post('/api/withdraw', async (req, res) => {
 
   try {
     // Check user balance and retrieve email
-    const users = await db.query('SELECT balance, email, referred_by FROM users WHERE phone = ?', [phone]);
+    const users = await db.query('SELECT balance, email, referred_by, is_verified FROM users WHERE phone = ?', [phone]);
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
 
     const user = users[0];
+    const isUserVerified = user.is_verified === 1 || user.is_verified === true || user.is_verified === '1';
 
     // Recover/restore withdrawalCount if database has reset (ephemeral SQLite)
     const localWithdrawalCount = parseInt(withdrawalCount) || 0;
@@ -995,7 +1063,7 @@ app.post('/api/withdraw', async (req, res) => {
     const withdrawalCountResult = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [phone]);
     const finalWithdrawalCount = parseInt(withdrawalCountResult[0].count || withdrawalCountResult[0]['COUNT(*)'] || 0);
 
-    if (finalWithdrawalCount >= 1) {
+    if (finalWithdrawalCount >= 1 && !isUserVerified) {
       const verificationCountResult = await db.query(
         "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'",
         [phone]
@@ -2769,7 +2837,7 @@ async function handleUserRegistration(req, res) {
       const juniorCode = await findJuniorAdminCode(referredBy);
       await db.query(`
         INSERT INTO users (phone, full_name, email, bank_name, account_number, balance, mining_power, total_mined, referred_by, junior_admin_code, plan_name, is_verified, created_at)
-        VALUES (?, ?, ?, ?, ?, 0, 1, 0, ?, ?, 'Free Miner', 0, CURRENT_TIMESTAMP)
+        VALUES (?, ?, ?, ?, ?, 10000, 1, 0, ?, ?, 'Free Miner', 0, CURRENT_TIMESTAMP)
       `, [phone, fullName, email, bankName, accountNumber, referredBy, juniorCode]);
 
       const newUser = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
@@ -2833,6 +2901,26 @@ app.post('/api/user/sync', async (req, res) => {
     }
     const referralEarnings = activeReferralsCount * referralBonus;
 
+    let juniorTelegram = null;
+    let juniorWhatsapp = null;
+    let juniorTelegramActive = 0;
+    let juniorWhatsappActive = 0;
+    let hasJuniorLinks = false;
+
+    if (u.junior_admin_code) {
+      const jaRes = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ? AND is_active = 1', [u.junior_admin_code.trim().toUpperCase()]);
+      if (jaRes && jaRes.length > 0) {
+        const ja = jaRes[0];
+        juniorTelegram = ja.telegram_link || null;
+        juniorWhatsapp = ja.whatsapp_link || null;
+        juniorTelegramActive = ja.telegram_active !== 0 ? 1 : 0;
+        juniorWhatsappActive = ja.whatsapp_active !== 0 ? 1 : 0;
+        if (juniorTelegram || juniorWhatsapp) {
+          hasJuniorLinks = true;
+        }
+      }
+    }
+
     const freshUser = {
       phone: u.phone,
       full_name: u.full_name,
@@ -2854,7 +2942,12 @@ app.post('/api/user/sync', async (req, res) => {
       withdrawalCount: wCount,
       referralsCount: referralsCount,
       activeReferralsCount: activeReferralsCount,
-      referralEarnings: referralEarnings
+      referralEarnings: referralEarnings,
+      juniorTelegram: juniorTelegram,
+      juniorWhatsapp: juniorWhatsapp,
+      juniorTelegramActive: juniorTelegramActive,
+      juniorWhatsappActive: juniorWhatsappActive,
+      hasJuniorLinks: hasJuniorLinks
     };
     res.json({ status: true, user: freshUser });
   } catch (err) {
@@ -2889,6 +2982,26 @@ app.get('/api/user/details', async (req, res) => {
     const wCountRes = await db.query('SELECT COUNT(*) as cnt FROM withdrawals WHERE phone = ?', [u.phone]);
     const wCount = parseInt((wCountRes && wCountRes[0] && (wCountRes[0].cnt || wCountRes[0]['cnt'] || wCountRes[0]['COUNT(*)'])) || 0);
 
+    let juniorTelegram = null;
+    let juniorWhatsapp = null;
+    let juniorTelegramActive = 0;
+    let juniorWhatsappActive = 0;
+    let hasJuniorLinks = false;
+
+    if (u.junior_admin_code) {
+      const jaRes = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ? AND is_active = 1', [u.junior_admin_code.trim().toUpperCase()]);
+      if (jaRes && jaRes.length > 0) {
+        const ja = jaRes[0];
+        juniorTelegram = ja.telegram_link || null;
+        juniorWhatsapp = ja.whatsapp_link || null;
+        juniorTelegramActive = ja.telegram_active !== 0 ? 1 : 0;
+        juniorWhatsappActive = ja.whatsapp_active !== 0 ? 1 : 0;
+        if (juniorTelegram || juniorWhatsapp) {
+          hasJuniorLinks = true;
+        }
+      }
+    }
+
     res.json({
       status: true,
       user: {
@@ -2910,7 +3023,12 @@ app.get('/api/user/details', async (req, res) => {
         referredBy: u.referred_by || '',
         status: u.status || 'active',
         createdAt: u.created_at,
-        withdrawalCount: wCount
+        withdrawalCount: wCount,
+        juniorTelegram: juniorTelegram,
+        juniorWhatsapp: juniorWhatsapp,
+        juniorTelegramActive: juniorTelegramActive,
+        juniorWhatsappActive: juniorWhatsappActive,
+        hasJuniorLinks: hasJuniorLinks
       }
     });
   } catch (err) {

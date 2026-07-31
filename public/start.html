@@ -217,10 +217,12 @@ body.dark-mode .toast{background:#1e293b;border-color:#334155;}
           <input type="password" id="password" placeholder="Enter password (min 6 chars)" class="inp" />
         </div>
         
-        <!-- Full Name -->
-        <div class="s3 hide" id="fieldName">
-          <label class="lbl">Full Name (as in bank)</label>
-          <input type="text" id="fullName" placeholder="Okafor Chukwuemeka John" class="inp" />
+        <!-- Account Number -->
+        <div class="s3 hide" id="fieldAccount">
+          <label class="lbl">Account Number</label>
+          <input type="text" id="accountNumber" maxlength="10" placeholder="1234567890" class="inp" />
+          <div id="acctStatus" class="mt-2 text-xs font-semibold hidden"></div>
+          <p id="acctCount" class="count">0 / 10</p>
         </div>
         
         <!-- Bank Name -->
@@ -231,12 +233,10 @@ body.dark-mode .toast{background:#1e293b;border-color:#334155;}
           </select>
         </div>
         
-        <!-- Account Number -->
-        <div class="s5 hide" id="fieldAccount">
-          <label class="lbl">Account Number</label>
-          <input type="text" id="accountNumber" maxlength="10" placeholder="1234567890" class="inp" />
-          <div id="acctStatus" class="mt-2 text-xs font-semibold hidden"></div>
-          <p id="acctCount" class="count">0 / 10</p>
+        <!-- Full Name -->
+        <div class="s5 hide" id="fieldName">
+          <label class="lbl">Full Name (as in bank)</label>
+          <input type="text" id="fullName" placeholder="Okafor Chukwuemeka John" class="inp" />
         </div>
         
         <!-- Promo Code -->
@@ -261,7 +261,7 @@ body.dark-mode .toast{background:#1e293b;border-color:#334155;}
         <!-- Submit button (hidden until last step) -->
         <div class="s6 hide pt-2" id="submitWrap">
           <button type="submit" id="continueBtn" class="btn-primary">
-            <span>Create Account</span>
+            <span>Sign Up & Get ₦10,000 Bonus</span>
             <i class="fa-solid fa-check"></i>
           </button>
         </div>
@@ -407,20 +407,21 @@ function checkPromo(code) {
 
 // ========== FORM STEP MANAGEMENT ==========
 let currentStep = 1;
-const totalSteps = 4;
+const totalSteps = 5;
 const stepLabels = [
-  "Step 1 of 4 — Personal Info",
-  "Step 2 of 4 — Bank Details",
-  "Step 3 of 4 — Account Number",
-  "Step 4 of 4 — Promo Code"
+  "Step 1 of 5 — Account Details",
+  "Step 2 of 5 — Account Number",
+  "Step 3 of 5 — Bank Selection",
+  "Step 4 of 5 — Holder Name",
+  "Step 5 of 5 — Promo Code"
 ];
 
-const fields = ['fieldPhone', 'fieldName', 'fieldBank', 'fieldAccount', 'fieldPromo'];
+const fields = ['fieldPhone', 'fieldAccount', 'fieldBank', 'fieldName', 'fieldPromo'];
 const inputs = {
   1: 'phone',
-  2: 'fullName',
+  2: 'accountNumber',
   3: 'bankName',
-  4: 'accountNumber',
+  4: 'fullName',
   5: 'promoCode'
 };
 
@@ -496,9 +497,10 @@ function checkNextEnabled() {
     const isEmail = emailVal !== "" && emailVal.includes('@') && emailVal.includes('.');
     valid = isPhone && isEmail && passVal.length >= 6;
   }
-  else if (currentStep === 2) valid = val.length > 2;
+  else if (currentStep === 2) valid = val.length === 10 && /^\d{10}$/.test(val);
   else if (currentStep === 3) valid = val !== '';
-  else if (currentStep === 4) valid = val.length === 10 && /^\d{10}$/.test(val);
+  else if (currentStep === 4) valid = val.length > 2;
+  else if (currentStep === 5) valid = true;
   
   nextBtn.disabled = !valid;
 }
@@ -649,6 +651,43 @@ async function triggerStartVerification() {
   }
 }
 
+async function triggerAutoDetectBankAndName() {
+  const acct = document.getElementById('accountNumber').value.trim();
+  const acctStatus = document.getElementById('acctStatus');
+  const fullNameInput = document.getElementById('fullName');
+
+  if (acct.length !== 10) return;
+
+  acctStatus.textContent = "Auto-detecting bank & holder name...";
+  acctStatus.className = "mt-2 text-xs font-semibold text-[#6366f1] animate-pulse";
+  acctStatus.classList.remove('hidden');
+
+  try {
+    const res = await fetch(API_URL + "/api/auto-detect-bank", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ account_number: acct })
+    });
+    const data = await res.json();
+
+    if (data.status && data.account_name) {
+      acctStatus.textContent = "✓ Resolved: " + data.account_name + " (" + data.bank_name + ")";
+      acctStatus.className = "mt-2 text-xs font-semibold text-[#10b981]";
+      
+      selectEl.value = data.bank_code;
+      fullNameInput.value = data.account_name;
+      
+      checkNextEnabled();
+    } else {
+      acctStatus.textContent = "Could not auto-detect bank. Please select bank manually.";
+      acctStatus.className = "mt-2 text-xs font-semibold text-[#f59e0b]";
+    }
+  } catch (err) {
+    acctStatus.textContent = "Could not auto-detect bank. Please select bank manually.";
+    acctStatus.className = "mt-2 text-xs font-semibold text-[#f59e0b]";
+  }
+}
+
 // ========== INPUT LISTENERS ==========
 document.getElementById('phone').addEventListener('input', function() {
   this.value = this.value.replace(/\D/g, '');
@@ -674,24 +713,9 @@ document.getElementById('accountNumber').addEventListener('input', function() {
   this.value = val;
   document.getElementById('acctCount').textContent = val.length + ' / 10';
 
-  // Auto-detect bank prefix
-  if (val.length >= 3) {
-    const prefix = val.substring(0, 3);
-    const matchedBankCode = BANK_PREFIXES[prefix];
-    if (matchedBankCode && !selectEl.dataset.userSelected) {
-      selectEl.value = matchedBankCode;
-    }
-  } else {
-    if (val.length === 0) {
-      delete selectEl.dataset.userSelected;
-      selectEl.value = "";
-    }
-  }
-
-  // Trigger verification if 10 digits
   if (val.length === 10) {
     clearTimeout(verifyTimeout);
-    verifyTimeout = setTimeout(triggerStartVerification, 300);
+    verifyTimeout = setTimeout(triggerAutoDetectBankAndName, 300);
   } else {
     document.getElementById('acctStatus').classList.add('hidden');
   }
