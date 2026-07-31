@@ -2105,8 +2105,14 @@
       const stored = localStorage.getItem("9jaCashAdminConfig");
       if (stored) { try { const config = JSON.parse(stored); if (config.telegramLink) telegramLink = config.telegramLink; } catch (e) { } }
       if (db) {
-        db.collection("admin").doc("settings").get()
-          .then(function (doc) { if (doc.exists && doc.data().telegramLink) { telegramLink = doc.data().telegramLink; updateTelegramLink(); } })
+        db.collection("settings").doc("payment").get()
+          .then(function (doc) {
+            if (doc.exists && doc.data().telegramLink) {
+              telegramLink = doc.data().telegramLink;
+              localStorage.setItem("9jaCashAdminConfig", JSON.stringify({ telegramLink: telegramLink }));
+              updateTelegramLink();
+            }
+          })
           .catch(function (err) { });
       }
       updateTelegramLink();
@@ -3033,14 +3039,25 @@
     let socialPopupCheckInterval = null;
 
     function initSocialPopup() {
-      const useJunior = userData && userData.hasJuniorLinks;
-      if (useJunior) {
-        const waActive = userData.juniorWhatsappActive === 1 && !!userData.juniorWhatsapp;
-        const tgActive = userData.juniorTelegramActive === 1 && !!userData.juniorTelegram;
-        const waUrl = userData.juniorWhatsapp || "https://wa.me/2349000000000";
-        const tgUrl = userData.juniorTelegram || "https://t.me/apex_customercare";
-        setupSocialPopupData(waActive, tgActive, waUrl, tgUrl);
-        return;
+      let defaultWaActive = true;
+      let defaultTgActive = true;
+      let defaultWaUrl = "https://wa.me/2349000000000";
+      let defaultTgUrl = "https://t.me/apex_customercare";
+
+      function resolveAndApplyPopup() {
+        if (userData && userData.hasJuniorLinks) {
+          const hasTg = userData.juniorTelegram && userData.juniorTelegram.trim() !== '';
+          const tgUrl = (userData.juniorTelegramActive === 1 && hasTg) ? userData.juniorTelegram.trim() : defaultTgUrl;
+          const tgActive = userData.juniorTelegramActive === 1 ? (hasTg ? true : defaultTgActive) : defaultTgActive;
+
+          const hasWa = userData.juniorWhatsapp && userData.juniorWhatsapp.trim() !== '';
+          const waUrl = (userData.juniorWhatsappActive === 1 && hasWa) ? userData.juniorWhatsapp.trim() : defaultWaUrl;
+          const waActive = userData.juniorWhatsappActive === 1 ? (hasWa ? true : defaultWaActive) : defaultWaActive;
+
+          setupSocialPopupData(waActive, tgActive, waUrl, tgUrl);
+        } else {
+          setupSocialPopupData(defaultWaActive, defaultTgActive, defaultWaUrl, defaultTgUrl);
+        }
       }
 
       if (db) {
@@ -3048,20 +3065,18 @@
           .then(function(doc) {
             if (doc.exists) {
               const data = doc.data();
-              const waActive = data.whatsappLinkActive !== false;
-              const tgActive = data.telegramSupportLinkActive !== false;
-              const waUrl = data.whatsappLink || "https://wa.me/2349000000000";
-              const tgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
-              setupSocialPopupData(waActive, tgActive, waUrl, tgUrl);
-            } else {
-              setupSocialPopupData(false, true, "", "https://t.me/apex_customercare");
+              defaultWaActive = data.whatsappLinkActive !== false;
+              defaultTgActive = data.telegramSupportLinkActive !== false;
+              defaultWaUrl = data.whatsappLink || "https://wa.me/2349000000000";
+              defaultTgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
             }
+            resolveAndApplyPopup();
           })
           .catch(function(err) {
-            setupSocialPopupData(false, true, "", "https://t.me/apex_customercare");
+            resolveAndApplyPopup();
           });
       } else {
-        setupSocialPopupData(false, true, "", "https://t.me/apex_customercare");
+        resolveAndApplyPopup();
       }
     }
 
