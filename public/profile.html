@@ -1,854 +1,1064 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>9jaCash — Profile</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>9jaCash — Profile</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Outfit',sans-serif;background:#fff;color:#1a1a2e;min-height:100vh;}
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-/* Dark mode configurations */
-body.dark-mode{background:#0f172a;color:#f8fafc;}
-body.dark-mode .top-gradient{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%);}
-body.dark-mode .profile-card{background:#1e293b;border-color:#334155;}
-body.dark-mode .bottom-nav{background:#1e293b;border-color:#334155;}
-body.dark-mode .nav-item{color:#64748b;}
-body.dark-mode .nav-item.active{color:#818cf8;}
-body.dark-mode .field-box{background:#1e293b;border-color:#334155;}
-body.dark-mode .field-label{color:#94a3b8;}
-body.dark-mode .field-value{color:#f8fafc;}
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #fff;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
 
-.top-gradient{position:fixed;top:0;left:0;right:0;height:280px;background:linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%);border-radius:0 0 40px 40px;z-index:0;}
-.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 20px 100px;}
-.header{padding:24px 0 16px;display:flex;align-items:center;gap:16px;}
-.back-btn{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer;border:none;transition:all 0.3s;}
-.back-btn:hover{background:rgba(255,255,255,0.3);}
-.header-text{color:#fff;}
-.header-title{font-size:24px;font-weight:800;}
-.header-sub{font-size:13px;opacity:0.8;margin-top:2px;}
+    /* Dark mode configurations */
+    body.dark-mode {
+      background: #0f172a;
+      color: #f8fafc;
+    }
 
-.profile-card{background:#fff;border-radius:24px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,0.05);border:1px solid #f1f5f9;margin-bottom:20px;position:relative;}
-.avatar-large{width:80px;height:80px;border-radius:24px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;font-weight:800;margin:0 auto 16px;box-shadow:0 8px 24px rgba(102,126,234,0.3);}
+    body.dark-mode .top-gradient {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+    }
 
-.field-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.field-info{flex:1;}
-.field-label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;}
-.field-value{font-size:14px;font-weight:700;color:#1a1a2e;margin-top:2px;}
+    body.dark-mode .profile-card {
+      background: #1e293b;
+      border-color: #334155;
+    }
 
-.bottom-nav {
-  position: fixed;
-  bottom: 16px;
-  left: 16px;
-  right: 16px;
-  height: 64px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  z-index: 10000;
-  max-width: 448px;
-  margin: 0 auto;
-  padding: 0 6px;
-  border-radius: 40px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-  transition: all 0.3s ease;
-}
-body.dark-mode .bottom-nav {
-  background: #1e293b;
-  border-color: #334155;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
-}
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  color: #64748b;
-  text-decoration: none;
-  font-size: 10px;
-  font-weight: 700;
-  transition: all 0.2s ease;
-  border: none;
-  background: none;
-  cursor: pointer;
-  height: 48px;
-  min-width: 58px;
-  border-radius: 24px;
-}
-.nav-item i {
-  font-size: 18px;
-  transition: transform 0.2s ease;
-}
-.nav-item.active {
-  color: #6366f1;
-  background: rgba(99, 102, 241, 0.08);
-}
-body.dark-mode .nav-item.active {
-  color: #818cf8;
-  background: rgba(129, 140, 248, 0.08);
-}
-.nav-mid {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  box-shadow: 0 4px 15px rgba(99,102,241,0.3);
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.nav-mid:active {
-  transform: scale(0.92);
-}
+    body.dark-mode .bottom-nav {
+      background: #1e293b;
+      border-color: #334155;
+    }
 
-.theme-toggle-btn{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;cursor:pointer;border:none;transition:all 0.3s;margin-left:auto;}
-.theme-toggle-btn:hover{background:rgba(255,255,255,0.35);}
-</style>
+    body.dark-mode .nav-item {
+      color: #64748b;
+    }
+
+    body.dark-mode .nav-item.active {
+      color: #818cf8;
+    }
+
+    body.dark-mode .field-box {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    body.dark-mode .field-label {
+      color: #94a3b8;
+    }
+
+    body.dark-mode .field-value {
+      color: #f8fafc;
+    }
+
+    .top-gradient {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 280px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      border-radius: 0 0 40px 40px;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 20px 100px;
+    }
+
+    .header {
+      padding: 24px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s;
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .header-text {
+      color: #fff;
+    }
+
+    .header-title {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .header-sub {
+      font-size: 13px;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+
+    .profile-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      border: 1px solid #f1f5f9;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .avatar-large {
+      width: 80px;
+      height: 80px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 32px;
+      font-weight: 800;
+      margin: 0 auto 16px;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    }
+
+    .field-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .field-info {
+      flex: 1;
+    }
+
+    .field-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .field-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-top: 2px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      height: 64px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 10000;
+      max-width: 448px;
+      margin: 0 auto;
+      padding: 0 6px;
+      border-radius: 40px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .bottom-nav {
+      background: #1e293b;
+      border-color: #334155;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      color: #64748b;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      border: none;
+      background: none;
+      cursor: pointer;
+      height: 48px;
+      min-width: 58px;
+      border-radius: 24px;
+    }
+
+    .nav-item i {
+      font-size: 18px;
+      transition: transform 0.2s ease;
+    }
+
+    .nav-item.active {
+      color: #6366f1;
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    body.dark-mode .nav-item.active {
+      color: #818cf8;
+      background: rgba(129, 140, 248, 0.08);
+    }
+
+    .nav-mid {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-mid:active {
+      transform: scale(0.92);
+    }
+
+    .theme-toggle-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s;
+      margin-left: auto;
+    }
+
+    .theme-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="top-gradient"></div>
-<div class="app">
-  
-  <!-- Header -->
-  <div class="header">
-    <button class="back-btn" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-chevron-left"></i></button>
-    <div class="header-text">
-      <div class="header-title">My Profile</div>
-      <div class="header-sub">Verify security and database configurations</div>
-    </div>
-    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" id="themeToggleBtn">
-      <i id="themeIcon" class="fa-solid fa-sun"></i>
-    </button>
-  </div>
+  <div class="top-gradient"></div>
+  <div class="app">
 
-  <!-- Profile Card -->
-  <div class="profile-card text-center" style="margin-top: 10px;">
-    <div class="avatar-large" id="avatarLarge">9</div>
-    <h3 class="text-lg font-bold flex items-center justify-center gap-2 cursor-pointer hover:text-violet-400" id="profileName" onclick="promptEditName()" title="Click to edit display name">
-      9jaCash User <i class="fa-solid fa-pen-to-square text-xs text-slate-500"></i>
-    </h3>
-    <span class="inline-block mt-2 px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-full">
-      <i class="fa-solid fa-circle-check mr-1"></i> Active Account Status
-    </span>
-  </div>
-
-  <!-- Account Card -->
-  <div class="profile-card">
-    <h4 class="font-bold text-sm mb-4 text-violet-400"><i class="fa-solid fa-user-shield mr-2"></i> Account Details</h4>
-    
-    <div class="field-box">
-      <div class="field-info">
-        <div class="field-label">Phone Number</div>
-        <div class="field-value font-mono text-sm" id="profilePhone">—</div>
+    <!-- Header -->
+    <div class="header">
+      <button class="back-btn" onclick="window.location.href='dashboard.html'"><i
+          class="fa-solid fa-chevron-left"></i></button>
+      <div class="header-text">
+        <div class="header-title">My Profile</div>
+        <div class="header-sub">Verify security and database configurations</div>
       </div>
-      <i class="fa-solid fa-phone text-slate-500"></i>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" id="themeToggleBtn">
+        <i id="themeIcon" class="fa-solid fa-sun"></i>
+      </button>
     </div>
 
-    <div class="field-box cursor-pointer hover:border-violet-500/50 transition-all" onclick="promptLinkEmail()" title="Click to link Gmail">
-      <div class="field-info">
-        <div class="field-label">Email Address</div>
-        <div class="field-value font-mono text-sm" id="profileEmail">—</div>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="text-[10px] text-violet-400 font-bold hover:underline" id="emailActionText">Link Gmail</span>
-        <i class="fa-solid fa-envelope text-slate-500"></i>
-      </div>
-    </div>
-
-    <div class="field-box">
-      <div class="field-info">
-        <div class="field-label">Referred By Code</div>
-        <div class="field-value font-mono text-sm" id="profileReferredBy">None</div>
-      </div>
-      <i class="fa-solid fa-user-group text-slate-500"></i>
-    </div>
-  </div>
-
-  <!-- Bank Card -->
-  <div class="profile-card cursor-pointer hover:border-violet-500/50 transition-all" onclick="promptLinkBank()" title="Click to update Bank details">
-    <div class="flex justify-between items-center mb-4">
-      <h4 class="font-bold text-sm text-violet-400"><i class="fa-solid fa-building-columns mr-2"></i> Linked Bank Info</h4>
-      <span class="text-[10px] text-violet-400 font-bold hover:underline" id="bankActionText">Link Bank</span>
-    </div>
-
-    <div class="field-box">
-      <div class="field-info">
-        <div class="field-label">Bank Name</div>
-        <div class="field-value text-sm" id="profileBankName">—</div>
-      </div>
-      <i class="fa-solid fa-bank text-slate-500"></i>
-    </div>
-
-    <div class="field-box">
-      <div class="field-info">
-        <div class="field-label">Account Number</div>
-        <div class="field-value font-mono text-sm" id="profileAccountNumber">—</div>
-      </div>
-      <i class="fa-solid fa-hashtag text-slate-500"></i>
-    </div>
-  </div>
-
-  <!-- Stats Card -->
-  <div class="profile-card">
-    <h4 class="font-bold text-sm mb-4 text-violet-400"><i class="fa-solid fa-chart-line mr-2"></i> Mining Statistics</h4>
-
-    <div class="field-box">
-      <div class="field-info">
-        <div class="field-label">Active Plan</div>
-        <div class="field-value font-bold text-sm text-indigo-400" id="profilePlanName">Free Miner</div>
-      </div>
-      <i class="fa-solid fa-rocket text-slate-500"></i>
-    </div>
-
-    <div class="field-box">
-      <div class="field-info">
-        <div class="field-label">Mining Multiplier</div>
-        <div class="field-value font-mono text-sm" id="profileMultiplier">1x</div>
-      </div>
-      <i class="fa-solid fa-bolt text-slate-500"></i>
-    </div>
-
-    <div class="field-box">
-      <div class="field-info">
-        <div class="field-label">Total Earnings Mined</div>
-        <div class="field-value text-emerald-400 font-bold text-sm" id="profileTotalMined">₦0</div>
-      </div>
-      <i class="fa-solid fa-hammer text-slate-500"></i>
-    </div>
-  </div>
-
-  <!-- Payout Key Card (Shows when key is purchased / unlocked) -->
-  <div class="profile-card border border-amber-500/20 bg-amber-500/5 relative overflow-hidden hidden" id="payoutKeyProfileCard">
-    <div class="flex justify-between items-center mb-4">
-      <h4 class="font-bold text-sm text-amber-400"><i class="fa-solid fa-key mr-2"></i> Payout Authorization Key</h4>
-      <span class="text-[10px] text-amber-455 font-bold uppercase tracking-wider">Unlocked</span>
-    </div>
-    <div class="field-box" style="border-style: dashed; border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.03);">
-      <div class="field-info w-full text-center py-2">
-        <div class="field-label mb-1">Your Payout Key</div>
-        <div class="field-value font-mono text-xl font-extrabold text-amber-400 tracking-widest select-all" id="profilePayoutKeyText">9JA-XXXXXX</div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Payout Key Locked Card (Shows when key is not yet purchased / empty) -->
-  <div class="profile-card border border-slate-500/20 bg-slate-500/5 relative overflow-hidden hidden" id="payoutKeyLockedCard">
-    <div class="flex justify-between items-center mb-4">
-      <h4 class="font-bold text-sm text-slate-400"><i class="fa-solid fa-lock mr-2"></i> Payout Authorization Key</h4>
-      <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Locked</span>
-    </div>
-    <div class="field-box">
-      <div class="field-info">
-        <div class="field-label">Withdrawal Status</div>
-        <div class="field-value text-slate-400 text-xs font-semibold">Key purchase required to release funds</div>
-      </div>
-      <button onclick="window.location.href='buy.html'" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition-all">Buy Key</button>
-    </div>
-  </div>
-
-  <!-- Video Testimony Challenge Card -->
-  <div class="profile-card cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 hidden relative overflow-hidden" 
-       id="videoChallengeCard" 
-       onclick="window.location.href='video-challenge.html'"
-       style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%); border: 1px solid rgba(139, 92, 246, 0.4); box-shadow: 0 10px 25px rgba(76, 29, 149, 0.25);">
-    
-    <!-- Decorative Glowing Circles -->
-    <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-violet-500/10 blur-xl pointer-events-none"></div>
-    <div class="absolute -bottom-12 -left-12 w-28 h-28 rounded-full bg-emerald-500/10 blur-xl pointer-events-none"></div>
-
-    <div class="flex justify-between items-center mb-3">
-      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 text-[10px] font-extrabold uppercase tracking-wider">
-        <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping"></span> Live Campaign
-      </span>
-      <span class="text-[11px] text-violet-300 font-extrabold flex items-center gap-1">
-        Enter Challenge <i class="fa-solid fa-chevron-right text-xs"></i>
+    <!-- Profile Card -->
+    <div class="profile-card text-center" style="margin-top: 10px;">
+      <div class="avatar-large" id="avatarLarge">9</div>
+      <h3 class="text-lg font-bold flex items-center justify-center gap-2 cursor-pointer hover:text-violet-400"
+        id="profileName" onclick="promptEditName()" title="Click to edit display name">
+        9jaCash User <i class="fa-solid fa-pen-to-square text-xs text-slate-500"></i>
+      </h3>
+      <span
+        class="inline-block mt-2 px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-full">
+        <i class="fa-solid fa-circle-check mr-1"></i> Active Account Status
       </span>
     </div>
-    
-    <div class="mb-4">
-      <h4 class="font-extrabold text-lg text-white mb-1" style="text-shadow: 0 2px 10px rgba(0,0,0,0.3); margin-top: 4px;">
-        <i class="fa-solid fa-video mr-1.5 text-violet-400"></i> ₦500,000 Video Challenge
+
+    <!-- Account Card -->
+    <div class="profile-card">
+      <h4 class="font-bold text-sm mb-4 text-violet-400"><i class="fa-solid fa-user-shield mr-2"></i> Account Details
       </h4>
-      <p class="text-xs text-slate-300 leading-relaxed font-medium">
-        Record a 1-minute review about 9jaCash. Get rewarded with ₦500,000 instantly credited to your balance upon approval!
+
+      <div class="field-box">
+        <div class="field-info">
+          <div class="field-label">Phone Number</div>
+          <div class="field-value font-mono text-sm" id="profilePhone">—</div>
+        </div>
+        <i class="fa-solid fa-phone text-slate-500"></i>
+      </div>
+
+      <div class="field-box cursor-pointer hover:border-violet-500/50 transition-all" onclick="promptLinkEmail()"
+        title="Click to link Gmail">
+        <div class="field-info">
+          <div class="field-label">Email Address</div>
+          <div class="field-value font-mono text-sm" id="profileEmail">—</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] text-violet-400 font-bold hover:underline" id="emailActionText">Link Gmail</span>
+          <i class="fa-solid fa-envelope text-slate-500"></i>
+        </div>
+      </div>
+
+      <div class="field-box">
+        <div class="field-info">
+          <div class="field-label">Referred By Code</div>
+          <div class="field-value font-mono text-sm" id="profileReferredBy">None</div>
+        </div>
+        <i class="fa-solid fa-user-group text-slate-500"></i>
+      </div>
+    </div>
+
+    <!-- Bank Card -->
+    <div class="profile-card cursor-pointer hover:border-violet-500/50 transition-all" onclick="promptLinkBank()"
+      title="Click to update Bank details">
+      <div class="flex justify-between items-center mb-4">
+        <h4 class="font-bold text-sm text-violet-400"><i class="fa-solid fa-building-columns mr-2"></i> Linked Bank Info
+        </h4>
+        <span class="text-[10px] text-violet-400 font-bold hover:underline" id="bankActionText">Link Bank</span>
+      </div>
+
+      <div class="field-box">
+        <div class="field-info">
+          <div class="field-label">Bank Name</div>
+          <div class="field-value text-sm" id="profileBankName">—</div>
+        </div>
+        <i class="fa-solid fa-bank text-slate-500"></i>
+      </div>
+
+      <div class="field-box">
+        <div class="field-info">
+          <div class="field-label">Account Number</div>
+          <div class="field-value font-mono text-sm" id="profileAccountNumber">—</div>
+        </div>
+        <i class="fa-solid fa-hashtag text-slate-500"></i>
+      </div>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="profile-card">
+      <h4 class="font-bold text-sm mb-4 text-violet-400"><i class="fa-solid fa-chart-line mr-2"></i> Mining Statistics
+      </h4>
+
+      <div class="field-box">
+        <div class="field-info">
+          <div class="field-label">Active Plan</div>
+          <div class="field-value font-bold text-sm text-indigo-400" id="profilePlanName">Free Miner</div>
+        </div>
+        <i class="fa-solid fa-rocket text-slate-500"></i>
+      </div>
+
+      <div class="field-box">
+        <div class="field-info">
+          <div class="field-label">Mining Multiplier</div>
+          <div class="field-value font-mono text-sm" id="profileMultiplier">1x</div>
+        </div>
+        <i class="fa-solid fa-bolt text-slate-500"></i>
+      </div>
+
+      <div class="field-box">
+        <div class="field-info">
+          <div class="field-label">Total Earnings Mined</div>
+          <div class="field-value text-emerald-400 font-bold text-sm" id="profileTotalMined">₦0</div>
+        </div>
+        <i class="fa-solid fa-hammer text-slate-500"></i>
+      </div>
+    </div>
+
+    <!-- Payout Key Card (Shows when key is purchased / unlocked) -->
+    <div class="profile-card border border-amber-500/20 bg-amber-500/5 relative overflow-hidden hidden"
+      id="payoutKeyProfileCard">
+      <div class="flex justify-between items-center mb-4">
+        <h4 class="font-bold text-sm text-amber-400"><i class="fa-solid fa-key mr-2"></i> Payout Authorization Key</h4>
+        <span class="text-[10px] text-amber-455 font-bold uppercase tracking-wider">Unlocked</span>
+      </div>
+      <div class="field-box"
+        style="border-style: dashed; border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.03);">
+        <div class="field-info w-full text-center py-2">
+          <div class="field-label mb-1">Your Payout Key</div>
+          <div class="field-value font-mono text-xl font-extrabold text-amber-400 tracking-widest select-all"
+            id="profilePayoutKeyText">9JA-XXXXXX</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payout Key Locked Card (Shows when key is not yet purchased / empty) -->
+    <div class="profile-card border border-slate-500/20 bg-slate-500/5 relative overflow-hidden hidden"
+      id="payoutKeyLockedCard">
+      <div class="flex justify-between items-center mb-4">
+        <h4 class="font-bold text-sm text-slate-400"><i class="fa-solid fa-lock mr-2"></i> Payout Authorization Key</h4>
+        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Locked</span>
+      </div>
+      <div class="field-box">
+        <div class="field-info">
+          <div class="field-label">Withdrawal Status</div>
+          <div class="field-value text-slate-400 text-xs font-semibold">Key purchase required to release funds</div>
+        </div>
+        <button onclick="window.location.href='buy.html'"
+          class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition-all">Buy
+          Key</button>
+      </div>
+    </div>
+
+    <!-- Video Testimony Challenge Card -->
+    <div
+      class="profile-card cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 hidden relative overflow-hidden"
+      id="videoChallengeCard" onclick="window.location.href='video-challenge.html'"
+      style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%); border: 1px solid rgba(139, 92, 246, 0.4); box-shadow: 0 10px 25px rgba(76, 29, 149, 0.25);">
+
+      <!-- Decorative Glowing Circles -->
+      <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-violet-500/10 blur-xl pointer-events-none"></div>
+      <div class="absolute -bottom-12 -left-12 w-28 h-28 rounded-full bg-emerald-500/10 blur-xl pointer-events-none">
+      </div>
+
+      <div class="flex justify-between items-center mb-3">
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 text-[10px] font-extrabold uppercase tracking-wider">
+          <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping"></span> Live Campaign
+        </span>
+        <span class="text-[11px] text-violet-300 font-extrabold flex items-center gap-1">
+          Enter Challenge <i class="fa-solid fa-chevron-right text-xs"></i>
+        </span>
+      </div>
+
+      <div class="mb-4">
+        <h4 class="font-extrabold text-lg text-white mb-1"
+          style="text-shadow: 0 2px 10px rgba(0,0,0,0.3); margin-top: 4px;">
+          <i class="fa-solid fa-video mr-1.5 text-violet-400"></i> ₦500,000 Video Challenge
+        </h4>
+        <p class="text-xs text-slate-300 leading-relaxed font-medium">
+          Record a 1-minute review about 9jaCash. Get rewarded with ₦500,000 instantly credited to your balance upon
+          approval!
+        </p>
+      </div>
+
+      <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
+        <div>
+          <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Instant Reward</div>
+          <div class="text-base font-black text-emerald-400">₦500,000 Cash</div>
+        </div>
+        <div
+          class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <i class="fa-solid fa-coins text-lg"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- About 9jaCash Card -->
+    <div class="profile-card cursor-pointer hover:border-violet-500/50 transition-all mb-4 text-left"
+      onclick="window.location.href='about.html'" title="Click to view Platform Certifications">
+      <div class="flex justify-between items-center">
+        <h4 class="font-bold text-sm text-violet-400"><i class="fa-solid fa-circle-info mr-2"></i> About 9jaCash</h4>
+        <span class="text-[10px] text-violet-400 font-bold hover:underline">View Dossier <i
+            class="fa-solid fa-chevron-right ml-1"></i></span>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">
+        View our Certificate of Authenticity, CAC details, CBN alignment, and regulatory credentials.
       </p>
     </div>
 
-    <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
-      <div>
-        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Instant Reward</div>
-        <div class="text-base font-black text-emerald-400">₦500,000 Cash</div>
-      </div>
-      <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-        <i class="fa-solid fa-coins text-lg"></i>
-      </div>
-    </div>
+    <!-- Log Out Button -->
+    <button onclick="logoutUser()"
+      class="w-full py-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 mb-6">
+      <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
+    </button>
   </div>
 
-  <!-- About 9jaCash Card -->
-  <div class="profile-card cursor-pointer hover:border-violet-500/50 transition-all mb-4 text-left" onclick="window.location.href='about.html'" title="Click to view Platform Certifications">
-    <div class="flex justify-between items-center">
-      <h4 class="font-bold text-sm text-violet-400"><i class="fa-solid fa-circle-info mr-2"></i> About 9jaCash</h4>
-      <span class="text-[10px] text-violet-400 font-bold hover:underline">View Dossier <i class="fa-solid fa-chevron-right ml-1"></i></span>
-    </div>
-    <p class="text-xs text-slate-400 mt-2">
-      View our Certificate of Authenticity, CAC details, CBN alignment, and regulatory credentials.
-    </p>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-house"></i>Home</button>
+    <button class="nav-item" onclick="window.location.href='upgrade.html'"><i class="fa-solid fa-rocket"></i>Upgrade</button>
+    <button class="nav-mid" onclick="window.location.href='tasks.html'"><i class="fa-solid fa-list-check"></i></button>
+    <button class="nav-item" onclick="window.location.href='about.html'"><i class="fa-solid fa-circle-info"></i>About</button>
+    <button class="nav-item active" onclick="window.location.href='profile.html'"><i class="fa-solid fa-user"></i>Profile</button>
   </div>
 
-  <!-- Log Out Button -->
-  <button onclick="logoutUser()" class="w-full py-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 mb-6">
-    <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
-  </button>
-</div>
+  <script>
+    let userData = null;
+    const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
 
-<!-- Bottom Navigation -->
-<div class="bottom-nav">
-  <button class="nav-item" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-house"></i>Home</button>
-  <button class="nav-item" onclick="window.location.href='upgrade.html'"><i class="fa-solid fa-rocket"></i>Upgrade</button>
-  <button class="nav-mid" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-hammer"></i></button>
-  <button class="nav-item" onclick="window.location.href='about.html'"><i class="fa-solid fa-circle-info"></i>About</button>
-  <button class="nav-item active" onclick="window.location.href='profile.html'"><i class="fa-solid fa-user"></i>Profile</button>
-</div>
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('9jaCashDark', isDark);
+      document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+    }
 
-<script>
-let userData = null;
-const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
-
-function toggleTheme() {
-  const isDark = document.body.classList.toggle('dark-mode');
-  localStorage.setItem('9jaCashDark', isDark);
-  document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
-}
-
-function initProfile() {
-  try {
-    userData = JSON.parse(localStorage.getItem("9jaCashUser"));
-  } catch(e) {
-    userData = null;
-  }
-  if (!userData) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  // Bind session data to view
-  const isUserVerified = userData && (userData.is_verified === 1 || userData.is_verified === true || userData.isVerified === true);
-  const verBadgeHtml = isUserVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:16px;" title="Verified Account"></i>' : '';
-  const displayName = userData.customName || userData.fullName || userData.name || "9jaCash User";
-  document.getElementById("profileName").innerHTML = displayName + verBadgeHtml + ' <i class="fa-solid fa-pen-to-square text-xs text-slate-500 ml-1"></i>';
-  document.getElementById("avatarLarge").textContent = displayName.charAt(0).toUpperCase();
-  document.getElementById("profilePhone").textContent = userData.phone || "—";
-  
-  const emailVal = userData.email || "";
-  const isPlaceholderEmail = emailVal.includes(userData.phone + "@") || emailVal === "";
-  document.getElementById("profileEmail").textContent = isPlaceholderEmail ? "No Gmail linked" : emailVal;
-  document.getElementById("emailActionText").textContent = isPlaceholderEmail ? "Link Gmail" : "Update Gmail";
-  
-  document.getElementById("profileReferredBy").textContent = userData.referredBy || "None (Direct)";
-  document.getElementById("profileBankName").textContent = userData.bankName || "Not linked";
-  document.getElementById("profileAccountNumber").textContent = userData.accountNumber || "Not linked";
-  const hasBankInit = userData.bankName && userData.bankName !== "Not linked";
-  document.getElementById("bankActionText").textContent = hasBankInit ? "Update Bank" : "Link Bank";
-  document.getElementById("profilePlanName").textContent = userData.planName || userData.plan || "Free Miner";
-  document.getElementById("profileMultiplier").textContent = (userData.miningPower || 1) + "x";
-  document.getElementById("profileTotalMined").textContent = "₦" + (userData.totalMined || 0).toLocaleString();
-  updatePayoutKeyUI();
-
-  // Check if video challenge is active
-  fetch(API_URL + '/api/settings/videoChallenge')
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      const active = data.value ? (data.value.active !== false) : true;
-      if (active) {
-        document.getElementById("videoChallengeCard").classList.remove("hidden");
-      } else {
-        document.getElementById("videoChallengeCard").classList.add("hidden");
+    function initProfile() {
+      try {
+        userData = JSON.parse(localStorage.getItem("9jaCashUser"));
+      } catch (e) {
+        userData = null;
       }
-    })
-    .catch(function(err) {
-      document.getElementById("videoChallengeCard").classList.remove("hidden");
-    });
+      if (!userData) {
+        window.location.href = "login.html";
+        return;
+      }
 
-  // Dark/Light Theme Matcher
-  const isDark = localStorage.getItem("9jaCashDark") === "true" || localStorage.getItem("9jaCashDark") === null;
-  if (isDark) {
-    document.body.classList.add("dark-mode");
-    document.getElementById("themeIcon").className = "fa-solid fa-moon";
-  } else {
-    document.body.classList.remove("dark-mode");
-    document.getElementById("themeIcon").className = "fa-solid fa-sun";
-  }
+      // Bind session data to view
+      const isUserVerified = userData && (userData.is_verified === 1 || userData.is_verified === true || userData.isVerified === true);
+      const verBadgeHtml = isUserVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:16px;" title="Verified Account"></i>' : '';
+      const displayName = userData.customName || userData.fullName || userData.name || "9jaCash User";
+      document.getElementById("profileName").innerHTML = displayName + verBadgeHtml + ' <i class="fa-solid fa-pen-to-square text-xs text-slate-500 ml-1"></i>';
+      document.getElementById("avatarLarge").textContent = displayName.charAt(0).toUpperCase();
+      document.getElementById("profilePhone").textContent = userData.phone || "—";
 
-  const localBalance = parseFloat(localStorage.getItem("walletBalance")) || 0;
-  const localTotalMined = userData.totalMined || 0;
-  const localWithdrawalCount = userData.withdrawalCount || 0;
-
-  // Fetch updated records from Express SQL server
-  fetch(API_URL + '/api/user/sync', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      phone: userData.phone,
-      balance: localBalance,
-      totalMined: localTotalMined,
-      withdrawalCount: localWithdrawalCount
-    })
-  })
-  .then(function(res) { return res.json(); })
-  .then(function(data) {
-    if (data.status && data.user) {
-      const fresh = data.user;
-      userData = fresh;
-      localStorage.setItem("9jaCashUser", JSON.stringify(userData));
-      
-      const emailVal = fresh.email || "";
-      const isPlaceholderEmail = emailVal.includes(fresh.phone + "@") || emailVal === "";
+      const emailVal = userData.email || "";
+      const isPlaceholderEmail = emailVal.includes(userData.phone + "@") || emailVal === "";
       document.getElementById("profileEmail").textContent = isPlaceholderEmail ? "No Gmail linked" : emailVal;
       document.getElementById("emailActionText").textContent = isPlaceholderEmail ? "Link Gmail" : "Update Gmail";
 
-      const displayName = fresh.customName || fresh.fullName || fresh.name || "9jaCash User";
-      const isVerifiedFresh = fresh.is_verified === 1 || fresh.isVerified;
-      const freshBadgeHtml = isVerifiedFresh ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:16px;" title="Verified Account"></i>' : '';
-      document.getElementById("profileName").innerHTML = displayName + freshBadgeHtml + ' <i class="fa-solid fa-pen-to-square text-xs text-slate-500 ml-1"></i>';
-      document.getElementById("avatarLarge").textContent = displayName.charAt(0).toUpperCase();
-      
-      document.getElementById("profileBankName").textContent = fresh.bankName || "Not linked";
-      document.getElementById("profileAccountNumber").textContent = fresh.accountNumber || "Not linked";
-      const hasBankSync = fresh.bankName && fresh.bankName !== "Not linked";
-      document.getElementById("bankActionText").textContent = hasBankSync ? "Update Bank" : "Link Bank";
-      document.getElementById("profilePlanName").textContent = fresh.planName || fresh.plan || "Free Miner";
-      document.getElementById("profileMultiplier").textContent = (fresh.miningPower || 1) + "x";
-      document.getElementById("profileTotalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
+      document.getElementById("profileReferredBy").textContent = userData.referredBy || "None (Direct)";
+      document.getElementById("profileBankName").textContent = userData.bankName || "Not linked";
+      document.getElementById("profileAccountNumber").textContent = userData.accountNumber || "Not linked";
+      const hasBankInit = userData.bankName && userData.bankName !== "Not linked";
+      document.getElementById("bankActionText").textContent = hasBankInit ? "Update Bank" : "Link Bank";
+      document.getElementById("profilePlanName").textContent = userData.planName || userData.plan || "Free Miner";
+      document.getElementById("profileMultiplier").textContent = (userData.miningPower || 1) + "x";
+      document.getElementById("profileTotalMined").textContent = "₦" + (userData.totalMined || 0).toLocaleString();
       updatePayoutKeyUI();
-    }
-  })
-  .catch(function(err) {
-    console.warn("Backend profile sync offline");
-  });
-}
 
-function updatePayoutKeyUI() {
-  const payoutKey = userData.payoutKey || userData.payout_key;
-  const payoutKeyCard = document.getElementById("payoutKeyProfileCard");
-  const payoutKeyLocked = document.getElementById("payoutKeyLockedCard");
+      // Check if video challenge is active
+      fetch(API_URL + '/api/settings/videoChallenge')
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          const active = data.value ? (data.value.active !== false) : true;
+          if (active) {
+            document.getElementById("videoChallengeCard").classList.remove("hidden");
+          } else {
+            document.getElementById("videoChallengeCard").classList.add("hidden");
+          }
+        })
+        .catch(function (err) {
+          document.getElementById("videoChallengeCard").classList.remove("hidden");
+        });
 
-  if (!payoutKeyCard || !payoutKeyLocked) return;
+      // Dark/Light Theme Matcher
+      const isDark = localStorage.getItem("9jaCashDark") === "true" || localStorage.getItem("9jaCashDark") === null;
+      if (isDark) {
+        document.body.classList.add("dark-mode");
+        document.getElementById("themeIcon").className = "fa-solid fa-moon";
+      } else {
+        document.body.classList.remove("dark-mode");
+        document.getElementById("themeIcon").className = "fa-solid fa-sun";
+      }
 
-  if (payoutKey) {
-    payoutKeyLocked.classList.add("hidden");
-    payoutKeyCard.classList.remove("hidden");
-    document.getElementById("profilePayoutKeyText").textContent = payoutKey;
-  } else {
-    payoutKeyCard.classList.add("hidden");
-    payoutKeyLocked.classList.remove("hidden");
-  }
-}
+      const localBalance = parseFloat(localStorage.getItem("walletBalance")) || 0;
+      const localTotalMined = userData.totalMined || 0;
+      const localWithdrawalCount = userData.withdrawalCount || 0;
 
-function logoutUser() {
-  localStorage.removeItem("9jaCashUser");
-  localStorage.removeItem("walletBalance");
-  localStorage.removeItem("transactionHistory");
-  localStorage.removeItem("claimData");
-  localStorage.removeItem("checkinData");
-  localStorage.removeItem("mineData");
-  localStorage.removeItem("todayMined");
-  localStorage.removeItem("lastMineDate");
-  location.href = "login.html";
-}
-
-// ========== LINK GMAIL ACCOUNT ==========
-function promptLinkEmail() {
-  const isDark = document.body.classList.contains("dark-mode");
-  
-  Swal.fire({
-    title: 'Link Gmail Account',
-    text: 'Enter your Gmail address to receive transaction notifications and payment receipts.',
-    input: 'email',
-    inputPlaceholder: 'yourname@gmail.com',
-    showCancelButton: true,
-    confirmButtonText: 'Link Email',
-    confirmButtonColor: '#8b5cf6',
-    cancelButtonText: 'Cancel',
-    background: isDark ? "#1e293b" : "#fff",
-    color: isDark ? "#f8fafc" : "#1a1a2e"
-  }).then(function(result) {
-    if (result.isConfirmed && result.value) {
-      const newEmail = result.value.trim();
-      
-      fetch(API_URL + '/api/user/link-email', {
+      // Fetch updated records from Express SQL server
+      fetch(API_URL + '/api/user/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: userData.phone,
-          password: userData.password,
-          email: newEmail
+          balance: localBalance,
+          totalMined: localTotalMined,
+          withdrawalCount: localWithdrawalCount
         })
       })
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        if (data.status) {
-          Swal.fire({
-            title: 'Success!',
-            text: 'Your Gmail address has been linked successfully.',
-            icon: 'success',
-            confirmButtonColor: '#8b5cf6',
-            background: isDark ? "#1e293b" : "#fff",
-            color: isDark ? "#f8fafc" : "#1a1a2e"
-          });
-          
-          userData = data.user;
-          localStorage.setItem("9jaCashUser", JSON.stringify(userData));
-          
-          const emailVal = userData.email || "";
-          const isPlaceholderEmail = emailVal.includes(userData.phone + "@") || emailVal === "";
-          document.getElementById("profileEmail").textContent = isPlaceholderEmail ? "No Gmail linked" : emailVal;
-          document.getElementById("emailActionText").textContent = isPlaceholderEmail ? "Link Gmail" : "Update Gmail";
-        } else {
-          Swal.fire({
-            title: 'Error',
-            text: data.error || 'Failed to update email address.',
-            icon: 'error',
-            confirmButtonColor: '#8b5cf6',
-            background: isDark ? "#1e293b" : "#fff",
-            color: isDark ? "#f8fafc" : "#1a1a2e"
-          });
-        }
-      })
-      .catch(function(err) {
-        console.error("Link email error:", err);
-        Swal.fire({
-          title: 'Connection Error',
-          text: 'Failed to communicate with database server.',
-          icon: 'error',
-          confirmButtonColor: '#8b5cf6',
-          background: isDark ? "#1e293b" : "#fff",
-          color: isDark ? "#f8fafc" : "#1a1a2e"
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.status && data.user) {
+            const fresh = data.user;
+            userData = fresh;
+            localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+
+            const emailVal = fresh.email || "";
+            const isPlaceholderEmail = emailVal.includes(fresh.phone + "@") || emailVal === "";
+            document.getElementById("profileEmail").textContent = isPlaceholderEmail ? "No Gmail linked" : emailVal;
+            document.getElementById("emailActionText").textContent = isPlaceholderEmail ? "Link Gmail" : "Update Gmail";
+
+            const displayName = fresh.customName || fresh.fullName || fresh.name || "9jaCash User";
+            const isVerifiedFresh = fresh.is_verified === 1 || fresh.isVerified;
+            const freshBadgeHtml = isVerifiedFresh ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:16px;" title="Verified Account"></i>' : '';
+            document.getElementById("profileName").innerHTML = displayName + freshBadgeHtml + ' <i class="fa-solid fa-pen-to-square text-xs text-slate-500 ml-1"></i>';
+            document.getElementById("avatarLarge").textContent = displayName.charAt(0).toUpperCase();
+
+            document.getElementById("profileBankName").textContent = fresh.bankName || "Not linked";
+            document.getElementById("profileAccountNumber").textContent = fresh.accountNumber || "Not linked";
+            const hasBankSync = fresh.bankName && fresh.bankName !== "Not linked";
+            document.getElementById("bankActionText").textContent = hasBankSync ? "Update Bank" : "Link Bank";
+            document.getElementById("profilePlanName").textContent = fresh.planName || fresh.plan || "Free Miner";
+            document.getElementById("profileMultiplier").textContent = (fresh.miningPower || 1) + "x";
+            document.getElementById("profileTotalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
+            updatePayoutKeyUI();
+          }
+        })
+        .catch(function (err) {
+          console.warn("Backend profile sync offline");
         });
+    }
+
+    function updatePayoutKeyUI() {
+      const payoutKey = userData.payoutKey || userData.payout_key;
+      const payoutKeyCard = document.getElementById("payoutKeyProfileCard");
+      const payoutKeyLocked = document.getElementById("payoutKeyLockedCard");
+
+      if (!payoutKeyCard || !payoutKeyLocked) return;
+
+      if (payoutKey) {
+        payoutKeyLocked.classList.add("hidden");
+        payoutKeyCard.classList.remove("hidden");
+        document.getElementById("profilePayoutKeyText").textContent = payoutKey;
+      } else {
+        payoutKeyCard.classList.add("hidden");
+        payoutKeyLocked.classList.remove("hidden");
+      }
+    }
+
+    function logoutUser() {
+      localStorage.removeItem("9jaCashUser");
+      localStorage.removeItem("walletBalance");
+      localStorage.removeItem("transactionHistory");
+      localStorage.removeItem("claimData");
+      localStorage.removeItem("checkinData");
+      localStorage.removeItem("mineData");
+      localStorage.removeItem("todayMined");
+      localStorage.removeItem("lastMineDate");
+      location.href = "login.html";
+    }
+
+    // ========== LINK GMAIL ACCOUNT ==========
+    function promptLinkEmail() {
+      const isDark = document.body.classList.contains("dark-mode");
+
+      Swal.fire({
+        title: 'Link Gmail Account',
+        text: 'Enter your Gmail address to receive transaction notifications and payment receipts.',
+        input: 'email',
+        inputPlaceholder: 'yourname@gmail.com',
+        showCancelButton: true,
+        confirmButtonText: 'Link Email',
+        confirmButtonColor: '#8b5cf6',
+        cancelButtonText: 'Cancel',
+        background: isDark ? "#1e293b" : "#fff",
+        color: isDark ? "#f8fafc" : "#1a1a2e"
+      }).then(function (result) {
+        if (result.isConfirmed && result.value) {
+          const newEmail = result.value.trim();
+
+          fetch(API_URL + '/api/user/link-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: userData.phone,
+              password: userData.password,
+              email: newEmail
+            })
+          })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              if (data.status) {
+                Swal.fire({
+                  title: 'Success!',
+                  text: 'Your Gmail address has been linked successfully.',
+                  icon: 'success',
+                  confirmButtonColor: '#8b5cf6',
+                  background: isDark ? "#1e293b" : "#fff",
+                  color: isDark ? "#f8fafc" : "#1a1a2e"
+                });
+
+                userData = data.user;
+                localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+
+                const emailVal = userData.email || "";
+                const isPlaceholderEmail = emailVal.includes(userData.phone + "@") || emailVal === "";
+                document.getElementById("profileEmail").textContent = isPlaceholderEmail ? "No Gmail linked" : emailVal;
+                document.getElementById("emailActionText").textContent = isPlaceholderEmail ? "Link Gmail" : "Update Gmail";
+              } else {
+                Swal.fire({
+                  title: 'Error',
+                  text: data.error || 'Failed to update email address.',
+                  icon: 'error',
+                  confirmButtonColor: '#8b5cf6',
+                  background: isDark ? "#1e293b" : "#fff",
+                  color: isDark ? "#f8fafc" : "#1a1a2e"
+                });
+              }
+            })
+            .catch(function (err) {
+              console.error("Link email error:", err);
+              Swal.fire({
+                title: 'Connection Error',
+                text: 'Failed to communicate with database server.',
+                icon: 'error',
+                confirmButtonColor: '#8b5cf6',
+                background: isDark ? "#1e293b" : "#fff",
+                color: isDark ? "#f8fafc" : "#1a1a2e"
+              });
+            });
+        }
       });
     }
-  });
-}
 
-// ========== LINK BANK INFO ==========
-function promptLinkBank() {
-  const isDark = document.body.classList.contains("dark-mode");
-  
-  Swal.fire({
-    title: 'Update Bank Details',
-    html: `
+    // ========== LINK BANK INFO ==========
+    function promptLinkBank() {
+      const isDark = document.body.classList.contains("dark-mode");
+
+      Swal.fire({
+        title: 'Update Bank Details',
+        html: `
       <div style="text-align: left; margin-bottom: 8px; font-size: 12px; color: #94a3b8; font-weight: 600;">BANK NAME</div>
       <input id="swal-bank-name" class="swal2-input" placeholder="e.g. GTBank, Zenith, OPay" value="${userData.bankName || ''}" style="margin: 0 0 15px 0; width: 85%; background: ${isDark ? '#1e293b' : '#fff'}; color: ${isDark ? '#f8fafc' : '#1a1a2e'}; border-color: #334155; border-radius: 8px;">
       <div style="text-align: left; margin-bottom: 8px; font-size: 12px; color: #94a3b8; font-weight: 600;">ACCOUNT NUMBER</div>
       <input id="swal-account-number" class="swal2-input" placeholder="10-digit number" maxlength="10" value="${userData.accountNumber || ''}" style="margin: 0; width: 85%; background: ${isDark ? '#1e293b' : '#fff'}; color: ${isDark ? '#f8fafc' : '#1a1a2e'}; border-color: #334155; border-radius: 8px;">
     `,
-    focusConfirm: false,
-    showCancelButton: true,
-    confirmButtonText: 'Save Details',
-    confirmButtonColor: '#8b5cf6',
-    cancelButtonText: 'Cancel',
-    background: isDark ? "#1e293b" : "#fff",
-    color: isDark ? "#f8fafc" : "#1a1a2e",
-    preConfirm: () => {
-      const bankName = document.getElementById('swal-bank-name').value.trim();
-      const accountNumber = document.getElementById('swal-account-number').value.trim();
-      if (!bankName) {
-        Swal.showValidationMessage('Please enter a bank name');
-        return false;
-      }
-      if (accountNumber.length !== 10 || !/^\d{10}$/.test(accountNumber)) {
-        Swal.showValidationMessage('Account number must be exactly 10 digits');
-        return false;
-      }
-      return { bankName, accountNumber };
-    }
-  }).then(function(result) {
-    if (result.isConfirmed && result.value) {
-      const { bankName, accountNumber } = result.value;
-      
-      fetch(API_URL + '/api/user/update-bank', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: userData.phone,
-          password: userData.password,
-          bankName: bankName,
-          accountNumber: accountNumber
-        })
-      })
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        if (data.status) {
-          Swal.fire({
-            title: 'Success!',
-            text: 'Bank details updated successfully.',
-            icon: 'success',
-            confirmButtonColor: '#8b5cf6',
-            background: isDark ? "#1e293b" : "#fff",
-            color: isDark ? "#f8fafc" : "#1a1a2e"
-          });
-          
-          userData = data.user;
-          localStorage.setItem("9jaCashUser", JSON.stringify(userData));
-          
-          document.getElementById("profileBankName").textContent = userData.bankName || "Not linked";
-          document.getElementById("profileAccountNumber").textContent = userData.accountNumber || "Not linked";
-          document.getElementById("bankActionText").textContent = "Update Bank";
-          
-          // Sync with legacy local storage values just in case
-          localStorage.setItem("userBankName", userData.bankName);
-          localStorage.setItem("userAccountNumber", userData.accountNumber);
-        } else {
-          Swal.fire({
-            title: 'Error',
-            text: data.error || 'Failed to update bank details.',
-            icon: 'error',
-            confirmButtonColor: '#8b5cf6',
-            background: isDark ? "#1e293b" : "#fff",
-            color: isDark ? "#f8fafc" : "#1a1a2e"
-          });
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Save Details',
+        confirmButtonColor: '#8b5cf6',
+        cancelButtonText: 'Cancel',
+        background: isDark ? "#1e293b" : "#fff",
+        color: isDark ? "#f8fafc" : "#1a1a2e",
+        preConfirm: () => {
+          const bankName = document.getElementById('swal-bank-name').value.trim();
+          const accountNumber = document.getElementById('swal-account-number').value.trim();
+          if (!bankName) {
+            Swal.showValidationMessage('Please enter a bank name');
+            return false;
+          }
+          if (accountNumber.length !== 10 || !/^\d{10}$/.test(accountNumber)) {
+            Swal.showValidationMessage('Account number must be exactly 10 digits');
+            return false;
+          }
+          return { bankName, accountNumber };
         }
-      })
-      .catch(function(err) {
-        console.error("Link bank error:", err);
-        Swal.fire({
-          title: 'Connection Error',
-          text: 'Failed to communicate with database server.',
-          icon: 'error',
-          confirmButtonColor: '#8b5cf6',
-          background: isDark ? "#1e293b" : "#fff",
-          color: isDark ? "#f8fafc" : "#1a1a2e"
-        });
+      }).then(function (result) {
+        if (result.isConfirmed && result.value) {
+          const { bankName, accountNumber } = result.value;
+
+          fetch(API_URL + '/api/user/update-bank', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: userData.phone,
+              password: userData.password,
+              bankName: bankName,
+              accountNumber: accountNumber
+            })
+          })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              if (data.status) {
+                Swal.fire({
+                  title: 'Success!',
+                  text: 'Bank details updated successfully.',
+                  icon: 'success',
+                  confirmButtonColor: '#8b5cf6',
+                  background: isDark ? "#1e293b" : "#fff",
+                  color: isDark ? "#f8fafc" : "#1a1a2e"
+                });
+
+                userData = data.user;
+                localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+
+                document.getElementById("profileBankName").textContent = userData.bankName || "Not linked";
+                document.getElementById("profileAccountNumber").textContent = userData.accountNumber || "Not linked";
+                document.getElementById("bankActionText").textContent = "Update Bank";
+
+                // Sync with legacy local storage values just in case
+                localStorage.setItem("userBankName", userData.bankName);
+                localStorage.setItem("userAccountNumber", userData.accountNumber);
+              } else {
+                Swal.fire({
+                  title: 'Error',
+                  text: data.error || 'Failed to update bank details.',
+                  icon: 'error',
+                  confirmButtonColor: '#8b5cf6',
+                  background: isDark ? "#1e293b" : "#fff",
+                  color: isDark ? "#f8fafc" : "#1a1a2e"
+                });
+              }
+            })
+            .catch(function (err) {
+              console.error("Link bank error:", err);
+              Swal.fire({
+                title: 'Connection Error',
+                text: 'Failed to communicate with database server.',
+                icon: 'error',
+                confirmButtonColor: '#8b5cf6',
+                background: isDark ? "#1e293b" : "#fff",
+                color: isDark ? "#f8fafc" : "#1a1a2e"
+              });
+            });
+        }
       });
     }
-  });
-}
 
-window.addEventListener("DOMContentLoaded", function() {
-  initProfile();
-  initLiveWithdrawalPopups();
-});
-</script>
+    window.addEventListener("DOMContentLoaded", function () {
+      initProfile();
+      initLiveWithdrawalPopups();
+    });
+  </script>
 
-<!-- Live Withdrawal Popup Container -->
-<div id="liveWithdrawalPopup" style="position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150px); z-index: 10000; display: flex; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; max-width: 90%; width: 280px; opacity: 0;">
-  <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 12px #10b981; animation: pulse 1.5s infinite;"></div>
-  <div style="flex: 1;">
-    <div style="font-size: 10px; color: #6366f1; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Live Payout</div>
-    <div id="liveWithdrawalText" style="font-size: 12px; color: #f8fafc; font-weight: 700; margin-top: 1px;"></div>
-  </div>
-</div>
-
-<script>
-function initLiveWithdrawalPopups() {
-  const popup = document.getElementById('liveWithdrawalPopup');
-  if (!popup) return;
-
-  const names = ["Mustafa", "Emeka", "Amina", "Chidi", "Fatima", "Tunde", "Blessing", "Musa", "Ngozi", "Ibrahim", "Yetunde", "Olumide", "Halima", "Chioma", "Kelechi", "Abubakar", "Funmi", "Uche", "Bose", "Damilola", "Efe", "Ali", "Yusuf"];
-
-  function triggerPopup() {
-    const randomName = names[Math.floor(Math.random() * names.length)];
-    const randomK = Math.floor(Math.random() * (1000 - 50 + 1)) + 50;
-    const randomAmount = "₦" + (randomK * 1000).toLocaleString("en-NG");
-    document.getElementById('liveWithdrawalText').textContent = `${randomName} successfully withdrew ${randomAmount}`;
-    
-    // Slide in
-    popup.style.transform = 'translate(-50%, 0)';
-    popup.style.opacity = '1';
-
-    // Slide out after 5 seconds
-    setTimeout(() => {
-      popup.style.transform = 'translate(-50%, -150px)';
-      popup.style.opacity = '0';
-    }, 5000);
-
-    // Schedule next popup (every 10 seconds)
-    setTimeout(triggerPopup, 10000);
-  }
-
-  // Start the first popup after 10 seconds
-  setTimeout(triggerPopup, 10000);
-}
-}
-</script>
-
-<a href="javascript:void(0)" onclick="openCustomerCareModal()" style="position:fixed; bottom:90px; right:20px; width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer; z-index:90; box-shadow:0 4px 20px rgba(99,102,241,0.4); border:3px solid #fff; text-decoration:none;" title="Customer Care Support">
-  <i class="fa-solid fa-headset"></i>
-</a>
-
-<!-- CUSTOMER CARE SELECTION MODAL -->
-<div id="customerCareModal" class="customer-care-modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:99999; align-items:center; justify-content:center;">
-  <div style="background:linear-gradient(145deg, #111827, #0f172a); border:1px solid rgba(255,255,255,0.12); border-radius:24px; width:90%; max-width:400px; padding:28px 24px; text-align:center; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); position:relative;">
-    <button onclick="closeCustomerCareModal()" style="position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.08); border:none; color:#94a3b8; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">✕</button>
-    
-    <div style="width:64px; height:64px; margin:0 auto 16px auto; background:linear-gradient(135deg, #6366f1, #8b5cf6); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 25px rgba(99,102,241,0.5);">
-      <i class="fa-solid fa-headset" style="font-size:28px; color:white;"></i>
+  <!-- Live Withdrawal Popup Container -->
+  <div id="liveWithdrawalPopup"
+    style="position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150px); z-index: 10000; display: flex; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; max-width: 90%; width: 280px; opacity: 0;">
+    <div
+      style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 12px #10b981; animation: pulse 1.5s infinite;">
     </div>
-    
-    <h3 style="font-size:20px; font-weight:800; color:white; margin:0 0 6px 0;">Customer Care Support</h3>
-    <p style="font-size:13px; color:#94a3b8; margin:0 0 24px 0;">Select your preferred channel to connect with our official support team:</p>
-    
-    <div style="display:flex; flex-direction:column; gap:14px;">
-      <!-- WhatsApp Option -->
-      <a id="modalWhatsappBtn" href="https://wa.me/2349000000000?text=Hello%209jaCash%20Support,%20I%20need%20assistance" target="_blank" style="display:flex; align-items:center; gap:16px; background:linear-gradient(135deg, #128c7e, #25d366); color:white; text-decoration:none; padding:16px 20px; border-radius:16px; font-weight:700; font-size:15px; box-shadow:0 10px 20px rgba(37,211,102,0.25);">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="white" style="flex-shrink:0;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.157 4.228 4.305-1.127z"/></svg>
-        <div style="text-align:left;">
-          <div style="font-size:15px; font-weight:800;">WhatsApp Support</div>
-          <div style="font-size:11px; opacity:0.85; font-weight:500;">Instant 24/7 Live Chat Assistance</div>
-        </div>
-      </a>
-      
-      <!-- Telegram Option -->
-      <a id="modalTelegramBtn" href="https://t.me/apex_customercare" target="_blank" style="display:flex; align-items:center; gap:16px; background:linear-gradient(135deg, #0088cc, #229ed9); color:white; text-decoration:none; padding:16px 20px; border-radius:16px; font-weight:700; font-size:15px; box-shadow:0 10px 20px rgba(0,136,204,0.25);">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="white" style="flex-shrink:0;"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.536-.196 1.006.128.832.941z"/></svg>
-        <div style="text-align:left;">
-          <div style="font-size:15px; font-weight:800;">Telegram Channel</div>
-          <div style="font-size:11px; opacity:0.85; font-weight:500;">Official Community & Support</div>
-        </div>
-      </a>
+    <div style="flex: 1;">
+      <div style="font-size: 10px; color: #6366f1; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+        Live Payout</div>
+      <div id="liveWithdrawalText" style="font-size: 12px; color: #f8fafc; font-weight: 700; margin-top: 1px;"></div>
     </div>
   </div>
-</div>
 
-<script>
-function openCustomerCareModal() {
-  const modal = document.getElementById("customerCareModal");
-  if (modal) modal.style.display = "flex";
+  <script>
+    function initLiveWithdrawalPopups() {
+      const popup = document.getElementById('liveWithdrawalPopup');
+      if (!popup) return;
+
+      const names = ["Mustafa", "Emeka", "Amina", "Chidi", "Fatima", "Tunde", "Blessing", "Musa", "Ngozi", "Ibrahim", "Yetunde", "Olumide", "Halima", "Chioma", "Kelechi", "Abubakar", "Funmi", "Uche", "Bose", "Damilola", "Efe", "Ali", "Yusuf"];
+
+      function triggerPopup() {
+        const randomName = names[Math.floor(Math.random() * names.length)];
+        const randomK = Math.floor(Math.random() * (1000 - 50 + 1)) + 50;
+        const randomAmount = "₦" + (randomK * 1000).toLocaleString("en-NG");
+        document.getElementById('liveWithdrawalText').textContent = `${randomName} successfully withdrew ${randomAmount}`;
+
+        // Slide in
+        popup.style.transform = 'translate(-50%, 0)';
+        popup.style.opacity = '1';
+
+        // Slide out after 5 seconds
+        setTimeout(() => {
+          popup.style.transform = 'translate(-50%, -150px)';
+          popup.style.opacity = '0';
+        }, 5000);
+
+        // Schedule next popup (every 10 seconds)
+        setTimeout(triggerPopup, 10000);
+      }
+
+      // Start the first popup after 10 seconds
+      setTimeout(triggerPopup, 10000);
+    }
 }
-function closeCustomerCareModal() {
-  const modal = document.getElementById("customerCareModal");
-  if (modal) modal.style.display = "none";
-}
-function loadCustomerCareLinks() {
-  if (window._9jaCash && window._9jaCash.db) {
-    window._9jaCash.db.collection('settings').doc('payment').get()
-      .then(function(doc) {
-        if (doc.exists) {
-          const data = doc.data();
-          const whatsappBtn = document.getElementById('modalWhatsappBtn');
-          const telegramBtn = document.getElementById('modalTelegramBtn');
-          
-          const waActive = data.whatsappLinkActive !== false;
-          const tgActive = data.telegramSupportLinkActive !== false;
-          const waUrl = data.whatsappLink || "https://wa.me/2349000000000";
-          const tgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
-          
-          if (whatsappBtn) {
-            whatsappBtn.href = waUrl;
-            whatsappBtn.style.display = waActive ? 'flex' : 'none';
-          }
-          if (telegramBtn) {
-            telegramBtn.href = tgUrl;
-            telegramBtn.style.display = tgActive ? 'flex' : 'none';
-          }
-          
-          // Fallback: if both are inactive, show Telegram by default
-          if (!waActive && !tgActive) {
-            if (telegramBtn) telegramBtn.style.display = 'flex';
-          }
-        }
-      })
-      .catch(function(err) {
-        console.warn("Error loading customer care links:", err);
-      });
-  }
-}
-function promptEditName() {
-  const isDark = document.body.classList.contains('dark-theme');
-  Swal.fire({
-    title: 'Edit Display Name',
-    html: `
+  </script>
+
+  <a href="javascript:void(0)" onclick="openCustomerCareModal()"
+    style="position:fixed; bottom:90px; right:20px; width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer; z-index:90; box-shadow:0 4px 20px rgba(99,102,241,0.4); border:3px solid #fff; text-decoration:none;"
+    title="Customer Care Support">
+    <i class="fa-solid fa-headset"></i>
+  </a>
+
+  <!-- CUSTOMER CARE SELECTION MODAL -->
+  <div id="customerCareModal" class="customer-care-modal-overlay"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:99999; align-items:center; justify-content:center;">
+    <div
+      style="background:linear-gradient(145deg, #111827, #0f172a); border:1px solid rgba(255,255,255,0.12); border-radius:24px; width:90%; max-width:400px; padding:28px 24px; text-align:center; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); position:relative;">
+      <button onclick="closeCustomerCareModal()"
+        style="position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.08); border:none; color:#94a3b8; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">✕</button>
+
+      <div
+        style="width:64px; height:64px; margin:0 auto 16px auto; background:linear-gradient(135deg, #6366f1, #8b5cf6); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 25px rgba(99,102,241,0.5);">
+        <i class="fa-solid fa-headset" style="font-size:28px; color:white;"></i>
+      </div>
+
+      <h3 style="font-size:20px; font-weight:800; color:white; margin:0 0 6px 0;">Customer Care Support</h3>
+      <p style="font-size:13px; color:#94a3b8; margin:0 0 24px 0;">Select your preferred channel to connect with our
+        official support team:</p>
+
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <!-- WhatsApp Option -->
+        <a id="modalWhatsappBtn"
+          href="https://wa.me/2349000000000?text=Hello%209jaCash%20Support,%20I%20need%20assistance" target="_blank"
+          style="display:flex; align-items:center; gap:16px; background:linear-gradient(135deg, #128c7e, #25d366); color:white; text-decoration:none; padding:16px 20px; border-radius:16px; font-weight:700; font-size:15px; box-shadow:0 10px 20px rgba(37,211,102,0.25);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="white" style="flex-shrink:0;">
+            <path
+              d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.157 4.228 4.305-1.127z" />
+          </svg>
+          <div style="text-align:left;">
+            <div style="font-size:15px; font-weight:800;">WhatsApp Support</div>
+            <div style="font-size:11px; opacity:0.85; font-weight:500;">Instant 24/7 Live Chat Assistance</div>
+          </div>
+        </a>
+
+        <!-- Telegram Option -->
+        <a id="modalTelegramBtn" href="https://t.me/apex_customercare" target="_blank"
+          style="display:flex; align-items:center; gap:16px; background:linear-gradient(135deg, #0088cc, #229ed9); color:white; text-decoration:none; padding:16px 20px; border-radius:16px; font-weight:700; font-size:15px; box-shadow:0 10px 20px rgba(0,136,204,0.25);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="white" style="flex-shrink:0;">
+            <path
+              d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.536-.196 1.006.128.832.941z" />
+          </svg>
+          <div style="text-align:left;">
+            <div style="font-size:15px; font-weight:800;">Telegram Channel</div>
+            <div style="font-size:11px; opacity:0.85; font-weight:500;">Official Community & Support</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openCustomerCareModal() {
+      const modal = document.getElementById("customerCareModal");
+      if (modal) modal.style.display = "flex";
+    }
+    function closeCustomerCareModal() {
+      const modal = document.getElementById("customerCareModal");
+      if (modal) modal.style.display = "none";
+    }
+    function loadCustomerCareLinks() {
+      if (window._9jaCash && window._9jaCash.db) {
+        window._9jaCash.db.collection('settings').doc('payment').get()
+          .then(function (doc) {
+            if (doc.exists) {
+              const data = doc.data();
+              const whatsappBtn = document.getElementById('modalWhatsappBtn');
+              const telegramBtn = document.getElementById('modalTelegramBtn');
+
+              const waActive = data.whatsappLinkActive !== false;
+              const tgActive = data.telegramSupportLinkActive !== false;
+              const waUrl = data.whatsappLink || "https://wa.me/2349000000000";
+              const tgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
+
+              if (whatsappBtn) {
+                whatsappBtn.href = waUrl;
+                whatsappBtn.style.display = waActive ? 'flex' : 'none';
+              }
+              if (telegramBtn) {
+                telegramBtn.href = tgUrl;
+                telegramBtn.style.display = tgActive ? 'flex' : 'none';
+              }
+
+              // Fallback: if both are inactive, show Telegram by default
+              if (!waActive && !tgActive) {
+                if (telegramBtn) telegramBtn.style.display = 'flex';
+              }
+            }
+          })
+          .catch(function (err) {
+            console.warn("Error loading customer care links:", err);
+          });
+      }
+    }
+    function promptEditName() {
+      const isDark = document.body.classList.contains('dark-theme');
+      Swal.fire({
+        title: 'Edit Display Name',
+        html: `
       <div style="text-align: left; margin-bottom: 8px; font-size: 12px; color: #94a3b8; font-weight: 600;">NEW DISPLAY NAME</div>
       <input id="swal-custom-name" class="swal2-input" placeholder="Enter display name" value="${userData.customName || userData.fullName || userData.name || ''}" style="margin: 0 0 15px 0; width: 85%; background: ${isDark ? '#1e293b' : '#fff'}; color: ${isDark ? '#f8fafc' : '#1a1a2e'}; border-color: #334155; border-radius: 8px;">
     `,
-    showCancelButton: true,
-    confirmButtonText: 'Save Changes',
-    confirmButtonColor: '#8b5cf6',
-    cancelButtonColor: '#ef4444',
-    background: isDark ? '#0f172a' : '#fff',
-    color: isDark ? '#f8fafc' : '#1a1a2e',
-    preConfirm: () => {
-      const customName = document.getElementById('swal-custom-name').value.trim();
-      if (!customName) {
-        Swal.showValidationMessage('Please enter a display name');
-        return false;
-      }
-      return customName;
-    }
-  }).then((result) => {
-    if (result.isConfirmed) {
-      const customName = result.value;
-      Swal.fire({
-        title: 'Updating name...',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-      });
-      fetch(API_URL + '/api/user/update-name', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: userData.phone, customName })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status) {
-          userData.customName = customName;
-          localStorage.setItem("9jaCashUser", JSON.stringify(userData));
-          
-          // Re-render name display
-          const isUserVerified = userData.is_verified === 1 || userData.isVerified;
-          const verBadgeHtml = isUserVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:16px;" title="Verified Account"></i>' : '';
-          document.getElementById("profileName").innerHTML = customName + verBadgeHtml + ' <i class="fa-solid fa-pen-to-square text-xs text-slate-500 ml-1"></i>';
-          document.getElementById("avatarLarge").textContent = customName.charAt(0).toUpperCase();
-
-          Swal.fire({
-            icon: 'success',
-            title: 'Display Name Updated',
-            text: 'Your new display name has been saved successfully.',
-            timer: 2000,
-            showConfirmButton: false,
-            background: isDark ? '#0f172a' : '#fff',
-            color: isDark ? '#f8fafc' : '#1a1a2e'
-          });
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Failed',
-            text: data.error || 'Could not save display name.',
-            background: isDark ? '#0f172a' : '#fff',
-            color: isDark ? '#f8fafc' : '#1a1a2e'
-          });
+        showCancelButton: true,
+        confirmButtonText: 'Save Changes',
+        confirmButtonColor: '#8b5cf6',
+        cancelButtonColor: '#ef4444',
+        background: isDark ? '#0f172a' : '#fff',
+        color: isDark ? '#f8fafc' : '#1a1a2e',
+        preConfirm: () => {
+          const customName = document.getElementById('swal-custom-name').value.trim();
+          if (!customName) {
+            Swal.showValidationMessage('Please enter a display name');
+            return false;
+          }
+          return customName;
         }
-      })
-      .catch(() => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Network Error',
-          text: 'Check your internet connection and try again.',
-          background: isDark ? '#0f172a' : '#fff',
-          color: isDark ? '#f8fafc' : '#1a1a2e'
-        });
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const customName = result.value;
+          Swal.fire({
+            title: 'Updating name...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+          });
+          fetch(API_URL + '/api/user/update-name', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: userData.phone, customName })
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.status) {
+                userData.customName = customName;
+                localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+
+                // Re-render name display
+                const isUserVerified = userData.is_verified === 1 || userData.isVerified;
+                const verBadgeHtml = isUserVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:16px;" title="Verified Account"></i>' : '';
+                document.getElementById("profileName").innerHTML = customName + verBadgeHtml + ' <i class="fa-solid fa-pen-to-square text-xs text-slate-500 ml-1"></i>';
+                document.getElementById("avatarLarge").textContent = customName.charAt(0).toUpperCase();
+
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Display Name Updated',
+                  text: 'Your new display name has been saved successfully.',
+                  timer: 2000,
+                  showConfirmButton: false,
+                  background: isDark ? '#0f172a' : '#fff',
+                  color: isDark ? '#f8fafc' : '#1a1a2e'
+                });
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Failed',
+                  text: data.error || 'Could not save display name.',
+                  background: isDark ? '#0f172a' : '#fff',
+                  color: isDark ? '#f8fafc' : '#1a1a2e'
+                });
+              }
+            })
+            .catch(() => {
+              Swal.fire({
+                icon: 'error',
+                title: 'Network Error',
+                text: 'Check your internet connection and try again.',
+                background: isDark ? '#0f172a' : '#fff',
+                color: isDark ? '#f8fafc' : '#1a1a2e'
+              });
+            });
+        }
       });
     }
-  });
-}
 
-setTimeout(loadCustomerCareLinks, 500);
-</script>
+    setTimeout(loadCustomerCareLinks, 500);
+  </script>
 
 </body>
+
 </html>

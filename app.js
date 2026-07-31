@@ -1,7 +1,7 @@
 // app.js — 9jaCash Express Application Router
 // Contains all REST API endpoints for user and admin database management.
 // Shared between local server.js and Netlify production serverless functions.
-try { require('dotenv').config(); } catch(e) {}
+try { require('dotenv').config(); } catch (e) { }
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('⚠️ Unhandled Rejection (handled):', reason);
@@ -20,7 +20,7 @@ const https = require('https');
 function safeParseDate(dateStr) {
   if (!dateStr) return new Date(0);
   if (dateStr instanceof Date) return dateStr;
-  
+
   // If it's a numeric timestamp
   if (/^\d+$/.test(dateStr.toString().trim())) {
     const d = new Date(Number(dateStr.toString().trim()));
@@ -30,7 +30,7 @@ function safeParseDate(dateStr) {
   // Try standard parse first (handles ISO strings perfectly)
   let d = new Date(dateStr);
   if (!isNaN(d.getTime())) return d;
-  
+
   try {
     const cleanStr = dateStr.toString().replace(/,/g, ' ').trim();
     // Try splitting by space to separate date and time
@@ -45,7 +45,7 @@ function safeParseDate(dateStr) {
           let p1 = parseInt(dateParts[0]);
           let p2 = parseInt(dateParts[1]);
           let p3 = parseInt(dateParts[2]);
-          
+
           let year, month, day;
           if (p1 > 1000) {
             // YYYY-MM-DD
@@ -74,7 +74,7 @@ function safeParseDate(dateStr) {
             day = p1;
             month = p2;
           }
-          
+
           let hours = 0, minutes = 0, seconds = 0;
           if (parts.length >= 2) {
             const timeStr = parts[1];
@@ -82,13 +82,13 @@ function safeParseDate(dateStr) {
             hours = parseInt(timeParts[0] || 0);
             minutes = parseInt(timeParts[1] || 0);
             seconds = parseInt(timeParts[2] || 0);
-            
+
             // Check AM/PM
             const ampm = cleanStr.toLowerCase();
             if (ampm.includes('pm') && hours < 12) hours += 12;
             if (ampm.includes('am') && hours === 12) hours = 0;
           }
-          
+
           // Build date using Date.UTC for timezone independence
           d = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
           if (!isNaN(d.getTime())) return d;
@@ -222,7 +222,7 @@ function sendResendEmail(to, subject, html, retries = 3, delay = 1000) {
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error(`[SMTP ERROR] to: ${to} | Code: ${error.code || 'N/A'} | Message: ${error.message}`);
-          
+
           if (error.message.includes('535')) {
             console.error('[SMTP CRITICAL] Gmail Authentication failed. Check App Password or account security blocks.');
           } else if (error.message.includes('550')) {
@@ -303,7 +303,7 @@ app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 const path = require('path');
-app.use(express.static(path.join(__dirname, 'public'), { 
+app.use(express.static(path.join(__dirname, 'public'), {
   extensions: ['html'],
   setHeaders: function (res, filepath) {
     if (filepath.endsWith('.html') || filepath.includes('admin') || filepath.includes('junior')) {
@@ -440,7 +440,7 @@ async function findJuniorAdminCode(referredBy) {
         }
       }
     }
-  } catch(e) {
+  } catch (e) {
     console.error('Error in findJuniorAdminCode:', e.message);
   }
   return null;
@@ -474,7 +474,7 @@ function mapUserKeys(u) {
 // POST /api/register — User signup
 app.post('/api/register', async (req, res) => {
   const { phone, email, password, fullName, bankName, accountNumber, promoCode, promoBonus, referredBy } = req.body || {};
-  
+
   const cleanPhone = normalizePhone(phone);
   if (!cleanPhone || cleanPhone.length !== 11) {
     return res.status(400).json({ status: false, error: 'Phone must be 11 digits (e.g. 08012345678)' });
@@ -495,10 +495,10 @@ app.post('/api/register', async (req, res) => {
   try {
     const createdAt = new Date().toISOString();
     const juniorAdminCode = await findJuniorAdminCode(referredBy);
-    
+
     // Check if user already exists
     const existing = await db.query('SELECT phone FROM users WHERE phone = ? OR LOWER(email) = ?', [cleanPhone, cleanEmail]);
-    
+
     if (existing && existing.length > 0) {
       // Upsert: Update existing user record with latest password and details
       await db.query(`
@@ -616,7 +616,7 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/user/sync', async (req, res) => {
   const { phone, balance, totalMined, withdrawalCount } = req.body || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
-  
+
   const cleanPhone = normalizePhone(phone);
   try {
     const users = await db.query('SELECT * FROM users WHERE phone = ?', [cleanPhone]);
@@ -681,7 +681,7 @@ app.post('/api/user/sync', async (req, res) => {
     const finalWithdrawalCount = parseInt(getCnt(withdrawalsResult));
 
     const verificationResult = await db.query(
-      "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'", 
+      "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'",
       [cleanPhone]
     );
     const verified = parseInt(getCnt(verificationResult)) > 0;
@@ -751,7 +751,7 @@ app.post('/api/user/link-email', async (req, res) => {
     await db.query('UPDATE users SET email = ? WHERE phone = ?', [email, phone]);
     const users = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
     const u = users[0];
-    
+
     // Trigger Welcome Email alert
     const welcomeHtml = compileEmailTemplate(
       "Welcome to 9jaCash! ⛏️",
@@ -782,7 +782,7 @@ app.post('/api/user/update-bank', async (req, res) => {
   if (!phone || !bankName || !accountNumber) {
     return res.status(400).json({ status: false, error: 'Phone, Bank Name and Account Number are required' });
   }
-  
+
   try {
     // SECURITY: Authenticate request using user password
     const userList = await db.query('SELECT password FROM users WHERE phone = ?', [phone]);
@@ -941,7 +941,7 @@ app.post('/api/user/stake-spin', async (req, res) => {
     const content = multiplier === 0
       ? `You staked ₦${stake.toLocaleString()} on the Spin Wheel and hit the BOMB! Better luck next time!`
       : `Congratulations! You staked ₦${stake.toLocaleString()} and hit a ${multiplier}x multiplier, winning ₦${payoutAmount.toLocaleString()}!`;
-    
+
     await db.query(`
       INSERT INTO user_notifications (id, phone, type, title, content, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
@@ -997,16 +997,16 @@ app.post('/api/withdraw', async (req, res) => {
 
     if (finalWithdrawalCount >= 1) {
       const verificationCountResult = await db.query(
-        "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'", 
+        "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'",
         [phone]
       );
       const verificationCount = parseInt(verificationCountResult[0].count || verificationCountResult[0]['COUNT(*)'] || 0);
 
       if (verificationCount === 0) {
-        return res.status(403).json({ 
-          status: false, 
-          error: 'verification_required', 
-          message: 'You have completed 1 withdrawal. Please verify your account before initiating your second withdrawal.' 
+        return res.status(403).json({
+          status: false,
+          error: 'verification_required',
+          message: 'You have completed 1 withdrawal. Please verify your account before initiating your second withdrawal.'
         });
       }
     }
@@ -1191,7 +1191,7 @@ app.post('/api/admin/junior/approve-withdrawal', async (req, res) => {
     const w = list[0];
 
     await db.query("UPDATE withdrawals SET status = 'Approved' WHERE id = ?", [id]);
-    
+
     // Send email notification in background
     const users = await db.query('SELECT email, full_name FROM users WHERE phone = ?', [w.phone]);
     if (users.length > 0 && users[0].email) {
@@ -1246,7 +1246,7 @@ app.post('/api/admin/junior/reject-withdrawal', async (req, res) => {
       const u = users[0];
       const refundedBalance = parseFloat(u.balance) + parseFloat(w.amount);
       await db.query('UPDATE users SET balance = ? WHERE phone = ?', [refundedBalance, w.phone]);
-      
+
       // Send email alert in background
       if (u.email) {
         const bounceHtml = compileEmailTemplate(
@@ -1333,7 +1333,7 @@ app.get('/api/user/payment-instructions', async (req, res) => {
         }
       }
     }
-    
+
     // Otherwise, return useGlobal: true to fallback to Super Admin Firestore bank details
     res.json({ status: true, useGlobal: true });
   } catch (err) {
@@ -1391,7 +1391,7 @@ app.post('/api/admin/super/approve-withdrawal', async (req, res) => {
     const w = list[0];
 
     await db.query("UPDATE withdrawals SET status = 'Approved' WHERE id = ?", [id]);
-    
+
     // Send email notification in background
     const users = await db.query('SELECT email, full_name FROM users WHERE phone = ?', [w.phone]);
     if (users.length > 0 && users[0].email) {
@@ -1443,7 +1443,7 @@ app.post('/api/admin/super/reject-withdrawal', async (req, res) => {
       const u = users[0];
       const refundedBalance = parseFloat(u.balance) + parseFloat(w.amount);
       await db.query('UPDATE users SET balance = ? WHERE phone = ?', [refundedBalance, w.phone]);
-      
+
       // Send email alert in background
       if (u.email) {
         const bounceHtml = compileEmailTemplate(
@@ -1484,7 +1484,7 @@ app.post('/api/admin/super/reject-withdrawal', async (req, res) => {
 app.get('/api/admin/super/juniors', async (req, res) => {
   try {
     const list = await db.query('SELECT email, referral_code, bank_name, account_number, account_name, is_active, created_at FROM junior_admins ORDER BY created_at DESC');
-    
+
     // Get setting for admin percentage
     let adminPercentage = 20;
     try {
@@ -1610,17 +1610,17 @@ app.post('/api/admin/super/verify-user', async (req, res) => {
 app.get('/api/admin/super/migrate-from-neon', async (req, res) => {
   const { Pool } = require('pg');
   const neonUrl = 'postgresql://neondb_owner:npg_DJo20VrMUKam@ep-wild-smoke-ay0gdd4y-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require';
-  
+
   try {
     const sourcePool = new Pool({ connectionString: neonUrl, ssl: { rejectUnauthorized: false } });
-    
+
     const tablesRes = await sourcePool.query(`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
     `);
     const tables = tablesRes.rows.map(r => r.table_name);
-    
+
     let report = {};
 
     for (const table of tables) {
@@ -1634,7 +1634,7 @@ app.get('/api/admin/super/migrate-from-neon', async (req, res) => {
 
       const rowsRes = await sourcePool.query(`SELECT * FROM "${table}"`);
       const rows = rowsRes.rows;
-      
+
       let inserted = 0;
       if (rows.length > 0) {
         const colNames = columns.map(c => `"${c}"`).join(', ');
@@ -1667,7 +1667,7 @@ app.get('/api/admin/super/stats', async (req, res) => {
     const uCount = await db.query('SELECT COUNT(*) as cnt FROM users');
     const jCount = await db.query('SELECT COUNT(*) as cnt FROM junior_admins');
     const wCount = await db.query("SELECT COUNT(*) as cnt FROM withdrawals WHERE status = 'Pending'");
-    
+
     // Fetch all approved receipts for time-window calculations
     const receipts = await db.query(`
       SELECT amount, type, plan_name, created_at FROM receipts 
@@ -1675,9 +1675,9 @@ app.get('/api/admin/super/stats', async (req, res) => {
     `);
 
     const approvedWithdrawals = await db.query("SELECT SUM(amount) AS total FROM withdrawals WHERE LOWER(status) IN ('approved', 'completed', 'success')");
-    
+
     const getCnt = (arr) => (arr && arr[0]) ? (arr[0].cnt || arr[0]['cnt'] || arr[0]['COUNT(*)'] || 0) : 0;
-    
+
     // Align timezone with WAT (UTC+1, Nigeria Time)
     const now = new Date();
     const watTime = new Date(now.getTime() + 1 * 60 * 60 * 1000);
@@ -1773,7 +1773,7 @@ app.get('/api/admin/super/stats', async (req, res) => {
       } else {
         await db.query("INSERT INTO system_settings (key, value) VALUES ('keys_sold_offset', '67')");
       }
-    } catch(e) {}
+    } catch (e) { }
 
     keysSold.total += keysSoldOffset;
 
@@ -1874,10 +1874,10 @@ app.post('/api/admin/super/credit-user', async (req, res) => {
   try {
     const users = await db.query('SELECT balance FROM users WHERE phone = ?', [phone]);
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
-    
+
     const newBalance = (parseFloat(users[0].balance) || 0) + amtVal;
     await db.query('UPDATE users SET balance = ? WHERE phone = ?', [newBalance, phone]);
-    
+
     // Add a notification alert for the user
     const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
     await db.query(`
@@ -2066,7 +2066,7 @@ app.post('/api/admin/super/send-message', async (req, res) => {
           if (type === 'payout_key' || title.toLowerCase().includes('payout key')) {
             const keyMatch = content.match(/KEY-[A-Z0-9]+/i);
             const keyStr = keyMatch ? keyMatch[0] : '';
-            
+
             emailHtml = compileEmailTemplate(
               "Payout Key Issued 🔑",
               `<p>Hi ${users[0].full_name || 'User'},</p>
@@ -2151,7 +2151,7 @@ app.get('/api/user/get-payment-details', async (req, res) => {
 
 // POST /api/admin/junior/update-payment-settings — Save Junior Admin bank & crypto details
 app.post('/api/admin/junior/update-payment-settings', async (req, res) => {
-  const { 
+  const {
     email, password, bankName, accountNumber, accountName, cryptoAddress, cryptoNetwork,
     feeBankName, feeAccountNumber, feeAccountName, feeAmount, telegramLink, whatsappLink,
     telegramActive, whatsappActive
@@ -2279,7 +2279,7 @@ app.post('/api/admin/login-video/update', async (req, res) => {
   }
   try {
     let finalUrl = videoUrl || '';
-    
+
     // If base64 video data is provided, upload/save it
     if (videoData && videoData.startsWith('data:video/')) {
       const fs = require('fs');
@@ -2291,7 +2291,7 @@ app.post('/api/admin/login-video/update', async (req, res) => {
       const ext = matches[1].split('/')[1];
       const base64Data = matches[2];
       const buffer = Buffer.from(base64Data, 'base64');
-      
+
       const uploadsDir = path.join(__dirname, 'public', 'uploads');
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
@@ -2301,11 +2301,11 @@ app.post('/api/admin/login-video/update', async (req, res) => {
       fs.writeFileSync(filePath, buffer);
       finalUrl = `/uploads/${uniqueName}`;
     }
-    
+
     // Update the DB entry
     const updateFields = [];
     const params = [];
-    
+
     if (finalUrl) {
       updateFields.push('video_url = ?');
       params.push(finalUrl);
@@ -2326,12 +2326,12 @@ app.post('/api/admin/login-video/update', async (req, res) => {
       updateFields.push('caption = ?');
       params.push(caption.toString());
     }
-    
+
     if (updateFields.length > 0) {
       params.push(id);
       await db.query(`UPDATE login_videos SET ${updateFields.join(', ')} WHERE id = ?`, params);
     }
-    
+
     const fresh = await db.query('SELECT * FROM login_videos WHERE id = ?', [id]);
     res.json({ status: true, message: 'Promo video updated successfully', video: fresh[0] });
   } catch (err) {
@@ -2436,7 +2436,7 @@ app.get('/api/cloudinary-signature', (req, res) => {
 
     const timestamp = Math.round(new Date().getTime() / 1000);
     const crypto = require('crypto');
-    
+
     // Sign parameters: folder and timestamp sorted alphabetically
     const stringToSign = `folder=video_challenges&timestamp=${timestamp}${apiSecret}`;
     const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
@@ -2578,7 +2578,7 @@ app.get('/api/cron/reminders', async (req, res) => {
     let sentCount = 0;
     const fallbackUrl = process.env.APP_URL || 'https://9jacash.com';
     const ctaUrl = `${fallbackUrl}/dashboard.html`;
-    
+
     for (const u of list) {
       const reminderHtml = compileEmailTemplate(
         "Time to Mine! ⛏️",
@@ -2607,7 +2607,7 @@ app.post('/api/admin/super/trigger-reminders', async (req, res) => {
     let sentCount = 0;
     const fallbackUrl = process.env.APP_URL || 'https://9jacash.com';
     const ctaUrl = req ? `${getBaseUrl(req)}/dashboard.html` : `${fallbackUrl}/dashboard.html`;
-    
+
     for (const u of list) {
       const reminderHtml = compileEmailTemplate(
         "Time to Mine! ⛏️",
@@ -2762,7 +2762,7 @@ async function handleUserRegistration(req, res) {
         SET full_name = ?, email = COALESCE(?, email), bank_name = COALESCE(?, bank_name), account_number = COALESCE(?, account_number), referred_by = COALESCE(?, referred_by)
         WHERE phone = ?
       `, [fullName, email, bankName, accountNumber, referredBy, phone]);
-      
+
       const updated = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
       return res.json({ status: true, user: updated[0], message: 'User profile updated successfully' });
     } else {
@@ -2789,7 +2789,7 @@ app.post('/api/user/sync', async (req, res) => {
   const body = req.body || {};
   const rawPhone = (body.phone || body.userId || body.phoneNumber || body.email || '').toString().trim();
   if (!rawPhone) return res.status(400).json({ status: false, error: 'Phone required' });
-  
+
   const digitsOnly = rawPhone.replace(/\D/g, '');
   const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
 
@@ -2809,16 +2809,10 @@ app.post('/api/user/sync', async (req, res) => {
     }
     const u = users[0];
     const isVerifiedNum = (u.is_verified === 1 || u.is_verified === true || u.is_verified === '1') ? 1 : 0;
-    
+
     // Fetch real withdrawal count from SQL database
     const wCountRes = await db.query('SELECT COUNT(*) as cnt FROM withdrawals WHERE phone = ?', [u.phone]);
     const wCount = parseInt((wCountRes && wCountRes[0] && (wCountRes[0].cnt || wCountRes[0]['cnt'] || wCountRes[0]['COUNT(*)'])) || 0);
-
-    const refCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ?', [u.phone]);
-    const refCount = parseInt((refCountRes && refCountRes[0] && (refCountRes[0].cnt || refCountRes[0]['COUNT(*)'])) || 0);
-    const activeRefCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ? AND is_verified = 1', [u.phone]);
-    const activeRefCount = parseInt((activeRefCountRes && activeRefCountRes[0] && (activeRefCountRes[0].cnt || activeRefCountRes[0]['COUNT(*)'])) || 0);
-    const referralEarnings = activeRefCount * 10000;
 
     const freshUser = {
       phone: u.phone,
@@ -2838,10 +2832,7 @@ app.post('/api/user/sync', async (req, res) => {
       payoutKey: u.payout_key || '',
       juniorAdminCode: u.junior_admin_code || '',
       referredBy: u.referred_by || '',
-      withdrawalCount: wCount,
-      referralsCount: refCount,
-      activeReferrals: activeRefCount,
-      referralEarnings: referralEarnings
+      withdrawalCount: wCount
     };
     res.json({ status: true, user: freshUser });
   } catch (err) {
@@ -2876,12 +2867,6 @@ app.get('/api/user/details', async (req, res) => {
     const wCountRes = await db.query('SELECT COUNT(*) as cnt FROM withdrawals WHERE phone = ?', [u.phone]);
     const wCount = parseInt((wCountRes && wCountRes[0] && (wCountRes[0].cnt || wCountRes[0]['cnt'] || wCountRes[0]['COUNT(*)'])) || 0);
 
-    const refCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ?', [u.phone]);
-    const refCount = parseInt((refCountRes && refCountRes[0] && (refCountRes[0].cnt || refCountRes[0]['COUNT(*)'])) || 0);
-    const activeRefCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ? AND is_verified = 1', [u.phone]);
-    const activeRefCount = parseInt((activeRefCountRes && activeRefCountRes[0] && (activeRefCountRes[0].cnt || activeRefCountRes[0]['COUNT(*)'])) || 0);
-    const referralEarnings = activeRefCount * 10000;
-
     res.json({
       status: true,
       user: {
@@ -2903,10 +2888,7 @@ app.get('/api/user/details', async (req, res) => {
         referredBy: u.referred_by || '',
         status: u.status || 'active',
         createdAt: u.created_at,
-        withdrawalCount: wCount,
-        referralsCount: refCount,
-        activeReferrals: activeRefCount,
-        referralEarnings: referralEarnings
+        withdrawalCount: wCount
       }
     });
   } catch (err) {
@@ -2970,7 +2952,7 @@ app.get('/api/receipts/list', async (req, res) => {
     } else {
       list = await db.query('SELECT id, phone, user_name, type, plan_name, amount, status, created_at FROM receipts ORDER BY created_at DESC');
     }
-    
+
     const formatted = (list || []).map(r => ({
       id: r.id || 'rc_' + Math.random().toString(36).substr(2, 6),
       userId: r.phone || '',
@@ -3081,7 +3063,7 @@ app.post('/api/admin/receipts/bulk-approve', async (req, res) => {
       const receipts = await db.query('SELECT * FROM receipts WHERE id = ?', [id]);
       if (receipts.length === 0) continue;
       const rc = receipts[0];
-      
+
       // If it is already approved, skip it
       if (rc.status === 'Approved' || rc.status === 'approved' || rc.status === 'verified') continue;
 
@@ -3094,7 +3076,7 @@ app.post('/api/admin/receipts/bulk-approve', async (req, res) => {
       // 1. Account Verification Flow
       if (rc.type === 'verification' || rc.type === 'account_verification') {
         await db.query('UPDATE users SET is_verified = 1, balance = balance + 35000 WHERE phone = ?', [rc.phone]);
-        
+
         const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
         await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, rc.phone]);
 
@@ -3152,7 +3134,7 @@ app.post('/api/admin/receipts/bulk-approve', async (req, res) => {
           try { await sendResendEmail(u.email, "Account Verification Approved — 9jaCash", emailHtml); } catch (e) { console.error("Email error:", e); }
         }
       }
-      
+
       // 2. Payout Key Purchase Flow
       else if (rc.type === 'payout' || rc.type === 'key' || rc.type === 'payout_key_purchase' || rc.type === 'payout_key') {
         const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
@@ -3255,7 +3237,7 @@ app.post('/api/admin/receipts/approve', async (req, res) => {
     // 1. Account Verification Flow
     if (rc.type === 'verification' || rc.type === 'account_verification') {
       await db.query('UPDATE users SET is_verified = 1, balance = balance + 35000 WHERE phone = ?', [rc.phone]);
-      
+
       const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
       await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, rc.phone]);
 
@@ -3313,7 +3295,7 @@ app.post('/api/admin/receipts/approve', async (req, res) => {
         try { await sendResendEmail(u.email, "Account Verification Approved — 9jaCash", emailHtml); } catch (e) { console.error("Email error:", e); }
       }
     }
-    
+
     // 2. Payout Key Purchase Flow
     else if (rc.type === 'payout' || rc.type === 'key' || rc.type === 'payout_key_purchase' || rc.type === 'payout_key') {
       const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
@@ -3450,7 +3432,7 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
 
     let placeholders = phones.map(() => '?').join(',');
     const receipts = await db.query(`SELECT * FROM receipts WHERE phone IN (${placeholders}) AND (status = 'Approved' OR status = 'approved' OR status = 'verified' OR status = 'completed' OR status = 'success')`, phones);
-    
+
     const keysCount = await db.query(`
       SELECT COUNT(*) as cnt FROM receipts 
       WHERE phone IN (${placeholders}) AND LOWER(status) IN ('approved', 'verified', 'completed', 'success') 
@@ -3673,34 +3655,34 @@ app.post('/api/user/update-details', async (req, res) => {
   try {
     const fields = [];
     const params = [];
-    
+
     const plan = planName || plan_name;
     if (plan !== undefined) {
       fields.push('plan_name = ?');
       params.push(plan);
     }
-    
+
     const power = miningPower || mining_power;
     if (power !== undefined) {
       fields.push('mining_power = ?');
       params.push(parseFloat(power));
     }
-    
+
     if (balance !== undefined) {
       fields.push('balance = ?');
       params.push(parseFloat(balance));
     }
-    
+
     const mined = totalMined || total_mined;
     if (mined !== undefined) {
       fields.push('total_mined = ?');
       params.push(parseFloat(mined));
     }
-    
+
     if (fields.length === 0) {
       return res.json({ status: true, message: 'No fields to update' });
     }
-    
+
     params.push(phone);
     await db.query(`UPDATE users SET ${fields.join(', ')} WHERE phone = ?`, params);
     res.json({ status: true, message: 'User updated successfully' });
