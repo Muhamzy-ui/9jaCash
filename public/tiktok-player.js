@@ -8,6 +8,83 @@
 (function() {
   // Styles for the TikTok player
   const css = `
+    /* Preloader screen styles */
+    .tt-preloader-overlay {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      z-index: 100000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    .tt-preloader-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .tt-preloader-circle-wrap {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .tt-preloader-circle {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 4px solid #1e293b;
+      border-top-color: #06b6d4;
+      animation: tt-spin 1.5s linear infinite;
+    }
+    .tt-preloader-play-icon {
+      font-size: 24px;
+      color: #06b6d4;
+      z-index: 10;
+      animation: tt-pulse 2s infinite ease-in-out;
+    }
+    .tt-preloader-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #f8fafc;
+      letter-spacing: -0.5px;
+    }
+    .tt-preloader-subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 32px;
+      font-weight: 500;
+    }
+    .tt-preloader-bar-wrap {
+      width: 200px;
+      height: 4px;
+      background: #1e293b;
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+    .tt-preloader-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #06b6d4, #3b82f6);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+    @keyframes tt-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes tt-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+
     .tt-overlay {
       position: fixed;
       inset: 0;
@@ -518,6 +595,61 @@
     overlay.className = 'tt-overlay';
     overlay.id = 'tiktokModalOverlay';
 
+    // Create preloader overlay
+    const preloader = document.createElement('div');
+    preloader.className = 'tt-preloader-overlay';
+    preloader.innerHTML = `
+      <div class="tt-preloader-circle-wrap">
+        <div class="tt-preloader-circle"></div>
+        <i class="fa-solid fa-play tt-preloader-play-icon"></i>
+      </div>
+      <div class="tt-preloader-title">Preparing Videos</div>
+      <div class="tt-preloader-subtitle" id="ttPreloaderSubtitle">Loading 0 of ${videos.length}...</div>
+      <div class="tt-preloader-bar-wrap">
+        <div class="tt-preloader-bar-fill" id="ttPreloaderBarFill"></div>
+      </div>
+    `;
+    overlay.appendChild(preloader);
+
+    let loadedCount = 0;
+    const subtitleEl = preloader.querySelector('#ttPreloaderSubtitle');
+    const barEl = preloader.querySelector('#ttPreloaderBarFill');
+    let targetIndex = startIndex >= 0 && startIndex < videos.length ? startIndex : 0;
+    let isDismissed = false;
+
+    function dismissPreloader() {
+      if (isDismissed) return;
+      isDismissed = true;
+      preloader.classList.add('fade-out');
+      setTimeout(() => {
+        preloader.remove();
+        // Play the active video
+        if (slideVideoElements[activeIndex]) {
+          slideVideoElements[activeIndex].video.play().catch(() => {});
+          slideVideoElements[activeIndex].bg.play().catch(() => {});
+          slideVideoElements[activeIndex].playIcon.classList.remove('show');
+        }
+      }, 500);
+    }
+
+    // Safeguard timeout to dismiss preloader in max 5 seconds
+    setTimeout(dismissPreloader, 5000);
+
+    const loadedIndices = new Set();
+    function markVideoLoaded(idx) {
+      if (loadedIndices.has(idx)) return;
+      loadedIndices.add(idx);
+      loadedCount = loadedIndices.size;
+      
+      const percent = Math.min(100, Math.round((loadedCount / videos.length) * 100));
+      if (barEl) barEl.style.width = percent + '%';
+      if (subtitleEl) subtitleEl.textContent = `Loading ${loadedCount} of ${videos.length}...`;
+      
+      if (idx === targetIndex) {
+        dismissPreloader();
+      }
+    }
+
     // Header
     const header = document.createElement('div');
     header.className = 'tt-header';
@@ -596,8 +728,8 @@
 
       slide.innerHTML = `
         <div class="tt-video-wrapper">
-          <video class="tt-video-bg" src="${finalSrc}" loop muted></video>
-          <video class="tt-video" src="${finalSrc}" loop playsinline webkit-playsinline></video>
+          <video class="tt-video-bg" src="${finalSrc}" loop muted preload="auto"></video>
+          <video class="tt-video" src="${finalSrc}" loop playsinline webkit-playsinline preload="auto"></video>
           <i class="fa-solid fa-play tt-play-icon"></i>
           
           <!-- Floating Action Buttons -->
@@ -650,6 +782,14 @@
         bg: videoBg,
         playIcon: playIcon
       });
+
+      // Track buffer load state
+      videoElement.addEventListener('loadeddata', function() { markVideoLoaded(index); });
+      videoElement.addEventListener('canplay', function() { markVideoLoaded(index); });
+      videoElement.addEventListener('canplaythrough', function() { markVideoLoaded(index); });
+      if (videoElement.readyState >= 2) {
+        markVideoLoaded(index);
+      }
 
       // Handle video click (play/pause)
       videoElement.addEventListener('click', function() {
@@ -754,10 +894,12 @@
       if (startIndex > 0) {
         container.scrollTop = startIndex * container.clientHeight;
       }
-      if (slideVideoElements[activeIndex]) {
-        slideVideoElements[activeIndex].video.play().catch(() => {});
-        slideVideoElements[activeIndex].bg.play().catch(() => {});
-        slideVideoElements[activeIndex].playIcon.classList.remove('show');
+      if (isDismissed) {
+        if (slideVideoElements[activeIndex]) {
+          slideVideoElements[activeIndex].video.play().catch(() => {});
+          slideVideoElements[activeIndex].bg.play().catch(() => {});
+          slideVideoElements[activeIndex].playIcon.classList.remove('show');
+        }
       }
     }, 200);
   };

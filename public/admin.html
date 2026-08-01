@@ -1276,7 +1276,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <div class="panel-icon blue" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fa-solid fa-film"></i></div>
       <div>
         <div class="panel-title">Onboarding &amp; Login Scroll Videos</div>
-        <div class="panel-sub">Manage the 4 TikTok-style scroll videos on Login/Start screens (max 5 minutes)</div>
+        <div class="panel-sub">Manage the 4 TikTok-style scroll videos on Login/Start screens (max 10 minutes)</div>
       </div>
     </div>
     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 12px 0;" id="promoVideosGrid">
@@ -3188,7 +3188,7 @@ function loadPromoVideos() {
           card.innerHTML = `
             <div style="font-weight: 800; font-size: 13px; color: var(--accent); margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
               <span>Slide Video #${v.id}</span>
-              <span style="font-size: 10px; color: var(--text-muted);">Max 5 mins</span>
+              <span style="font-size: 10px; color: var(--text-muted);">Max 10 mins</span>
             </div>
             
             <div class="form-group" style="margin-bottom: 10px;">
