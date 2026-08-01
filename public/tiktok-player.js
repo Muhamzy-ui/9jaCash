@@ -437,30 +437,304 @@
     "chinedu_9ja", "funmi_9ja", "tunde_cash", "alabi_investor", "ngozi_wealth",
     "mustapha_wat", "joy_payout", "emeka_earn", "yetunde_gold", "ibrahim_kuda",
     "bose_cashout", "chioma_vfd", "kelechi_opay", "abubakar_key", "bolanle_9ja",
-    "eze_invest", "favour_payout", "chike_payout", "solomon_rich", "amara_cash"
+    "eze_invest", "favour_payout", "chike_payout", "solomon_rich", "amara_cash",
+    "tony_alert", "ada_crypto", "femi_payout", "seun_double", "chinonso_cash",
+    "halima_naira", "uche_verified", "tari_pay", "sadiq_monie", "kemi_kuda",
+    "chima_zenith", "nelson_access", "precious_palmpay", "david_opay", "rita_cash"
   ];
 
   const NIGERIAN_COMMENTS = [
-    "Legit platform! I just withdrew ₦50,000 yesterday, cash landed under 2 mins.",
-    "This 9jaCash is highly paying. Very fast key verification.",
-    "Amina support is very active, helped me unlock my basic plan.",
-    "9jaCash is working o! Make sure you link your account correctly.",
-    "Who else is making money here? I started with ₦40,000, now on ₦160,000 return.",
-    "I was skeptical before, but Christian admin verified my payout key and my money landed.",
-    "Finally, a payout platform that pays instantly to Nigerian banks.",
-    "The dark mode is so clean! Love the UI experience.",
-    "Fast payouts, linked my Access bank account and it verified automatically.",
-    "If your withdrawal is pending, just buy the payout key and submit proof. Cash is guaranteed.",
-    "Is this real? Yes, got my alert this morning!",
-    "No jokes, I have made over ₦120,000 this week from referral bonuses.",
-    "Verified account is the key to unlimited withdrawals. Highly recommended.",
-    "This platform is a lifesaver. Direct TRC20 secure network.",
-    "My streak is 7 days already, daily check-in is boosting my payout status.",
-    "Moniepoint payment receipt was approved in minutes. Very responsive.",
-    "Kuda bank alert received! Thanks 9jaCash team.",
-    "God bless the admins of this site, payment is smooth.",
-    "Best investment of 2026. Fully CBN regulated, NDIC insured."
+    // SET 1 — First Withdrawal / Small Payouts / Getting Started
+    "Just withdrew 15k to my opay. First time and it entered sharp sharp",
+    "My first withdrawal was 8k. I was surprised it came so fast",
+    "Started with free plan and got 5k. Small but it works",
+    "20k landed in my kuda. This is my first time using 9jacash",
+    "I was doubting but my first 12k entered my palmpay. Its real",
+    "First withdrawal of 25k done. Took like 2 minutes",
+    "Got my alert for 10k. Small money but im happy it works",
+    "My first time and i got 18k in my moniepoint. No stress at all",
+    "Just 7k but it entered instantly. 9jacash is legit",
+    "Withdrew 30k first time. The process was smooth",
+    "I started small with 5k payout. Now im upgrading my plan",
+    "First withdrawal 22k to my gtb. Very fast",
+    "Got 14k in my access bank. First time user and im impressed",
+    "My initial payout was 11k. Small but confirmed",
+    "9k entered my zenith. First withdrawal no wahala",
+    "I just collected 16k. First time and everything worked fine",
+    "Started with 6k payout. At least i know its not fake",
+    "My first 35k landed. I was scared but it came through",
+    "13k to my uba. First withdrawal and im satisfied",
+    "Just got 19k now. First time using this platform",
+    "Small 4k payout but it entered. Good for testing",
+    "My first withdrawal was 28k. Fast and easy",
+    "17k entered my first bank. No issues at all",
+    "I withdrew 9k as my first time. It worked perfectly",
+    "First payout 21k. Took less than 5 mins",
+    "Got 26k in my palmpay. My first withdrawal ever",
+    "15k landed. I started with basic plan and it paid",
+    "My first 32k entered. I can now trust this platform",
+    "Just 10k but im happy. First withdrawal successful",
+    "24k to my opay. First time and no stories",
+    "I got 8k as first payout. Small beginnings",
+    "My first withdrawal 20k entered my kuda sharp",
+    "11k payout. First time and it was instant",
+    "Started with 14k. Now i know 9jacash is real",
+    "First time 27k. The process is very simple",
+    "I just got 5k. Testing the waters and it works",
+    "My first 23k landed in my moniepoint. Thank you",
+    "18k first withdrawal. Very smooth experience",
+    "I collected 12k first time. No verification wahala",
+    "Just withdrew 29k. First time and im shocked at the speed",
+    "7k entered my access bank. First payout done",
+    "My initial withdrawal was 16k. It came fast",
+    "First time 31k to my gtb. Everything good",
+    "I got 10k as my first payout. Im going to upgrade now",
+    "25k landed. First withdrawal and im very happy",
+    "My first 19k entered instantly. No delay",
+    "Started with 8k payout. Small but confirmed real",
+    "First withdrawal 33k. The site is easy to use",
+    "I just got 6k. First time and it entered my opay",
+    "21k first payout. 9jacash is the real deal",
+
+    // SET 2 — Verification / Linked Account / No Stress
+    "After i verified my linked account i withdrew 50k instantly",
+    "I verified my account with no stress and withdrew 40k asap",
+    "Linked my bank and verified it. 75k entered immediately",
+    "Verification was easy. Once done i withdrew 60k sharp",
+    "I linked my opay and verified. My 55k came instantly",
+    "No stress with verification. Withdrew 80k right after",
+    "Verified my kuda account and got 45k in 2 mins",
+    "After linking and verifying i withdrew 90k no delay",
+    "The verification took 1 minute. Then my 35k entered",
+    "I verified my palmpay and withdrew 65k immediately",
+    "Linked account verified fast. My 70k payout came quick",
+    "No wahala with verification. Withdrew 85k asap",
+    "Verified my moniepoint and got 50k instantly",
+    "After verification i withdrew 100k straight to my gtb",
+    "I linked my account and verified with no issues. 40k entered",
+    "Verification done. Withdrew 95k and it landed sharp",
+    "My account was verified in seconds. Then 30k came",
+    "I verified my uba account and withdrew 55k no stress",
+    "After linking my bank i verified and got 80k immediately",
+    "Verification was smooth. Withdrew 45k right away",
+    "I verified my zenith account. 60k entered my account fast",
+    "No stress verification. Then i withdrew 75k asap",
+    "Linked and verified my first bank. 50k came instantly",
+    "After verification i withdrew 35k to my access bank",
+    "My account verification was quick. Then 90k entered",
+    "I verified my linked account and got 65k in minutes",
+    "Verification passed and i withdrew 85k immediately",
+    "Linked my gtb and verified. 40k landed sharp sharp",
+    "No delay with verification. Withdrew 70k right after",
+    "I verified my account and withdrew 55k with zero stress",
+    "After linking i verified and got 100k instantly",
+    "Verification was very easy. Then my 45k came through",
+    "I verified my opay and withdrew 80k no stories",
+    "My linked account was verified fast. 50k entered asap",
+    "Verified my kuda. Withdrew 95k immediately after",
+    "No wahala at all. Verified and got 60k in my palmpay",
+    "I linked and verified my account. 75k came instantly",
+    "After verification i withdrew 30k to my moniepoint",
+    "Verification done in a flash. Then 85k landed",
+    "I verified my access bank and withdrew 65k sharp",
+    "Linked account verified. Got 90k immediately no stress",
+    "My verification was instant. Then i got 40k payout",
+    "I verified my account and withdrew 55k asap. Very easy",
+    "After verifying my uba i got 70k in less than 3 mins",
+    "No stress verification process. Withdrew 80k right away",
+    "I linked my bank verified it and got 50k instantly",
+    "Verification passed and my 100k entered my gtb fast",
+    "Verified my zenith with no issues. Withdrew 45k asap",
+    "After i verified my linked account i got 75k immediately",
+    "I verified my account and withdrew 60k. Smooth process",
+
+    // SET 3 — Regular Users / Upgrading Plans / Medium Payouts
+    "Just got 200k in my opay. This is my third withdrawal",
+    "My gold plan paid out 500k today. Very happy",
+    "Upgraded to basic and got 150k. Worth it",
+    "300k landed in my kuda. Second withdrawal this month",
+    "I now withdraw 250k every two weeks. Consistent",
+    "My payout was 400k this time. Gold plan is working",
+    "Got 180k in my palmpay. Regular user for 2 months now",
+    "350k entered my moniepoint. Third time using 9jacash",
+    "I upgraded and got 600k. Best decision i made",
+    "My 220k payout came through. Very reliable",
+    "450k to my gtb. I use this platform every month",
+    "Got 280k today. Second withdrawal and still smooth",
+    "My basic plan gave me 120k. Not bad at all",
+    "500k landed in my access bank. I am a regular now",
+    "I withdrew 320k. This is my fourth time",
+    "200k entered my uba. Consistent payouts every time",
+    "My gold plan just gave me 550k. I love this platform",
+    "Got 170k in my zenith. Using for 3 months straight",
+    "380k payout. I upgraded last month and it paid off",
+    "I collect 250k every month now. Very steady",
+    "My 420k entered my first bank. Regular customer here",
+    "Got 300k today. Second withdrawal this month alone",
+    "150k landed. I am on basic plan and its fine",
+    "My payout was 480k. Gold plan doing wonders",
+    "I withdrew 260k to my opay. Third time no issues",
+    "340k entered my kuda. I use 9jacash every two weeks",
+    "Got 190k. Upgraded from free to basic last month",
+    "My 510k landed in my palmpay. Very consistent platform",
+    "I get 220k every payout now. Very happy customer",
+    "400k to my gtb. This is my fifth withdrawal",
+    "Got 280k in my moniepoint. Regular user for 4 months",
+    "My payout was 360k. Gold plan is worth the upgrade",
+    "I withdrew 230k. Second time this month",
+    "450k entered my access bank. I trust this platform now",
+    "Got 170k. Basic plan but it pays on time",
+    "My 500k payout came. Third month on gold plan",
+    "I collect 240k every month. Very reliable source",
+    "320k landed in my uba. Fourth withdrawal done",
+    "Got 390k today. I upgraded and im seeing the difference",
+    "My 210k entered zenith. Consistent every time",
+    "I withdrew 460k. Regular user and no complaints",
+    "300k to my first bank. This is my sixth withdrawal",
+    "Got 250k in my opay. Using for 3 months now",
+    "My payout was 410k. Gold plan is really good",
+    "I get 180k every two weeks. Basic plan doing fine",
+    "350k entered my kuda. Very happy with 9jacash",
+    "My 270k landed. Fourth time using the platform",
+    "Got 490k today. Upgraded last month and no regrets",
+    "I withdrew 220k to my palmpay. Regular customer",
+    "My 330k payout came through. Very solid platform",
+
+    // SET 4 — Referrals / Community / Friends & Family
+    "My brother referred me and i got my first 20k. Thanks bro",
+    "I referred 3 people and got bonus 100k. 9jacash is sweet",
+    "My friend told me about this. I just got 15k first time",
+    "I told my sister and she also got her payout. Family money",
+    "Referred my neighbour and got 50k bonus. Platform too good",
+    "My cousin introduced me. First withdrawal 25k done",
+    "I brought my friend and we both got paid. Win win",
+    "My referral bonus was 80k. Just for telling people",
+    "My whole street is using 9jacash now. Everyone dey collect",
+    "I referred my colleague and he got 30k first time",
+    "My mama dey use am now. She got 12k first payout",
+    "I told my ex about it and she got paid too. 9jacash for all",
+    "My referral link don give me 150k this month alone",
+    "Brought my guy and he withdrew 40k instantly. We happy",
+    "My sister referred me. I got 18k and im grateful",
+    "I introduced 5 friends. All of them don collect money",
+    "My referral bonus entered my account. 60k sharp",
+    "My brother got 22k first time. I told you it works",
+    "I shared my link on whatsapp and got 90k bonus. Mad",
+    "My friend doubted until he saw my alert. Now he registered",
+    "My cousin got 35k first withdrawal. Family eating good",
+    "I referred my boss and he got 500k. He shock",
+    "My neighbour dey thank me everyday for showing am 9jacash",
+    "I put my link on my status and got 70k referral bonus",
+    "My friend got 28k first time. He thought i was joking",
+    "I told my church member and she got 16k. God bless",
+    "My referral money don pass 200k this month. Just sharing link",
+    "My guy got 45k first payout. We dey chop together",
+    "I introduced my landlord and he got 100k. He shock",
+    "My sister got 20k first time. Now she upgraded her plan",
+    "I shared with my group and 10 people joined. Bonus too much",
+    "My friend got 55k. He dey call me boss now",
+    "I referred my classmate and he got 15k. Students eating",
+    "My link gave me 120k this week. Just from telling people",
+    "My brother got 38k first withdrawal. I no dey lie",
+    "I told my barber and he got 25k. Now he dey tell customers",
+    "My referral bonus was 40k. Small but it adds up",
+    "My friend got 65k. He thought it was fake until alert enter",
+    "I introduced my aunt and she got 30k. She dey happy",
+    "My whatsapp status don turn to 9jacash advert. Bonus dey flow",
+    "My guy got 48k first time. Now he dey refer people too",
+    "I told my gym partner and he got 20k. We both flexing",
+    "My referral money entered 180k this month. No be joke",
+    "My friend got 33k. He say i save his life",
+    "I shared with my family group. 7 people don withdraw",
+    "My neighbour got 27k first time. He dey thank me everyday",
+    "I referred my old school mate and he got 42k. Connected",
+    "My link bonus don reach 250k. I just dey share for facebook",
+    "My friend got 58k first payout. He dey shout for phone",
+    "I told one stranger for bus and he got 19k. 9jacash for everybody",
+
+    // OTHER REVIEWS & TESTIMONIALS
+    "Just got my alert now. 1.5m to my palmpay. 9jacash is real abeg",
+    "I was scared at first but i tried with small money. Now im on gold plan and its paying. Thanks 9jacash",
+    "Fast payout no cap. My kuda got credited in 2 mins. Never seen this before",
+    "Been using for 3 months now. Every withdrawal enters. No stories",
+    "My friend introduced me last month. I have withdrawn 2.7m already. This thing works fr",
+    "Customer care replies fast. Had issue with my acc number and they fixed it in 5 mins",
+    "I don upgrade to diamond. 4m landed yesterday. I still cant believe it",
+    "This is the only platform that has not disappointed me. Others i tried before scammed me",
+    "Got my first 800k last week. Used it to pay my school fees. God bless 9jacash",
+    "The app is smooth. No crashing. No hanging. Just withdraw and money enters",
+    "I started with basic plan because i didnt have much money. The first month i got 600k. I upgraded to gold immediately. Last month my payout was 1.8m. If you are still thinking about it just try it. It really works",
+    "As a single mum i needed extra income. I saw 9jacash on facebook and decided to try. That was 4 months ago. I have made over 5m total. I was able to start my small business with the money. Im so grateful",
+    "I have used many online platforms before and lost money. 9jacash is different because you can see other people cashing out live. My first withdrawal of 1.2m entered my GTB in less than 10 minutes. Now i tell everyone about it",
+    "The verification was easy. I linked my moniepoint and my 3.5m payout came through without any wahala. The dashboard is even better than some bank apps i use. These guys know what they are doing",
+    "I referred my cousin and my neighbour. The referral bonus alone has given me 900k this month. Im not even doing anything extra just telling people about it. 9jacash is too good",
+    "I work as a teacher and salary is not enough. I put small money in 9jacash basic plan. Now i withdraw 500k every month. It has helped me so much with my family expenses. Thank you to the team",
+    "My first time i was shaking when i put money. But when i saw 750k enter my UBA account i knew it was real. That was 6 months ago. Now i withdraw 2m+ every month. My life has changed",
+    "I like that there are no hidden charges. What they show is what you get. I withdrew 2.1m and exactly 2.1m entered my account. No deductions no stories. Very transparent platform",
+    "I was about to borrow money from someone when i found 9jacash. I used the little i had and now i dont need to borrow anymore. I even lend people money now. Diamond plan is the best",
+    "The mobile site works perfectly on my iphone. I dont even need to download any app. Just open and withdraw. My last payout was 1.3m to my opay. Took 3 minutes. Amazing",
+    "My name is Chinedu. I am a driver in lagos. Life was very hard until someone told me about 9jacash. I started with 50k on basic plan. First month i got 350k. I upgraded to gold and last month i got 1.5m. I have bought my own car now and i dont drive for uber anymore. This platform changed my life. If you are reading this and you are doubting please just try it",
+    "I am a corper who just finished service. No job no money. I saw 9jacash on instagram and almost scrolled past because i have been scammed before. But i decided to try with free plan first. I saw how it works then i put small money. My first payout was 400k. I used it to learn a skill and also kept investing. 6 months later i have withdrawn over 4m. I am planning to open my own shop. Thank you 9jacash",
+    "I am a widow with three children. Paying school fees was a problem. My neighbour showed me 9jacash and i started with the little i had. First payout of 500k helped me pay one term fees. I kept working and referring people. Last term i paid full year fees and bought new uniforms for my children with my 1.6m payout. This platform gave me hope when i had none. God bless the people running it",
+    "I trade forex and i have blown many accounts. My friend told me instead of gambling with forex i should try 9jacash. I put 200k on diamond plan. In 30 days 2.8m entered my access bank. I used 1m to trade properly and the rest i used for my family. Now i have both forex income and 9jacash income. Double money. The platform is solid",
+    "I run a small shop in the market. I needed money to buy more goods. I tried 9jacash gold plan and got 1.5m in my first month. I bought goods sold them and still got my payout every two weeks. Now my shop is bigger and i still get money from 9jacash. It is like having two businesses",
+    "I told my girlfriend about 9jacash she said its a scam. I showed her my 2m alert. Now she wants me to teach her. Who is laughing now 😂",
+    "My village people think i have joined something because money keeps entering my account. I told them its 9jacash. Now half the village has registered",
+    "I withdrew 1.5m at 2am because i couldnt sleep. Money entered my opay in 3 minutes. I shouted in the midnight and my mother almost fainted. 9jacash does not sleep",
+    "My ex that left me because i was broke is now in my dm since i posted my 3m payout. 9jacash you are too much",
+    "My pastor asked me what business i am doing. I said i am serving the god of 9jacash. He wants the link too 😂",
+    "I have been using 9jacash for 8 months. Every payout has entered my account without fail. Total withdrawn so far is over 6m. Very reliable platform",
+    "The platform is easy to use even for someone like me who is not good with technology. I am 52 years old and i can withdraw without any problem. My last payout was 900k",
+    "I compared many platforms before choosing 9jacash. The transparency is what i like most. You can see the queue and live payouts. I withdrew 2.5m last week and it was smooth",
+    "As a business owner i need quick access to funds. 9jacash has helped me with cash flow. I have processed withdrawals totalling over 8m with zero issues. Recommended",
+    "I started small and grew gradually. That is what i advise everyone. Start with what you have and upgrade as you go. I am now on diamond and my payouts are consistent",
+    "5 stars. Fast payout. 1.8m entered my kuda in 3 minutes. No stress",
+    "Best support team. Always online and helpful. Plus the money comes fast",
+    "Used for 8 months. Every single payout entered. No fail. Would give 10 stars if i could",
+    "Clean dashboard. I can see everything clearly. Then the money enters like magic. Love it",
+    "I told my friends and family about it. Even my mother uses it now and she has withdrawn 800k. If its good enough for my mother then its good",
+    "Why stay broke when 9jacash is paying? Join now",
+    "Your account can have 1m more by tomorrow. 9jacash is waiting",
+    "Not magic. Not juju. Just 9jacash working. 2m payouts weekly",
+    "The platform that turns small money into big money. 9jacash",
+    "Stop watching others withdraw. Start your own journey today"
   ];
+
+  let shuffledComments = [];
+  let commentPointer = 0;
+  function getNextComment() {
+    if (shuffledComments.length === 0 || commentPointer >= shuffledComments.length) {
+      shuffledComments = [...NIGERIAN_COMMENTS];
+      for (let i = shuffledComments.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = shuffledComments[i];
+        shuffledComments[i] = shuffledComments[j];
+        shuffledComments[j] = temp;
+      }
+      commentPointer = 0;
+    }
+    const c = shuffledComments[commentPointer];
+    commentPointer++;
+    return c;
+  }
+
+  let shuffledNames = [];
+  let namePointer = 0;
+  function getNextUsername() {
+    if (shuffledNames.length === 0 || namePointer >= shuffledNames.length) {
+      shuffledNames = [...NIGERIAN_NAMES];
+      for (let i = shuffledNames.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = shuffledNames[i];
+        shuffledNames[i] = shuffledNames[j];
+        shuffledNames[j] = temp;
+      }
+      namePointer = 0;
+    }
+    const n = shuffledNames[namePointer];
+    namePointer++;
+    return '@' + n;
+  }
 
   // Helper to format counts in 'k' notation
   function formatCount(num) {
@@ -558,8 +832,8 @@
   }
 
   function createCommentElement(index, customText = null, customUser = null) {
-    const user = customUser || '@' + NIGERIAN_NAMES[Math.floor(Math.random() * NIGERIAN_NAMES.length)];
-    const comment = customText || NIGERIAN_COMMENTS[Math.floor(Math.random() * NIGERIAN_COMMENTS.length)];
+    const user = customUser || getNextUsername();
+    const comment = customText || getNextComment();
     
     // Hours/days ago
     let timeAgo = '';
@@ -617,33 +891,94 @@
     let targetIndex = startIndex >= 0 && startIndex < videos.length ? startIndex : 0;
     let isDismissed = false;
 
+    // Simulate progressive preloading bar fill over 1.2 seconds for visual loading system
+    let currentLoaded = 0;
+    let progressTimer = setInterval(() => {
+      if (currentLoaded < videos.length) {
+        currentLoaded++;
+        const percent = Math.min(95, Math.round((currentLoaded / videos.length) * 100));
+        if (barEl) barEl.style.width = percent + '%';
+        if (subtitleEl) subtitleEl.textContent = `Loading ${currentLoaded} of ${videos.length}...`;
+      }
+    }, 250);
+
+    function showMuteNotification() {
+      // Create a temporary mute guide overlay
+      const guide = document.createElement('div');
+      guide.style.position = 'absolute';
+      guide.style.top = '50%';
+      guide.style.left = '50%';
+      guide.style.transform = 'translate(-50%, -50%)';
+      guide.style.background = 'rgba(0, 0, 0, 0.85)';
+      guide.style.color = '#fff';
+      guide.style.padding = '12px 22px';
+      guide.style.borderRadius = '30px';
+      guide.style.fontSize = '12px';
+      guide.style.fontWeight = '800';
+      guide.style.zIndex = '10000';
+      guide.style.display = 'flex';
+      guide.style.alignItems = 'center';
+      guide.style.gap = '8px';
+      guide.style.pointerEvents = 'none';
+      guide.style.boxShadow = '0 8px 32px rgba(0,0,0,0.5)';
+      guide.style.border = '1px solid rgba(255,255,255,0.1)';
+      guide.style.transition = 'opacity 0.3s ease';
+      guide.innerHTML = '<i class="fa-solid fa-volume-xmark" style="color:#06b6d4;"></i> Tap Screen to Unmute';
+      
+      const activeSlide = container.children[activeIndex];
+      if (activeSlide) {
+        const wrapper = activeSlide.querySelector('.tt-video-wrapper');
+        if (wrapper) {
+          wrapper.appendChild(guide);
+          setTimeout(() => {
+            guide.style.opacity = '0';
+            setTimeout(() => guide.remove(), 300);
+          }, 3000);
+        }
+      }
+    }
+
     function dismissPreloader() {
       if (isDismissed) return;
       isDismissed = true;
-      preloader.classList.add('fade-out');
+      clearInterval(progressTimer);
+
+      if (barEl) barEl.style.width = '100%';
+      if (subtitleEl) subtitleEl.textContent = `Loading ${videos.length} of ${videos.length}...`;
+
       setTimeout(() => {
-        preloader.remove();
-        // Play the active video
-        if (slideVideoElements[activeIndex]) {
-          slideVideoElements[activeIndex].video.play().catch(() => {});
-          slideVideoElements[activeIndex].bg.play().catch(() => {});
-          slideVideoElements[activeIndex].playIcon.classList.remove('show');
-        }
-      }, 500);
+        preloader.classList.add('fade-out');
+        setTimeout(() => {
+          preloader.remove();
+          // Play the active video with fallback play routines
+          if (slideVideoElements[activeIndex]) {
+            const activeVid = slideVideoElements[activeIndex].video;
+            const activeBg = slideVideoElements[activeIndex].bg;
+
+            const playPromise = activeVid.play();
+            if (playPromise !== undefined) {
+              playPromise.catch(() => {
+                // Autoplay was blocked (needs muted policy on mobile)
+                activeVid.muted = true;
+                activeVid.play().catch(() => {});
+                showMuteNotification();
+              });
+            }
+            activeBg.play().catch(() => {});
+            slideVideoElements[activeIndex].playIcon.classList.remove('show');
+          }
+        }, 500);
+      }, 200);
     }
 
-    // Safeguard timeout to dismiss preloader in max 5 seconds
-    setTimeout(dismissPreloader, 5000);
+    // Dismiss preloader after 1.5 seconds max
+    setTimeout(dismissPreloader, 1500);
 
     const loadedIndices = new Set();
     function markVideoLoaded(idx) {
+      if (isDismissed) return;
       if (loadedIndices.has(idx)) return;
       loadedIndices.add(idx);
-      loadedCount = loadedIndices.size;
-      
-      const percent = Math.min(100, Math.round((loadedCount / videos.length) * 100));
-      if (barEl) barEl.style.width = percent + '%';
-      if (subtitleEl) subtitleEl.textContent = `Loading ${loadedCount} of ${videos.length}...`;
       
       if (idx === targetIndex) {
         dismissPreloader();
@@ -729,11 +1064,15 @@
       slide.innerHTML = `
         <div class="tt-video-wrapper">
           <video class="tt-video-bg" src="${finalSrc}" loop muted preload="auto"></video>
-          <video class="tt-video" src="${finalSrc}" loop playsinline webkit-playsinline preload="auto"></video>
+          <video class="tt-video" src="${finalSrc}" loop playsinline webkit-playsinline preload="auto" muted></video>
           <i class="fa-solid fa-play tt-play-icon"></i>
           
           <!-- Floating Action Buttons -->
           <div class="tt-sidebar">
+            <button class="tt-sidebar-btn" id="volumeBtn_${video.id}">
+              <div class="tt-sidebar-icon"><i class="fa-solid fa-volume-xmark"></i></div>
+              <span class="tt-sidebar-label">Muted</span>
+            </button>
             <button class="tt-sidebar-btn" id="likeBtn_${video.id}">
               <div class="tt-sidebar-icon"><i class="fa-regular fa-heart"></i></div>
               <span class="tt-sidebar-label" id="likeCount_${video.id}" data-value="${likesCount}">${formatCount(likesCount)}</span>
@@ -787,12 +1126,38 @@
       videoElement.addEventListener('loadeddata', function() { markVideoLoaded(index); });
       videoElement.addEventListener('canplay', function() { markVideoLoaded(index); });
       videoElement.addEventListener('canplaythrough', function() { markVideoLoaded(index); });
-      if (videoElement.readyState >= 2) {
-        markVideoLoaded(index);
+      const vBtn = slide.querySelector(`#volumeBtn_${video.id}`);
+      if (vBtn) {
+        vBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const isMuted = !videoElement.muted;
+          slideVideoElements.forEach(s => {
+            s.video.muted = isMuted;
+            const btn = s.video.closest('.tt-slide').querySelector(`[id^="volumeBtn_"]`);
+            if (btn) {
+              btn.querySelector('i').className = isMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+              btn.querySelector('.tt-sidebar-label').textContent = isMuted ? 'Muted' : 'Unmuted';
+            }
+          });
+        });
       }
 
-      // Handle video click (play/pause)
+      // Handle video click (play/pause and unmute toggle)
       videoElement.addEventListener('click', function() {
+        if (videoElement.muted) {
+          slideVideoElements.forEach(s => {
+            s.video.muted = false;
+            const btn = s.video.closest('.tt-slide').querySelector(`[id^="volumeBtn_"]`);
+            if (btn) {
+              btn.querySelector('i').className = 'fa-solid fa-volume-high';
+              btn.querySelector('.tt-sidebar-label').textContent = 'Unmuted';
+            }
+          });
+          const guides = overlay.querySelectorAll('.tt-video-wrapper > div');
+          guides.forEach(g => { if (g.textContent && g.textContent.includes('Unmute')) g.remove(); });
+          return;
+        }
+
         if (videoElement.paused) {
           videoElement.play();
           videoBg.play();
