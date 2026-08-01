@@ -284,10 +284,12 @@ async function initDb() {
             VALUES (?, ?, ?, ?, ?, ?, ?)
           `, [v.id, v.url, v.likes, v.favorites, v.shares, v.caption, new Date().toISOString()]);
         } else {
-          // Force update to correct caption and likes if already seeded
+          // Force update to correct caption and likes if already seeded, restoring default url if empty
           await query(`
-            UPDATE login_videos SET likes_count = ?, caption = ? WHERE id = ?
-          `, [v.likes, v.caption, v.id]);
+            UPDATE login_videos 
+            SET likes_count = ?, caption = ?, video_url = COALESCE(NULLIF(video_url, ''), ?) 
+            WHERE id = ?
+          `, [v.likes, v.caption, v.url, v.id]);
         }
       }
       console.log("🌱 Seed and update default login videos complete!");

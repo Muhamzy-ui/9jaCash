@@ -3241,13 +3241,18 @@ function clearPromoVideo(id, btn) {
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Clearing...';
 
+  const likesInput = document.getElementById(`promoVideoLikes_${id}`);
+  const favsInput = document.getElementById(`promoVideoFavs_${id}`);
+  const sharesInput = document.getElementById(`promoVideoShares_${id}`);
+  const captionInput = document.getElementById(`promoVideoCaption_${id}`);
+
   const payload = {
     id: id,
     videoUrl: "",
-    likes: 0,
-    favorites: 0,
-    shares: 0,
-    caption: ""
+    likes: likesInput ? parseInt(likesInput.value) || 0 : 0,
+    favorites: favsInput ? parseInt(favsInput.value) || 0 : 0,
+    shares: sharesInput ? parseInt(sharesInput.value) || 0 : 0,
+    caption: captionInput ? captionInput.value.trim() : ""
   };
 
   const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
