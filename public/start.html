@@ -1003,10 +1003,15 @@ function toggleTheme() {
 
 function playPromoVideo() {
   fetch(API_URL + '/api/login-videos')
-    .then(res => res.json())
-    .then(data => {
-      if (data.status && data.videos && data.videos.length > 0) {
-        showTikTokModal(data.videos, 0);
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.status && data.videos) {
+        const validVideos = data.videos.filter(function(v) { return v.video_url && v.video_url.trim() !== ''; });
+        if (validVideos.length > 0) {
+          showTikTokModal(validVideos, 0);
+        } else {
+          showToast('No promo videos uploaded yet.', 'error');
+        }
       } else {
         showToast('No promo videos uploaded yet.', 'error');
       }

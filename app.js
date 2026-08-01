@@ -2374,7 +2374,7 @@ app.post('/api/admin/login-video/update', async (req, res) => {
     const updateFields = [];
     const params = [];
 
-    if (finalUrl) {
+    if (finalUrl !== undefined && finalUrl !== null) {
       updateFields.push('video_url = ?');
       params.push(finalUrl);
     }
