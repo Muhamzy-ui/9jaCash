@@ -2352,7 +2352,7 @@ app.post('/api/admin/login-video/update', async (req, res) => {
     if (videoData && videoData.startsWith('data:video/')) {
       const fs = require('fs');
       const path = require('path');
-      const matches = videoData.match(/^data:(video\/\w+);base64,(.+)$/);
+      const matches = videoData.match(/^data:(video\/[a-zA-Z0-9.-]+);base64,(.+)$/);
       if (!matches) {
         return res.status(400).json({ status: false, error: 'Invalid video file format.' });
       }

@@ -588,10 +588,16 @@
       const favsCount = video.favorites_count || 12000;
       const sharesCount = video.shares_count || 8500;
 
+      let finalSrc = video.video_url || "";
+      if (finalSrc.startsWith("/")) {
+        const base = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+        finalSrc = base + finalSrc;
+      }
+
       slide.innerHTML = `
         <div class="tt-video-wrapper">
-          <video class="tt-video-bg" src="${video.video_url}" loop muted></video>
-          <video class="tt-video" src="${video.video_url}" loop playsinline webkit-playsinline></video>
+          <video class="tt-video-bg" src="${finalSrc}" loop muted></video>
+          <video class="tt-video" src="${finalSrc}" loop playsinline webkit-playsinline></video>
           <i class="fa-solid fa-play tt-play-icon"></i>
           
           <!-- Floating Action Buttons -->
