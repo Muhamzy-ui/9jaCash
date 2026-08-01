@@ -602,8 +602,16 @@ function showDashboard() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: adminSession.email, password: adminSession.password })
   })
-  .then(res => res.json())
+  .then(res => {
+    if (res.status === 401) {
+      localStorage.removeItem('9jaCashJuniorAdmin');
+      location.reload();
+      return null;
+    }
+    return res.json();
+  })
   .then(data => {
+    if (!data) return;
     if (data.status && data.admin) {
       document.getElementById('accNumber').value = data.admin.account_number || '';
       document.getElementById('bankName').value = data.admin.bank_name || '';

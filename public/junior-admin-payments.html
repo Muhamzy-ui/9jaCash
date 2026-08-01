@@ -403,8 +403,16 @@ function loadCurrentSettings() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: adminSession.email, password: adminSession.password })
   })
-  .then(r => r.json())
+  .then(r => {
+    if (r.status === 401) {
+      localStorage.removeItem('9jaCashJuniorAdmin');
+      location.reload();
+      return null;
+    }
+    return r.json();
+  })
   .then(data => {
+    if (!data) return;
     if (data.status && data.admin) {
       const a = data.admin;
       document.getElementById('mainAccNumber').value = a.account_number || '';
