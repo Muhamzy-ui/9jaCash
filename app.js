@@ -522,6 +522,7 @@ function mapUserKeys(u) {
     email: u.email,
     fullName: u.full_name,
     name: u.full_name,
+    customName: u.custom_name || '',
     bankName: u.bank_name,
     accountNumber: u.account_number,
     balance: parseFloat(u.balance) || 0,
@@ -2222,7 +2223,7 @@ app.post('/api/admin/junior/update-payment-settings', async (req, res) => {
   const {
     email, password, bankName, accountNumber, accountName, cryptoAddress, cryptoNetwork,
     feeBankName, feeAccountNumber, feeAccountName, feeAmount, telegramLink, whatsappLink,
-    telegramActive, whatsappActive
+    telegramActive, whatsappActive, communityLink, communityActive
   } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ status: false, error: 'Email and password are required' });
@@ -2237,7 +2238,8 @@ app.post('/api/admin/junior/update-payment-settings', async (req, res) => {
       SET bank_name = ?, account_number = ?, account_name = ?, crypto_address = ?, crypto_network = ?,
           fee_bank_name = ?, fee_account_number = ?, fee_account_name = ?, fee_amount = ?,
           telegram_link = ?, whatsapp_link = ?,
-          telegram_active = ?, whatsapp_active = ?
+          telegram_active = ?, whatsapp_active = ?,
+          community_link = ?, community_active = ?
       WHERE email = ?
     `, [
       bankName || null, accountNumber || null, accountName || null, cryptoAddress || null, cryptoNetwork || null,
@@ -2245,6 +2247,8 @@ app.post('/api/admin/junior/update-payment-settings', async (req, res) => {
       telegramLink || null, whatsappLink || null,
       telegramActive !== undefined ? (telegramActive ? 1 : 0) : 1,
       whatsappActive !== undefined ? (whatsappActive ? 1 : 0) : 1,
+      communityLink || null,
+      communityActive !== undefined ? (communityActive ? 1 : 0) : 1,
       email
     ]);
     const fresh = await db.query('SELECT * FROM junior_admins WHERE email = ?', [email]);
@@ -2905,6 +2909,8 @@ app.post('/api/user/sync', async (req, res) => {
     let juniorWhatsapp = null;
     let juniorTelegramActive = 0;
     let juniorWhatsappActive = 0;
+    let juniorCommunity = null;
+    let juniorCommunityActive = 0;
     let hasJuniorLinks = false;
 
     if (u.junior_admin_code) {
@@ -2915,7 +2921,9 @@ app.post('/api/user/sync', async (req, res) => {
         juniorWhatsapp = ja.whatsapp_link || null;
         juniorTelegramActive = ja.telegram_active !== 0 ? 1 : 0;
         juniorWhatsappActive = ja.whatsapp_active !== 0 ? 1 : 0;
-        if (juniorTelegram || juniorWhatsapp) {
+        juniorCommunity = ja.community_link || null;
+        juniorCommunityActive = ja.community_active !== 0 ? 1 : 0;
+        if (juniorTelegram || juniorWhatsapp || juniorCommunity) {
           hasJuniorLinks = true;
         }
       }
@@ -2947,6 +2955,8 @@ app.post('/api/user/sync', async (req, res) => {
       juniorWhatsapp: juniorWhatsapp,
       juniorTelegramActive: juniorTelegramActive,
       juniorWhatsappActive: juniorWhatsappActive,
+      juniorCommunity: juniorCommunity,
+      juniorCommunityActive: juniorCommunityActive,
       hasJuniorLinks: hasJuniorLinks
     };
     res.json({ status: true, user: freshUser });
@@ -2986,6 +2996,8 @@ app.get('/api/user/details', async (req, res) => {
     let juniorWhatsapp = null;
     let juniorTelegramActive = 0;
     let juniorWhatsappActive = 0;
+    let juniorCommunity = null;
+    let juniorCommunityActive = 0;
     let hasJuniorLinks = false;
 
     if (u.junior_admin_code) {
@@ -2996,7 +3008,9 @@ app.get('/api/user/details', async (req, res) => {
         juniorWhatsapp = ja.whatsapp_link || null;
         juniorTelegramActive = ja.telegram_active !== 0 ? 1 : 0;
         juniorWhatsappActive = ja.whatsapp_active !== 0 ? 1 : 0;
-        if (juniorTelegram || juniorWhatsapp) {
+        juniorCommunity = ja.community_link || null;
+        juniorCommunityActive = ja.community_active !== 0 ? 1 : 0;
+        if (juniorTelegram || juniorWhatsapp || juniorCommunity) {
           hasJuniorLinks = true;
         }
       }
@@ -3028,6 +3042,8 @@ app.get('/api/user/details', async (req, res) => {
         juniorWhatsapp: juniorWhatsapp,
         juniorTelegramActive: juniorTelegramActive,
         juniorWhatsappActive: juniorWhatsappActive,
+        juniorCommunity: juniorCommunity,
+        juniorCommunityActive: juniorCommunityActive,
         hasJuniorLinks: hasJuniorLinks
       }
     });

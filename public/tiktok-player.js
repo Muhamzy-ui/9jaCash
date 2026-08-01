@@ -1062,6 +1062,12 @@
         finalSrc = base + finalSrc;
       }
 
+      let commentLabelText = "5.0k";
+      if (index === 1) commentLabelText = "3.2k";
+      else if (index === 2) commentLabelText = "1.8k";
+      else if (index === 3) commentLabelText = "934";
+      else if (index > 3) commentLabelText = (50 + Math.floor(Math.random() * 500)).toString();
+
       slide.innerHTML = `
         <div class="tt-video-wrapper" style="background:#000;">
           <video class="tt-video" src="${finalSrc}" loop playsinline webkit-playsinline preload="auto" muted></video>
@@ -1079,7 +1085,7 @@
             </button>
             <button class="tt-sidebar-btn" id="commentBtn_${video.id}">
               <div class="tt-sidebar-icon"><i class="fa-regular fa-comment-dots"></i></div>
-              <span class="tt-sidebar-label">5.0k</span>
+              <span class="tt-sidebar-label">${commentLabelText}</span>
             </button>
             <button class="tt-sidebar-btn" id="favBtn_${video.id}">
               <div class="tt-sidebar-icon"><i class="fa-regular fa-bookmark"></i></div>
@@ -1190,6 +1196,15 @@
       });
 
       cBtn.addEventListener('click', function() {
+        const headerEl = commentsModal.querySelector('.tt-comments-header');
+        if (headerEl) {
+          headerEl.innerHTML = `
+            Comments (${commentLabelText})
+            <button class="tt-comments-close">✕</button>
+          `;
+          const closeBtn = headerEl.querySelector('.tt-comments-close');
+          if (closeBtn) closeBtn.onclick = () => commentsModal.classList.remove('show');
+        }
         commentsModal.classList.add('show');
         renderComments(commentsList);
       });

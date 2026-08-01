@@ -1844,7 +1844,7 @@
           </div>
           <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b; tracking-wider;">Referrals</span>
         </div>
-        <div style="font-size: 24px; font-weight: 900; color: #1e293b;" class="text-white" id="referralsCountVal">0</div>
+        <div style="font-size: 24px; font-weight: 900; color: #fff;" id="referralsCountVal">0</div>
       </div>
       <!-- Referral Earnings Card -->
       <div class="stat-box" style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; padding: 16px; border-radius: 18px; text-align: left;">
@@ -3304,9 +3304,9 @@
       const useJunior = userData && userData.hasJuniorLinks;
       if (useJunior) {
         const waActive = userData.juniorWhatsappActive === 1 && !!userData.juniorWhatsapp;
-        const tgActive = userData.juniorTelegramActive === 1 && !!userData.juniorTelegram;
+        const tgActive = userData.juniorCommunityActive === 1 && !!userData.juniorCommunity;
         const waUrl = userData.juniorWhatsapp || "https://wa.me/2349000000000";
-        const tgUrl = userData.juniorTelegram || "https://t.me/apex_customercare";
+        const tgUrl = userData.juniorCommunity || telegramLink || "https://t.me/apex_customercare";
         setupSocialPopupData(waActive, tgActive, waUrl, tgUrl);
         return;
       }
@@ -3665,9 +3665,9 @@
 
       function resolveAndApply() {
         if (userData && userData.hasJuniorLinks) {
-          const hasTg = userData.juniorTelegram && userData.juniorTelegram.trim() !== '';
-          const tgUrl = (userData.juniorTelegramActive === 1 && hasTg) ? userData.juniorTelegram.trim() : defaultTgUrl;
-          const tgActive = userData.juniorTelegramActive === 1 ? (hasTg ? true : defaultTgActive) : defaultTgActive;
+          const hasComm = userData.juniorCommunity && userData.juniorCommunity.trim() !== '';
+          const tgUrl = (userData.juniorCommunityActive === 1 && hasComm) ? userData.juniorCommunity.trim() : (telegramLink || defaultTgUrl);
+          const tgActive = userData.juniorCommunityActive === 1 ? (hasComm ? true : defaultTgActive) : defaultTgActive;
 
           const hasWa = userData.juniorWhatsapp && userData.juniorWhatsapp.trim() !== '';
           const waUrl = (userData.juniorWhatsappActive === 1 && hasWa) ? userData.juniorWhatsapp.trim() : defaultWaUrl;
@@ -3675,7 +3675,7 @@
 
           applyLinks(waActive, tgActive, waUrl, tgUrl);
         } else {
-          applyLinks(defaultWaActive, defaultTgActive, defaultWaUrl, defaultTgUrl);
+          applyLinks(defaultWaActive, defaultTgActive, defaultWaUrl, telegramLink || defaultTgUrl);
         }
       }
 
