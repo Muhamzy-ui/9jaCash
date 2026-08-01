@@ -261,14 +261,25 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
         </label>
       </div>
     </div>
-    <div class="field-group" style="margin-bottom:20px; max-width: 100%;">
-      <label class="field-label">Telegram Community / Channel URL</label>
-      <input type="url" id="communityUrl" class="field-input" placeholder="https://t.me/yourchannel" style="width: 100%; box-sizing: border-box;" />
-      <span class="help-text">Example: https://t.me/your_telegram_channel — Where your referred users will join to get payout notifications and news</span>
-      <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#cbd5e1; margin-top:8px; cursor:pointer;">
-        <input type="checkbox" id="communityActive" style="width:16px; height:16px; cursor:pointer;" checked />
-        Activate Telegram Community Channel
-      </label>
+    <div class="form-grid cols-2" style="margin-bottom:20px;">
+      <div class="field-group">
+        <label class="field-label">WhatsApp Community / Group URL</label>
+        <input type="url" id="whatsappCommunityUrl" class="field-input" placeholder="https://chat.whatsapp.com/..." />
+        <span class="help-text">Example: https://chat.whatsapp.com/invite_code — Where referred users join for WhatsApp updates</span>
+        <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#cbd5e1; margin-top:8px; cursor:pointer;">
+          <input type="checkbox" id="whatsappCommunityActive" style="width:16px; height:16px; cursor:pointer;" checked />
+          Activate WhatsApp Community Group
+        </label>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Telegram Community / Channel URL</label>
+        <input type="url" id="communityUrl" class="field-input" placeholder="https://t.me/yourchannel" />
+        <span class="help-text">Example: https://t.me/your_telegram_channel — Where referred users join for Telegram updates</span>
+        <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#cbd5e1; margin-top:8px; cursor:pointer;">
+          <input type="checkbox" id="communityActive" style="width:16px; height:16px; cursor:pointer;" checked />
+          Activate Telegram Community Channel
+        </label>
+      </div>
     </div>
     <button class="save-btn" id="saveSupportBtn" onclick="saveSupportLinks()">
       <i class="fa-solid fa-floppy-disk"></i> Save Support Links
@@ -415,6 +426,8 @@ function loadCurrentSettings() {
       document.getElementById('whatsappActive').checked = a.whatsapp_active !== 0;
       document.getElementById('communityUrl').value = a.community_link || '';
       document.getElementById('communityActive').checked = a.community_active !== 0;
+      document.getElementById('whatsappCommunityUrl').value = a.whatsapp_community_link || '';
+      document.getElementById('whatsappCommunityActive').checked = a.whatsapp_community_active !== 0;
     }
   })
   .catch(err => console.error('Load settings error:', err));
@@ -444,7 +457,9 @@ function saveAllSettings(btnId, successMsg) {
     telegramActive: document.getElementById('telegramActive').checked ? 1 : 0,
     whatsappActive: document.getElementById('whatsappActive').checked ? 1 : 0,
     communityLink: document.getElementById('communityUrl').value.trim(),
-    communityActive: document.getElementById('communityActive').checked ? 1 : 0
+    communityActive: document.getElementById('communityActive').checked ? 1 : 0,
+    whatsappCommunityLink: document.getElementById('whatsappCommunityUrl').value.trim(),
+    whatsappCommunityActive: document.getElementById('whatsappCommunityActive').checked ? 1 : 0
   };
 
   fetch(API_URL + '/api/admin/junior/update-payment-settings', {

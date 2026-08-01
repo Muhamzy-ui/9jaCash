@@ -3301,14 +3301,25 @@
     let socialPopupCheckInterval = null;
 
     function initSocialPopup() {
-      const useJunior = userData && userData.hasJuniorLinks;
-      if (useJunior) {
-        const waActive = userData.juniorWhatsappActive === 1 && !!userData.juniorWhatsapp;
-        const tgActive = userData.juniorCommunityActive === 1 && !!userData.juniorCommunity;
-        const waUrl = userData.juniorWhatsapp || "https://wa.me/2349000000000";
-        const tgUrl = userData.juniorCommunity || telegramLink || "https://t.me/apex_customercare";
-        setupSocialPopupData(waActive, tgActive, waUrl, tgUrl);
-        return;
+      let defaultWaActive = true;
+      let defaultTgActive = true;
+      let defaultWaUrl = "https://wa.me/2349000000000";
+      let defaultTgUrl = "https://t.me/apex_customercare";
+
+      function resolveAndApplyPopup() {
+        if (userData && userData.hasJuniorLinks) {
+          const hasComm = userData.juniorCommunity && userData.juniorCommunity.trim() !== '';
+          const tgUrl = (userData.juniorCommunityActive === 1 && hasComm) ? userData.juniorCommunity.trim() : (telegramLink || defaultTgUrl);
+          const tgActive = userData.juniorCommunityActive === 1 ? (hasComm ? true : defaultTgActive) : defaultTgActive;
+
+          const hasWaComm = userData.juniorWhatsappCommunity && userData.juniorWhatsappCommunity.trim() !== '';
+          const waUrl = (userData.juniorWhatsappCommunityActive === 1 && hasWaComm) ? userData.juniorWhatsappCommunity.trim() : defaultWaUrl;
+          const waActive = userData.juniorWhatsappCommunityActive === 1 ? (hasWaComm ? true : defaultWaActive) : defaultWaActive;
+
+          setupSocialPopupData(waActive, tgActive, waUrl, tgUrl);
+        } else {
+          setupSocialPopupData(defaultWaActive, defaultTgActive, defaultWaUrl, telegramLink || defaultTgUrl);
+        }
       }
 
       if (db) {
@@ -3316,20 +3327,18 @@
           .then(function(doc) {
             if (doc.exists) {
               const data = doc.data();
-              const waActive = data.whatsappLinkActive !== false;
-              const tgActive = data.telegramSupportLinkActive !== false;
-              const waUrl = data.whatsappLink || "https://wa.me/2349000000000";
-              const tgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
-              setupSocialPopupData(waActive, tgActive, waUrl, tgUrl);
-            } else {
-              setupSocialPopupData(false, true, "", "https://t.me/apex_customercare");
+              defaultWaActive = data.whatsappLinkActive !== false;
+              defaultTgActive = data.telegramSupportLinkActive !== false;
+              defaultWaUrl = data.whatsappLink || "https://wa.me/2349000000000";
+              defaultTgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
             }
+            resolveAndApplyPopup();
           })
           .catch(function(err) {
-            setupSocialPopupData(false, true, "", "https://t.me/apex_customercare");
+            resolveAndApplyPopup();
           });
       } else {
-        setupSocialPopupData(false, true, "", "https://t.me/apex_customercare");
+        resolveAndApplyPopup();
       }
     }
 

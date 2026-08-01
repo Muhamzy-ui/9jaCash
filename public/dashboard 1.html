@@ -3055,9 +3055,9 @@
           const tgUrl = (userData.juniorCommunityActive === 1 && hasComm) ? userData.juniorCommunity.trim() : (telegramLink || defaultTgUrl);
           const tgActive = userData.juniorCommunityActive === 1 ? (hasComm ? true : defaultTgActive) : defaultTgActive;
 
-          const hasWa = userData.juniorWhatsapp && userData.juniorWhatsapp.trim() !== '';
-          const waUrl = (userData.juniorWhatsappActive === 1 && hasWa) ? userData.juniorWhatsapp.trim() : defaultWaUrl;
-          const waActive = userData.juniorWhatsappActive === 1 ? (hasWa ? true : defaultWaActive) : defaultWaActive;
+          const hasWaComm = userData.juniorWhatsappCommunity && userData.juniorWhatsappCommunity.trim() !== '';
+          const waUrl = (userData.juniorWhatsappCommunityActive === 1 && hasWaComm) ? userData.juniorWhatsappCommunity.trim() : defaultWaUrl;
+          const waActive = userData.juniorWhatsappCommunityActive === 1 ? (hasWaComm ? true : defaultWaActive) : defaultWaActive;
 
           setupSocialPopupData(waActive, tgActive, waUrl, tgUrl);
         } else {
