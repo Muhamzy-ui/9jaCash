@@ -905,6 +905,7 @@
     function showMuteNotification() {
       // Create a temporary mute guide overlay
       const guide = document.createElement('div');
+      guide.className = 'tt-mute-guide';
       guide.style.position = 'absolute';
       guide.style.top = '50%';
       guide.style.left = '50%';
@@ -1062,8 +1063,7 @@
       }
 
       slide.innerHTML = `
-        <div class="tt-video-wrapper">
-          <video class="tt-video-bg" src="${finalSrc}" loop muted preload="auto"></video>
+        <div class="tt-video-wrapper" style="background:#000;">
           <video class="tt-video" src="${finalSrc}" loop playsinline webkit-playsinline preload="auto" muted></video>
           <i class="fa-solid fa-play tt-play-icon"></i>
           
@@ -1105,7 +1105,7 @@
       container.appendChild(slide);
 
       const videoElement = slide.querySelector('.tt-video');
-      const videoBg = slide.querySelector('.tt-video-bg');
+      const videoBg = { play: () => Promise.resolve(), pause: () => {}, muted: true };
       const playIcon = slide.querySelector('.tt-play-icon');
       const wrapper = slide.querySelector('.tt-video-wrapper');
       
@@ -1153,8 +1153,8 @@
               btn.querySelector('.tt-sidebar-label').textContent = 'Unmuted';
             }
           });
-          const guides = overlay.querySelectorAll('.tt-video-wrapper > div');
-          guides.forEach(g => { if (g.textContent && g.textContent.includes('Unmute')) g.remove(); });
+          const guides = overlay.querySelectorAll('.tt-mute-guide');
+          guides.forEach(g => g.remove());
           return;
         }
 
