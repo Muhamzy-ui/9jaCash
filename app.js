@@ -1551,7 +1551,9 @@ app.get('/api/user/payment-instructions', async (req, res) => {
 // POST /api/admin/super/create-junior — Add Junior Admin
 app.post('/api/admin/super/create-junior', async (req, res) => {
   const { email, password, referralCode, bankName, accountNumber, accountName } = req.body || {};
+  console.log('[CREATE-JUNIOR] Request received:', { email, referralCode, bankName });
   if (!email || !password || !referralCode) {
+    console.log('[CREATE-JUNIOR] Missing required fields');
     return res.status(400).json({ status: false, error: 'Email, password and referral code are required' });
   }
 
@@ -1559,6 +1561,7 @@ app.post('/api/admin/super/create-junior', async (req, res) => {
     // Check duplicate
     const dups = await db.query('SELECT email FROM junior_admins WHERE email = ? OR referral_code = ?', [email, referralCode]);
     if (dups.length > 0) {
+      console.log('[CREATE-JUNIOR] Duplicate found:', dups[0]);
       return res.status(409).json({ status: false, error: 'Email or Referral Code already in use' });
     }
 
@@ -1567,12 +1570,36 @@ app.post('/api/admin/super/create-junior', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, 1, ?)
     `, [email, password, referralCode, bankName || null, accountNumber || null, accountName || null, new Date().toISOString()]);
 
+    console.log('[CREATE-JUNIOR] Successfully created junior admin:', email, referralCode);
     res.status(201).json({ status: true, message: 'Junior admin created successfully' });
   } catch (err) {
-    console.error('Super admin error:', err.message);
-    res.status(500).json({ status: false, error: 'Failed to create junior admin' });
+    console.error('[CREATE-JUNIOR] Error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to create junior admin: ' + err.message });
   }
 });
+
+// GET /api/admin/seed-junior?code=011&email=test@test.com&pass=pass123 — Emergency seed endpoint
+app.get('/api/admin/seed-junior', async (req, res) => {
+  const { code, email, pass } = req.query;
+  if (!code || !email || !pass) {
+    return res.status(400).json({ error: 'Provide code, email, and pass as query params' });
+  }
+  try {
+    const existing = await db.query('SELECT email FROM junior_admins WHERE email = ? OR referral_code = ?', [email, code.toUpperCase()]);
+    if (existing.length > 0) {
+      return res.json({ status: 'already_exists', existing: existing[0] });
+    }
+    await db.query(`
+      INSERT INTO junior_admins (email, password, referral_code, is_active, created_at)
+      VALUES (?, ?, ?, 1, ?)
+    `, [email, pass, code.toUpperCase(), new Date().toISOString()]);
+    const check = await db.query('SELECT * FROM junior_admins WHERE email = ?', [email]);
+    res.json({ status: 'created', record: check[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // GET /api/admin/super/withdrawals — Fetch all withdrawals on the platform
 app.get('/api/admin/super/withdrawals', async (req, res) => {
