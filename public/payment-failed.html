@@ -204,6 +204,27 @@ function formatExternalLink(url, defaultUrl) {
   if (/^(https?:\/\/|tg:\/\/|whatsapp:\/\/)/i.test(clean)) {
     return clean;
   }
+  const isTelegram = (defaultUrl && defaultUrl.toLowerCase().includes('t.me'));
+  const isWhatsApp = (defaultUrl && (defaultUrl.toLowerCase().includes('wa.me') || defaultUrl.toLowerCase().includes('whatsapp')));
+  if (isTelegram) {
+    if (clean.startsWith('@')) {
+      return 'https://t.me/' + clean.slice(1);
+    }
+    if (!clean.includes('.') && !clean.includes('/')) {
+      return 'https://t.me/' + clean;
+    }
+    if (clean.toLowerCase().startsWith('t.me')) {
+      return 'https://' + clean;
+    }
+  }
+  if (isWhatsApp) {
+    if (/^\+?\d+$/.test(clean)) {
+      return 'https://wa.me/' + clean.replace(/^\+/, '');
+    }
+    if (clean.toLowerCase().startsWith('wa.me')) {
+      return 'https://' + clean;
+    }
+  }
   return 'https://' + clean;
 }
 try {
