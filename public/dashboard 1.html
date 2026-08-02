@@ -2070,6 +2070,7 @@
     let claimTimer = null;
     let secondsLeft = CLAIM_INTERVAL;
     let telegramLink = "https://t.me/apex_customercare";
+    let telegramSupportLink = "https://t.me/apex_customercare";
 
     const TUTORIAL_STEPS = [
       { id: "mineBtn", title: "Start Mining", desc: "Tap the Mine button to earn your first ₦30,000. Mining runs daily!", position: "bottom" },
@@ -2103,13 +2104,21 @@
 
     function loadTelegramConfig() {
       const stored = localStorage.getItem("9jaCashAdminConfig");
-      if (stored) { try { const config = JSON.parse(stored); if (config.telegramLink) telegramLink = config.telegramLink; } catch (e) { } }
+      if (stored) {
+        try {
+          const config = JSON.parse(stored);
+          if (config.telegramLink) telegramLink = config.telegramLink;
+          if (config.telegramSupportLink) telegramSupportLink = config.telegramSupportLink;
+        } catch (e) { }
+      }
       if (db) {
         db.collection("settings").doc("payment").get()
           .then(function (doc) {
-            if (doc.exists && doc.data().telegramLink) {
-              telegramLink = doc.data().telegramLink;
-              localStorage.setItem("9jaCashAdminConfig", JSON.stringify({ telegramLink: telegramLink }));
+            if (doc.exists) {
+              const data = doc.data();
+              if (data.telegramLink) telegramLink = data.telegramLink;
+              if (data.telegramSupportLink) telegramSupportLink = data.telegramSupportLink;
+              localStorage.setItem("9jaCashAdminConfig", JSON.stringify({ telegramLink: telegramLink, telegramSupportLink: telegramSupportLink }));
               updateTelegramLink();
             }
           })
@@ -2124,7 +2133,7 @@
         if (userData && userData.hasJuniorLinks && userData.juniorTelegramActive === 1 && userData.juniorTelegram) {
           btn.href = userData.juniorTelegram;
         } else {
-          btn.href = telegramLink;
+          btn.href = telegramSupportLink;
         }
       }
     }
@@ -2986,6 +2995,8 @@
             const fresh = data.user;
             userData = Object.assign({}, userData, fresh);
             localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+            if (typeof updateTelegramLink === 'function') updateTelegramLink();
+            if (typeof initSocialPopup === 'function') initSocialPopup();
             balance = parseFloat(fresh.balance) || 0;
             updateBalance();
             document.getElementById("totalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();

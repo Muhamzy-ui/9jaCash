@@ -605,6 +605,9 @@
             const fresh = data.user;
             userData = fresh;
             localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+            if (typeof loadCustomerCareLinks === 'function') {
+              loadCustomerCareLinks();
+            }
 
             const emailVal = fresh.email || "";
             const isPlaceholderEmail = emailVal.includes(fresh.phone + "@") || emailVal === "";

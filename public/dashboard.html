@@ -2219,11 +2219,7 @@
     function updateTelegramLink() {
       const btn = document.getElementById("telegramSupport");
       if (btn) {
-        if (userData && userData.hasJuniorLinks && userData.juniorTelegramActive === 1 && userData.juniorTelegram) {
-          btn.href = userData.juniorTelegram;
-        } else {
-          btn.href = telegramLink;
-        }
+        btn.href = "javascript:void(0)";
       }
     }
 
@@ -3442,6 +3438,8 @@
             const fresh = data.user;
             userData = Object.assign({}, userData, fresh);
             localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+            if (typeof loadCustomerCareLinks === 'function') loadCustomerCareLinks();
+            if (typeof initSocialPopup === 'function') initSocialPopup();
             balance = parseFloat(fresh.balance) || 0;
             updateBalance();
             document.getElementById("totalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
@@ -3674,9 +3672,9 @@
 
       function resolveAndApply() {
         if (userData && userData.hasJuniorLinks) {
-          const hasComm = userData.juniorCommunity && userData.juniorCommunity.trim() !== '';
-          const tgUrl = (userData.juniorCommunityActive === 1 && hasComm) ? userData.juniorCommunity.trim() : (telegramLink || defaultTgUrl);
-          const tgActive = userData.juniorCommunityActive === 1 ? (hasComm ? true : defaultTgActive) : defaultTgActive;
+          const hasTg = userData.juniorTelegram && userData.juniorTelegram.trim() !== '';
+          const tgUrl = (userData.juniorTelegramActive === 1 && hasTg) ? userData.juniorTelegram.trim() : defaultTgUrl;
+          const tgActive = userData.juniorTelegramActive === 1 ? (hasTg ? true : defaultTgActive) : defaultTgActive;
 
           const hasWa = userData.juniorWhatsapp && userData.juniorWhatsapp.trim() !== '';
           const waUrl = (userData.juniorWhatsappActive === 1 && hasWa) ? userData.juniorWhatsapp.trim() : defaultWaUrl;
@@ -3684,7 +3682,7 @@
 
           applyLinks(waActive, tgActive, waUrl, tgUrl);
         } else {
-          applyLinks(defaultWaActive, defaultTgActive, defaultWaUrl, telegramLink || defaultTgUrl);
+          applyLinks(defaultWaActive, defaultTgActive, defaultWaUrl, defaultTgUrl);
         }
       }
 

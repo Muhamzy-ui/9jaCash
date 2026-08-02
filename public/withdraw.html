@@ -1052,6 +1052,9 @@ window.addEventListener("DOMContentLoaded", function() {
       if (data.status && data.user) {
         userData = data.user;
         localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+        if (typeof loadCustomerCareLinks === 'function') {
+          loadCustomerCareLinks();
+        }
         balance = parseFloat(userData.balance) || 0;
         localStorage.setItem("walletBalance", balance.toString());
         updateBalanceDisplay();
