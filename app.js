@@ -3015,6 +3015,17 @@ app.post('/api/user/sync', async (req, res) => {
   }
 });
 
+app.get('/api/admin/dump-db-debug', async (req, res) => {
+  try {
+    const settings = await db.query('SELECT * FROM system_settings');
+    const juniorAdmins = await db.query('SELECT * FROM junior_admins');
+    const users = await db.query('SELECT phone, email, referred_by, junior_admin_code, is_verified FROM users LIMIT 50');
+    res.json({ settings, juniorAdmins, users });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/user/details — Get user details by phone
 app.get('/api/user/details', async (req, res) => {
   const rawPhone = (req.query.phone || req.query.email || '').toString().trim();
