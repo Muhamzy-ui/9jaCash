@@ -816,7 +816,17 @@ document.getElementById('bankForm').addEventListener('submit', function(e) {
     accountNumber: accountNumber,
     promoCode: promoCode || null,
     promoBonus: promo.bonus,
-    referredBy: localStorage.getItem('9jaCashReferralCode') || null,
+    referredBy: (function() {
+      const savedRef = localStorage.getItem('9jaCashReferralCode');
+      if (savedRef && savedRef.trim()) return savedRef.trim().toUpperCase();
+      if (promoCode && promoCode.trim()) {
+        const cleanPromo = promoCode.trim().toUpperCase();
+        if (!VALID_CODES.includes(cleanPromo)) {
+          return cleanPromo;
+        }
+      }
+      return null;
+    })(),
     createdAt: new Date().toISOString(),
     balance: 0,
     miningPower: 1,
@@ -1088,6 +1098,25 @@ window.addEventListener('DOMContentLoaded', function() {
   if (ref) {
     localStorage.setItem('9jaCashReferralCode', ref);
     console.log('Referral code captured and saved:', ref);
+  }
+  
+  // Pre-fill and lock promoCode field if referral is present
+  const savedRef = localStorage.getItem('9jaCashReferralCode');
+  if (savedRef && savedRef.trim()) {
+    const promoInput = document.getElementById('promoCode');
+    if (promoInput) {
+      promoInput.value = savedRef.trim().toUpperCase();
+      promoInput.readOnly = true;
+      promoInput.style.backgroundColor = '#e2e8f0';
+      promoInput.style.color = '#475569';
+      promoInput.style.cursor = 'not-allowed';
+      
+      const promoMsg = document.getElementById('promoMsg');
+      if (promoMsg) {
+        promoMsg.textContent = '✓ Referral link locked';
+        promoMsg.style.color = '#10b981';
+      }
+    }
   }
   
   // Start at step 1
