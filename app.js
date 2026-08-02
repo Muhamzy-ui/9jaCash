@@ -751,7 +751,7 @@ app.post('/api/login', async (req, res) => {
 
 // POST /api/user/sync — Fetch fresh user stats with recovery and verification checks
 app.post('/api/user/sync', async (req, res) => {
-  const { phone, balance, totalMined, withdrawalCount } = req.body || {};
+  const { phone, balance, totalMined, withdrawalCount, referredBy } = req.body || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
 
   const cleanPhone = normalizePhone(phone);
@@ -773,6 +773,8 @@ app.post('/api/user/sync', async (req, res) => {
       dbUser = users[0];
       let dbBalance = parseFloat(dbUser.balance) || 0;
       let dbTotalMined = parseFloat(dbUser.total_mined) || 0;
+      let dbReferredBy = dbUser.referred_by || null;
+      let dbJuniorAdminCode = dbUser.junior_admin_code || null;
       let needsUpdate = false;
 
       // Restore/recover balance if local storage is higher than DB balance
@@ -784,9 +786,20 @@ app.post('/api/user/sync', async (req, res) => {
         dbTotalMined = localTotalMined;
         needsUpdate = true;
       }
+      
+      // Dynamic referral linking: if they landed via a referral code, sync it to database
+      if (!dbReferredBy && referredBy) {
+        dbReferredBy = referredBy.trim().toUpperCase();
+        dbJuniorAdminCode = await findJuniorAdminCode(dbReferredBy);
+        needsUpdate = true;
+      }
 
       if (needsUpdate) {
-        await db.query('UPDATE users SET balance = ?, total_mined = ? WHERE phone = ?', [dbBalance, dbTotalMined, cleanPhone]);
+        await db.query(`
+          UPDATE users 
+          SET balance = ?, total_mined = ?, referred_by = ?, junior_admin_code = ? 
+          WHERE phone = ?
+        `, [dbBalance, dbTotalMined, dbReferredBy, dbJuniorAdminCode, cleanPhone]);
         const updatedUsers = await db.query('SELECT * FROM users WHERE phone = ?', [cleanPhone]);
         dbUser = updatedUsers && updatedUsers.length > 0 ? updatedUsers[0] : dbUser;
       }
@@ -823,6 +836,25 @@ app.post('/api/user/sync', async (req, res) => {
     );
     const verified = parseInt(getCnt(verificationResult)) > 0;
 
+    // Fetch referrals statistics
+    const refCountRes = await db.query('SELECT COUNT(*) as count FROM users WHERE referred_by = ?', [cleanPhone]);
+    const referralsCount = parseInt(getCnt(refCountRes));
+
+    const activeRefCountRes = await db.query('SELECT COUNT(*) as count FROM users WHERE referred_by = ? AND is_verified = 1', [cleanPhone]);
+    const activeReferralsCount = parseInt(getCnt(activeRefCountRes));
+
+    let referralBonus = 10000;
+    try {
+      const refSet = await db.query("SELECT value FROM system_settings WHERE key = 'referral_bonus'");
+      if (refSet && refSet.length > 0) {
+        const parsed = JSON.parse(refSet[0].value);
+        referralBonus = parseFloat(parsed.amount || 10000);
+      }
+    } catch(e) {
+      console.error("Error fetching referral bonus in sync:", e);
+    }
+    const referralEarnings = activeReferralsCount * referralBonus;
+
     const mapped = mapUserKeys(dbUser) || {
       phone: cleanPhone,
       email: `${cleanPhone}@9jacash.com`,
@@ -836,6 +868,9 @@ app.post('/api/user/sync', async (req, res) => {
     mapped.hasBouncedBefore = hasBouncedBefore;
     mapped.withdrawalCount = finalWithdrawalCount;
     mapped.verified = verified;
+    mapped.referralsCount = referralsCount;
+    mapped.activeReferralsCount = activeReferralsCount;
+    mapped.referralEarnings = referralEarnings;
 
     const juniorLinks = await getJuniorLinks(dbUser);
     res.json({ status: true, user: Object.assign({}, mapped, juniorLinks) });
@@ -2920,87 +2955,7 @@ async function handleUserRegistration(req, res) {
 app.post('/api/register', handleUserRegistration);
 app.post('/api/user/register', handleUserRegistration);
 
-// POST /api/user/sync — Fetch fresh user status & sync data with PostgreSQL
-app.post('/api/user/sync', async (req, res) => {
-  const body = req.body || {};
-  const rawPhone = (body.phone || body.userId || body.phoneNumber || body.email || '').toString().trim();
-  if (!rawPhone) return res.status(400).json({ status: false, error: 'Phone required' });
 
-  const digitsOnly = rawPhone.replace(/\D/g, '');
-  const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
-
-  try {
-    const users = await db.query(`
-      SELECT * FROM users 
-      WHERE phone = ? 
-         OR email = ? 
-         OR full_name = ?
-         OR (LENGTH(?) > 5 AND phone LIKE ?)
-         OR (LENGTH(?) > 5 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
-      ORDER BY created_at DESC LIMIT 1
-    `, [rawPhone, rawPhone, rawPhone, last10, '%' + last10, last10, '%' + last10]);
-
-    if (users.length === 0) {
-      return res.status(404).json({ status: false, error: 'User not found' });
-    }
-    const u = users[0];
-    const isVerifiedNum = (u.is_verified === 1 || u.is_verified === true || u.is_verified === '1') ? 1 : 0;
-
-    // Fetch real withdrawal count from SQL database
-    const wCountRes = await db.query('SELECT COUNT(*) as cnt FROM withdrawals WHERE phone = ?', [u.phone]);
-    const wCount = parseInt((wCountRes && wCountRes[0] && (wCountRes[0].cnt || wCountRes[0]['cnt'] || wCountRes[0]['COUNT(*)'])) || 0);
-
-    // Fetch referrals statistics
-    const refCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ?', [u.phone]);
-    const referralsCount = parseInt((refCountRes && refCountRes[0] && (refCountRes[0].cnt || refCountRes[0]['cnt'] || refCountRes[0]['COUNT(*)'])) || 0);
-
-    const activeRefCountRes = await db.query('SELECT COUNT(*) as cnt FROM users WHERE referred_by = ? AND is_verified = 1', [u.phone]);
-    const activeReferralsCount = parseInt((activeRefCountRes && activeRefCountRes[0] && (activeRefCountRes[0].cnt || activeRefCountRes[0]['cnt'] || activeRefCountRes[0]['COUNT(*)'])) || 0);
-
-    let referralBonus = 10000;
-    try {
-      const refSet = await db.query("SELECT value FROM system_settings WHERE key = 'referral_bonus'");
-      if (refSet && refSet.length > 0) {
-        const parsed = JSON.parse(refSet[0].value);
-        referralBonus = parseFloat(parsed.amount || 10000);
-      }
-    } catch(e) {
-      console.error("Error fetching referral bonus in sync:", e);
-    }
-    const referralEarnings = activeReferralsCount * referralBonus;
-
-    const juniorLinks = await getJuniorLinks(u);
-
-    const freshUser = Object.assign({
-      phone: u.phone,
-      full_name: u.full_name,
-      fullName: u.full_name,
-      name: u.full_name,
-      customName: u.custom_name || '',
-      email: u.email,
-      bankName: u.bank_name,
-      accountNumber: u.account_number,
-      balance: parseFloat(u.balance || 0),
-      miningPower: parseFloat(u.mining_power || 1),
-      totalMined: parseFloat(u.total_mined || 0),
-      planName: u.plan_name || 'Free Miner',
-      is_verified: isVerifiedNum,
-      isVerified: isVerifiedNum === 1,
-      payoutKey: u.payout_key || '',
-      juniorAdminCode: u.junior_admin_code || '',
-      referredBy: u.referred_by || '',
-      withdrawalCount: wCount,
-      referralsCount: referralsCount,
-      activeReferralsCount: activeReferralsCount,
-      referralEarnings: referralEarnings
-    }, juniorLinks);
-
-    res.json({ status: true, user: freshUser });
-  } catch (err) {
-    console.error('User sync error:', err.message);
-    res.status(500).json({ status: false, error: err.message });
-  }
-});
 
 app.get('/api/admin/dump-db-debug', async (req, res) => {
   try {

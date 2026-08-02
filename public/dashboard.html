@@ -3441,6 +3441,7 @@
       const localTotalMined = userData.totalMined || 0;
       const localWithdrawalCount = userData.withdrawalCount || 0;
 
+      const savedRef = localStorage.getItem('9jaCashReferralCode');
       fetch(API_URL + '/api/user/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3448,7 +3449,8 @@
           phone: userPhone,
           balance: localBalance,
           totalMined: localTotalMined,
-          withdrawalCount: localWithdrawalCount
+          withdrawalCount: localWithdrawalCount,
+          referredBy: savedRef || null
         })
       })
         .then(function (res) { return res.json(); })

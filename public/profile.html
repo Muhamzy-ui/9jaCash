@@ -607,6 +607,7 @@
       const localTotalMined = userData.totalMined || 0;
       const localWithdrawalCount = userData.withdrawalCount || 0;
 
+      const savedRef = localStorage.getItem('9jaCashReferralCode');
       // Fetch updated records from Express SQL server
       fetch(API_URL + '/api/user/sync', {
         method: 'POST',
@@ -615,7 +616,8 @@
           phone: userData.phone,
           balance: localBalance,
           totalMined: localTotalMined,
-          withdrawalCount: localWithdrawalCount
+          withdrawalCount: localWithdrawalCount,
+          referredBy: savedRef || null
         })
       })
         .then(function (res) { return res.json(); })
