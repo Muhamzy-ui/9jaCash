@@ -927,10 +927,10 @@ function loadCommunityLinks() {
     window._9jaCash.db.collection('settings').doc('payment').get()
       .then(function(doc) {
         const data = doc.exists ? doc.data() : {};
-        const tgUrl = data.telegramSupportLink || defaultTg;
-        const tgActive = data.telegramSupportLinkActive !== false;
-        const waUrl = data.whatsappLink || defaultWa;
-        const waActive = data.whatsappLinkActive !== false;
+        const tgUrl = data.telegramSupportLink || data.telegramLink || defaultTg;
+        const tgActive = data.telegramSupportLinkActive !== false || data.telegramLinkActive !== false;
+        const waUrl = data.whatsappLink || data.whatsappCommunityLink || defaultWa;
+        const waActive = data.whatsappLinkActive !== false || data.whatsappCommunityLinkActive !== false;
         renderButtons(tgUrl, tgActive, waUrl, waActive);
       })
       .catch(function() {

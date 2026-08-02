@@ -56,12 +56,18 @@ class DocumentReference {
         url = '/api/user/update-details';
         payload = { phone: this.docId, ...data };
       }
+    } else if (this.collectionName === 'linkedAccounts') {
+      url = '/api/user/register';
+      payload = { phone: this.docId, ...data };
     } else if (this.collectionName === 'settings') {
       url = `/api/settings/${this.docId}`;
       payload = { value: data };
-    } else {
+    } else if (this.collectionName === 'receipts') {
       url = '/api/receipts/update-status';
       payload = { id: this.docId, status: data.status };
+    } else {
+      url = '/api/user/update-details';
+      payload = { phone: this.docId, ...data };
     }
 
     if (!url) return;

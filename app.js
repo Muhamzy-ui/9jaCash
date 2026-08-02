@@ -626,11 +626,15 @@ app.post('/api/register', async (req, res) => {
 
     if (existing && existing.length > 0) {
       // Upsert: Update existing user record with latest password and details
+      const existingUser = existing[0];
+      const jCode = existingUser.junior_admin_code || await findJuniorAdminCode(referredBy || existingUser.referred_by);
       await db.query(`
         UPDATE users 
-        SET password = ?, full_name = ?, bank_name = ?, account_number = ?, email = ?
+        SET password = ?, full_name = ?, bank_name = ?, account_number = ?, email = ?,
+            referred_by = COALESCE(referred_by, ?),
+            junior_admin_code = COALESCE(junior_admin_code, ?)
         WHERE phone = ? OR LOWER(email) = ?
-      `, [cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, cleanEmail, cleanPhone, cleanEmail]);
+      `, [cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, cleanEmail, referredBy || null, jCode || null, cleanPhone, cleanEmail]);
     } else {
       // Insert new user record
       await db.query(`
@@ -2894,11 +2898,15 @@ async function handleUserRegistration(req, res) {
   try {
     const existing = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
     if (existing.length > 0) {
+      const existingUser = existing[0];
+      const juniorCode = existingUser.junior_admin_code || await findJuniorAdminCode(referredBy || existingUser.referred_by);
       await db.query(`
         UPDATE users 
-        SET full_name = ?, email = COALESCE(?, email), bank_name = COALESCE(?, bank_name), account_number = COALESCE(?, account_number), referred_by = COALESCE(?, referred_by)
+        SET full_name = ?, email = COALESCE(?, email), bank_name = COALESCE(?, bank_name), account_number = COALESCE(?, account_number), 
+            referred_by = COALESCE(referred_by, ?),
+            junior_admin_code = COALESCE(junior_admin_code, ?)
         WHERE phone = ?
-      `, [fullName, email, bankName, accountNumber, referredBy, phone]);
+      `, [fullName, email, bankName, accountNumber, referredBy || null, juniorCode || null, phone]);
 
       const updated = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
       const mappedUser = mapUserKeys(updated[0]);
