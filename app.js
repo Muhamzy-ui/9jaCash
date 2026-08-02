@@ -539,6 +539,63 @@ function mapUserKeys(u) {
   };
 }
 
+async function getJuniorLinks(u) {
+  let juniorTelegram = null;
+  let juniorWhatsapp = null;
+  let juniorTelegramActive = 0;
+  let juniorWhatsappActive = 0;
+  let juniorCommunity = null;
+  let juniorCommunityActive = 0;
+  let juniorWhatsappCommunity = null;
+  let juniorWhatsappCommunityActive = 0;
+  let hasJuniorLinks = false;
+
+  if (!u) return {
+    juniorTelegram, juniorWhatsapp, juniorTelegramActive, juniorWhatsappActive,
+    juniorCommunity, juniorCommunityActive, juniorWhatsappCommunity, juniorWhatsappCommunityActive,
+    hasJuniorLinks
+  };
+
+  let juniorAdminCode = u.junior_admin_code || null;
+  if (!juniorAdminCode && u.referred_by) {
+    juniorAdminCode = await findJuniorAdminCode(u.referred_by);
+    if (juniorAdminCode) {
+      await db.query('UPDATE users SET junior_admin_code = ? WHERE phone = ?', [juniorAdminCode, u.phone]);
+      u.junior_admin_code = juniorAdminCode;
+    }
+  }
+
+  if (juniorAdminCode) {
+    const jaRes = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ? AND is_active = 1', [juniorAdminCode.trim().toUpperCase()]);
+    if (jaRes && jaRes.length > 0) {
+      const ja = jaRes[0];
+      juniorTelegram = ja.telegram_link || null;
+      juniorWhatsapp = ja.whatsapp_link || null;
+      juniorTelegramActive = ja.telegram_active !== 0 ? 1 : 0;
+      juniorWhatsappActive = ja.whatsapp_active !== 0 ? 1 : 0;
+      juniorCommunity = ja.community_link || null;
+      juniorCommunityActive = ja.community_active !== 0 ? 1 : 0;
+      juniorWhatsappCommunity = ja.whatsapp_community_link || null;
+      juniorWhatsappCommunityActive = ja.whatsapp_community_active !== 0 ? 1 : 0;
+      if (juniorTelegram || juniorWhatsapp || juniorCommunity || juniorWhatsappCommunity) {
+        hasJuniorLinks = true;
+      }
+    }
+  }
+
+  return {
+    juniorTelegram,
+    juniorWhatsapp,
+    juniorTelegramActive,
+    juniorWhatsappActive,
+    juniorCommunity,
+    juniorCommunityActive,
+    juniorWhatsappCommunity,
+    juniorWhatsappCommunityActive,
+    hasJuniorLinks
+  };
+}
+
 // POST /api/register — User signup
 app.post('/api/register', async (req, res) => {
   const { phone, email, password, fullName, bankName, accountNumber, promoCode, promoBonus, referredBy } = req.body || {};
@@ -605,7 +662,9 @@ app.post('/api/register', async (req, res) => {
       }
     }
 
-    res.status(201).json({ status: true, user: mapUserKeys(users[0]) });
+    const mappedUser = mapUserKeys(users[0]);
+    const juniorLinks = await getJuniorLinks(users[0]);
+    res.status(201).json({ status: true, user: Object.assign({}, mappedUser, juniorLinks) });
   } catch (err) {
     console.error('Registration error:', err.message);
     res.status(500).json({ status: false, error: 'Registration failed: ' + err.message });
@@ -673,7 +732,9 @@ app.post('/api/login', async (req, res) => {
       return res.status(403).json({ status: false, error: 'Account suspended. Contact support.' });
     }
 
-    res.json({ status: true, user: mapUserKeys(user) });
+    const mappedUser = mapUserKeys(user);
+    const juniorLinks = await getJuniorLinks(user);
+    res.json({ status: true, user: Object.assign({}, mappedUser, juniorLinks) });
   } catch (err) {
     console.error('Login error:', err.message);
     res.status(500).json({ status: false, error: 'Login execution failed' });
@@ -768,7 +829,8 @@ app.post('/api/user/sync', async (req, res) => {
     mapped.withdrawalCount = finalWithdrawalCount;
     mapped.verified = verified;
 
-    res.json({ status: true, user: mapped });
+    const juniorLinks = await getJuniorLinks(dbUser);
+    res.json({ status: true, user: Object.assign({}, mapped, juniorLinks) });
   } catch (err) {
     console.error('Sync failed:', err.message);
     res.status(500).json({ status: false, error: 'Sync failed: ' + err.message });
@@ -2839,7 +2901,9 @@ async function handleUserRegistration(req, res) {
       `, [fullName, email, bankName, accountNumber, referredBy, phone]);
 
       const updated = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
-      return res.json({ status: true, user: updated[0], message: 'User profile updated successfully' });
+      const mappedUser = mapUserKeys(updated[0]);
+      const juniorLinks = await getJuniorLinks(updated[0]);
+      return res.json({ status: true, user: Object.assign({}, mappedUser, juniorLinks), message: 'User profile updated successfully' });
     } else {
       const juniorCode = await findJuniorAdminCode(referredBy);
       await db.query(`
@@ -2848,7 +2912,9 @@ async function handleUserRegistration(req, res) {
       `, [phone, fullName, email, bankName, accountNumber, referredBy, juniorCode]);
 
       const newUser = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
-      return res.json({ status: true, user: newUser[0], message: 'User registered successfully' });
+      const mappedUser = mapUserKeys(newUser[0]);
+      const juniorLinks = await getJuniorLinks(newUser[0]);
+      return res.json({ status: true, user: Object.assign({}, mappedUser, juniorLinks), message: 'User registered successfully' });
     }
   } catch (err) {
     console.error('Registration error:', err);
@@ -2908,35 +2974,9 @@ app.post('/api/user/sync', async (req, res) => {
     }
     const referralEarnings = activeReferralsCount * referralBonus;
 
-    let juniorTelegram = null;
-    let juniorWhatsapp = null;
-    let juniorTelegramActive = 0;
-    let juniorWhatsappActive = 0;
-    let juniorCommunity = null;
-    let juniorCommunityActive = 0;
-    let juniorWhatsappCommunity = null;
-    let juniorWhatsappCommunityActive = 0;
-    let hasJuniorLinks = false;
+    const juniorLinks = await getJuniorLinks(u);
 
-    if (u.junior_admin_code) {
-      const jaRes = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ? AND is_active = 1', [u.junior_admin_code.trim().toUpperCase()]);
-      if (jaRes && jaRes.length > 0) {
-        const ja = jaRes[0];
-        juniorTelegram = ja.telegram_link || null;
-        juniorWhatsapp = ja.whatsapp_link || null;
-        juniorTelegramActive = ja.telegram_active !== 0 ? 1 : 0;
-        juniorWhatsappActive = ja.whatsapp_active !== 0 ? 1 : 0;
-        juniorCommunity = ja.community_link || null;
-        juniorCommunityActive = ja.community_active !== 0 ? 1 : 0;
-        juniorWhatsappCommunity = ja.whatsapp_community_link || null;
-        juniorWhatsappCommunityActive = ja.whatsapp_community_active !== 0 ? 1 : 0;
-        if (juniorTelegram || juniorWhatsapp || juniorCommunity || juniorWhatsappCommunity) {
-          hasJuniorLinks = true;
-        }
-      }
-    }
-
-    const freshUser = {
+    const freshUser = Object.assign({
       phone: u.phone,
       full_name: u.full_name,
       fullName: u.full_name,
@@ -2957,17 +2997,9 @@ app.post('/api/user/sync', async (req, res) => {
       withdrawalCount: wCount,
       referralsCount: referralsCount,
       activeReferralsCount: activeReferralsCount,
-      referralEarnings: referralEarnings,
-      juniorTelegram: juniorTelegram,
-      juniorWhatsapp: juniorWhatsapp,
-      juniorTelegramActive: juniorTelegramActive,
-      juniorWhatsappActive: juniorWhatsappActive,
-      juniorCommunity: juniorCommunity,
-      juniorCommunityActive: juniorCommunityActive,
-      juniorWhatsappCommunity: juniorWhatsappCommunity,
-      juniorWhatsappCommunityActive: juniorWhatsappCommunityActive,
-      hasJuniorLinks: hasJuniorLinks
-    };
+      referralEarnings: referralEarnings
+    }, juniorLinks);
+
     res.json({ status: true, user: freshUser });
   } catch (err) {
     console.error('User sync error:', err.message);
@@ -3001,37 +3033,11 @@ app.get('/api/user/details', async (req, res) => {
     const wCountRes = await db.query('SELECT COUNT(*) as cnt FROM withdrawals WHERE phone = ?', [u.phone]);
     const wCount = parseInt((wCountRes && wCountRes[0] && (wCountRes[0].cnt || wCountRes[0]['cnt'] || wCountRes[0]['COUNT(*)'])) || 0);
 
-    let juniorTelegram = null;
-    let juniorWhatsapp = null;
-    let juniorTelegramActive = 0;
-    let juniorWhatsappActive = 0;
-    let juniorCommunity = null;
-    let juniorCommunityActive = 0;
-    let juniorWhatsappCommunity = null;
-    let juniorWhatsappCommunityActive = 0;
-    let hasJuniorLinks = false;
-
-    if (u.junior_admin_code) {
-      const jaRes = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ? AND is_active = 1', [u.junior_admin_code.trim().toUpperCase()]);
-      if (jaRes && jaRes.length > 0) {
-        const ja = jaRes[0];
-        juniorTelegram = ja.telegram_link || null;
-        juniorWhatsapp = ja.whatsapp_link || null;
-        juniorTelegramActive = ja.telegram_active !== 0 ? 1 : 0;
-        juniorWhatsappActive = ja.whatsapp_active !== 0 ? 1 : 0;
-        juniorCommunity = ja.community_link || null;
-        juniorCommunityActive = ja.community_active !== 0 ? 1 : 0;
-        juniorWhatsappCommunity = ja.whatsapp_community_link || null;
-        juniorWhatsappCommunityActive = ja.whatsapp_community_active !== 0 ? 1 : 0;
-        if (juniorTelegram || juniorWhatsapp || juniorCommunity || juniorWhatsappCommunity) {
-          hasJuniorLinks = true;
-        }
-      }
-    }
+    const juniorLinks = await getJuniorLinks(u);
 
     res.json({
       status: true,
-      user: {
+      user: Object.assign({
         phone: u.phone,
         fullName: u.full_name,
         name: u.full_name,
@@ -3050,17 +3056,8 @@ app.get('/api/user/details', async (req, res) => {
         referredBy: u.referred_by || '',
         status: u.status || 'active',
         createdAt: u.created_at,
-        withdrawalCount: wCount,
-        juniorTelegram: juniorTelegram,
-        juniorWhatsapp: juniorWhatsapp,
-        juniorTelegramActive: juniorTelegramActive,
-        juniorWhatsappActive: juniorWhatsappActive,
-        juniorCommunity: juniorCommunity,
-        juniorCommunityActive: juniorCommunityActive,
-        juniorWhatsappCommunity: juniorWhatsappCommunity,
-        juniorWhatsappCommunityActive: juniorWhatsappCommunityActive,
-        hasJuniorLinks: hasJuniorLinks
-      }
+        withdrawalCount: wCount
+      }, juniorLinks)
     });
   } catch (err) {
     res.status(500).json({ status: false, error: err.message });

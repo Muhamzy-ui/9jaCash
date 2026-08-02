@@ -297,7 +297,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;color:#f8fafc
             defaultWaActive = data.whatsappLinkActive !== false;
             defaultTgActive = data.telegramSupportLinkActive !== false;
             defaultWaUrl = data.whatsappLink || "https://wa.me/2349000000000";
-            defaultTgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
+            defaultTgUrl = data.telegramSupportLink || data.telegramLink || "https://t.me/apex_customercare";
           }
           resolveAndApply();
         })
