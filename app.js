@@ -544,60 +544,90 @@ function mapUserKeys(u) {
 }
 
 async function getJuniorLinks(u) {
-  let juniorTelegram = null;
-  let juniorWhatsapp = null;
-  let juniorTelegramActive = 0;
-  let juniorWhatsappActive = 0;
-  let juniorCommunity = null;
-  let juniorCommunityActive = 0;
-  let juniorWhatsappCommunity = null;
-  let juniorWhatsappCommunityActive = 0;
-  let hasJuniorLinks = false;
-
-  if (!u) return {
-    juniorTelegram, juniorWhatsapp, juniorTelegramActive, juniorWhatsappActive,
-    juniorCommunity, juniorCommunityActive, juniorWhatsappCommunity, juniorWhatsappCommunityActive,
-    hasJuniorLinks
+  const empty = {
+    juniorTelegram: null, juniorWhatsapp: null,
+    juniorTelegramActive: 0, juniorWhatsappActive: 0,
+    juniorCommunity: null, juniorCommunityActive: 0,
+    juniorWhatsappCommunity: null, juniorWhatsappCommunityActive: 0,
+    hasJuniorLinks: false
   };
 
-  let juniorAdminCode = u.junior_admin_code || null;
-  if (!juniorAdminCode && u.referred_by) {
-    juniorAdminCode = await findJuniorAdminCode(u.referred_by);
-    if (juniorAdminCode) {
-      await db.query('UPDATE users SET junior_admin_code = ? WHERE phone = ?', [juniorAdminCode, u.phone]);
-      u.junior_admin_code = juniorAdminCode;
-    }
-  }
+  if (!u) return empty;
 
-  if (juniorAdminCode) {
-    const jaRes = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ? AND is_active = 1', [juniorAdminCode.trim().toUpperCase()]);
-    if (jaRes && jaRes.length > 0) {
-      const ja = jaRes[0];
-      juniorTelegram = ja.telegram_link || null;
-      juniorWhatsapp = ja.whatsapp_link || null;
-      juniorTelegramActive = ja.telegram_active !== 0 ? 1 : 0;
-      juniorWhatsappActive = ja.whatsapp_active !== 0 ? 1 : 0;
-      juniorCommunity = ja.community_link || null;
-      juniorCommunityActive = ja.community_active !== 0 ? 1 : 0;
-      juniorWhatsappCommunity = ja.whatsapp_community_link || null;
-      juniorWhatsappCommunityActive = ja.whatsapp_community_active !== 0 ? 1 : 0;
-      if (juniorTelegram || juniorWhatsapp || juniorCommunity || juniorWhatsappCommunity) {
-        hasJuniorLinks = true;
+  try {
+    let ja = null;
+
+    // Strategy 1: Use junior_admin_code already stored on the user
+    if (u.junior_admin_code) {
+      const res = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ?', [u.junior_admin_code.trim().toUpperCase()]);
+      if (res && res.length > 0) ja = res[0];
+    }
+
+    // Strategy 2: referred_by IS a referral code (e.g. "011" or "SMARTTECHH")
+    if (!ja && u.referred_by) {
+      const refUp = u.referred_by.trim().toUpperCase();
+      const res = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ?', [refUp]);
+      if (res && res.length > 0) {
+        ja = res[0];
+        // Persist it so next time Strategy 1 works
+        await db.query('UPDATE users SET junior_admin_code = ? WHERE phone = ?', [ja.referral_code, u.phone]);
+        u.junior_admin_code = ja.referral_code;
       }
     }
-  }
 
-  return {
-    juniorTelegram,
-    juniorWhatsapp,
-    juniorTelegramActive,
-    juniorWhatsappActive,
-    juniorCommunity,
-    juniorCommunityActive,
-    juniorWhatsappCommunity,
-    juniorWhatsappCommunityActive,
-    hasJuniorLinks
-  };
+    // Strategy 3: referred_by IS the junior admin's phone number or email
+    if (!ja && u.referred_by) {
+      const refUp = u.referred_by.trim().toUpperCase();
+      const res = await db.query('SELECT * FROM junior_admins WHERE UPPER(phone) = ? OR UPPER(email) = ?', [refUp, refUp]);
+      if (res && res.length > 0) {
+        ja = res[0];
+        await db.query('UPDATE users SET junior_admin_code = ? WHERE phone = ?', [ja.referral_code, u.phone]);
+        u.junior_admin_code = ja.referral_code;
+      }
+    }
+
+    // Strategy 4: find via referral chain (referredBy -> parent user -> junior_admin_code)
+    if (!ja && u.referred_by) {
+      const jaCode = await findJuniorAdminCode(u.referred_by);
+      if (jaCode) {
+        const res = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ?', [jaCode.trim().toUpperCase()]);
+        if (res && res.length > 0) {
+          ja = res[0];
+          await db.query('UPDATE users SET junior_admin_code = ? WHERE phone = ?', [ja.referral_code, u.phone]);
+          u.junior_admin_code = ja.referral_code;
+        }
+      }
+    }
+
+    if (!ja) {
+      console.log(`[JuniorLinks] No junior admin found for user ${u.phone} | referred_by=${u.referred_by} | junior_admin_code=${u.junior_admin_code}`);
+      return empty;
+    }
+
+    console.log(`[JuniorLinks] Found junior admin ${ja.referral_code} for user ${u.phone}`);
+
+    const juniorTelegram = ja.telegram_link || null;
+    const juniorWhatsapp = ja.whatsapp_link || null;
+    const juniorTelegramActive = ja.telegram_active != null ? (ja.telegram_active == 1 || ja.telegram_active === true ? 1 : 0) : 1;
+    const juniorWhatsappActive = ja.whatsapp_active != null ? (ja.whatsapp_active == 1 || ja.whatsapp_active === true ? 1 : 0) : 1;
+    const juniorCommunity = ja.community_link || null;
+    const juniorCommunityActive = ja.community_active != null ? (ja.community_active == 1 || ja.community_active === true ? 1 : 0) : 1;
+    const juniorWhatsappCommunity = ja.whatsapp_community_link || null;
+    const juniorWhatsappCommunityActive = ja.whatsapp_community_active != null ? (ja.whatsapp_community_active == 1 || ja.whatsapp_community_active === true ? 1 : 0) : 1;
+
+    const hasJuniorLinks = !!(juniorTelegram || juniorWhatsapp || juniorCommunity || juniorWhatsappCommunity);
+
+    return {
+      juniorTelegram, juniorWhatsapp,
+      juniorTelegramActive, juniorWhatsappActive,
+      juniorCommunity, juniorCommunityActive,
+      juniorWhatsappCommunity, juniorWhatsappCommunityActive,
+      hasJuniorLinks
+    };
+  } catch (e) {
+    console.error('[JuniorLinks] Error:', e.message);
+    return empty;
+  }
 }
 
 // POST /api/register — User signup
@@ -2967,6 +2997,38 @@ app.get('/api/admin/dump-db-debug', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// GET /api/debug/junior-links?phone=... — Debug junior links resolution for a user
+app.get('/api/debug/junior-links', async (req, res) => {
+  const phone = (req.query.phone || '').toString().trim();
+  if (!phone) return res.status(400).json({ error: 'phone query param required' });
+
+  try {
+    const users = await db.query('SELECT * FROM users WHERE phone = ? OR phone LIKE ?', [phone, '%' + phone.slice(-8)]);
+    const juniorAdmins = await db.query('SELECT referral_code, phone, email, telegram_link, whatsapp_link, community_link, whatsapp_community_link, is_active FROM junior_admins');
+    
+    if (!users || users.length === 0) {
+      return res.json({ found: false, message: 'User not found', phone, allJuniorAdmins: juniorAdmins });
+    }
+
+    const u = users[0];
+    const links = await getJuniorLinks(u);
+
+    res.json({
+      found: true,
+      user: {
+        phone: u.phone,
+        referred_by: u.referred_by,
+        junior_admin_code: u.junior_admin_code
+      },
+      resolvedLinks: links,
+      allJuniorAdmins: juniorAdmins
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // GET /api/user/details — Get user details by phone
 app.get('/api/user/details', async (req, res) => {
