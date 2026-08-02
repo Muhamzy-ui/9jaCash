@@ -421,7 +421,8 @@ function checkPromo(code) {
   if (!code || code.trim() === "") return { ok: true, msg: "Optional — enter a valid code for bonus", bonus: false };
   const c = code.trim().toUpperCase();
   if (VALID_CODES.includes(c)) return { ok: true, msg: "✓ Promo code applied! Bonus unlocked", bonus: true };
-  return { ok: false, msg: "✗ Invalid promo code", bonus: false };
+  // Treat any unknown code as a referral code — neutral, not an error
+  return { ok: true, msg: "✓ Referral code accepted", bonus: false };
 }
 
 // ========== FORM STEP MANAGEMENT ==========
@@ -746,8 +747,8 @@ document.getElementById('promoCode').addEventListener('input', function() {
   const r = checkPromo(this.value);
   const msg = document.getElementById('promoMsg');
   msg.textContent = r.msg;
-  msg.className = 'count ' + (r.ok ? (r.bonus ? 'promo-ok' : '') : 'promo-bad');
-  this.style.borderColor = r.ok ? (r.bonus ? '#10b981' : '#e2e8f0') : '#ef4444';
+  msg.className = 'count ' + (r.bonus ? 'promo-ok' : '');
+  this.style.borderColor = r.bonus ? '#10b981' : '#e2e8f0';
 });
 
 document.getElementById('promoCode').addEventListener('blur', function() {
