@@ -2147,6 +2147,7 @@
     }
 
     function updateTelegramLink() {
+      // Support button = SUPPORT LINKS ONLY. Never community links.
       const btn = document.getElementById("telegramSupport");
       if (btn) {
         if (userData && userData.hasJuniorLinks && userData.juniorTelegramActive === 1 && userData.juniorTelegram) {
@@ -3072,46 +3073,46 @@
         });
     }
 
-    // ========== TIMED SOCIAL JOIN POPUP SYSTEM ==========
+    // ========== TIMED SOCIAL JOIN POPUP SYSTEM (COMMUNITY ONLY) ==========
     let socialPopupCheckInterval = null;
 
     function initSocialPopup() {
-      let defaultWaActive = true;
-      let defaultTgActive = true;
-      let defaultWaUrl = "https://wa.me/2349000000000";
-      let defaultTgUrl = "https://t.me/apex_customercare";
+      // Popup = COMMUNITY LINKS ONLY. Never support/customer-care links.
+      let defaultCommunityWaUrl = "https://wa.me/2349000000000";
+      let defaultCommunityTgUrl = "https://t.me/9jaCashOfficial";
+      let defaultCommunityWaActive = false;
+      let defaultCommunityTgActive = true;
 
       function resolveAndApplyPopup() {
         if (userData && userData.hasJuniorLinks) {
-          const hasComm = userData.juniorCommunity && userData.juniorCommunity.trim() !== '';
-          const tgUrl = (userData.juniorCommunityActive === 1 && hasComm) ? userData.juniorCommunity.trim() : (telegramLink || defaultTgUrl);
-          const tgActive = userData.juniorCommunityActive === 1 ? (hasComm ? true : defaultTgActive) : defaultTgActive;
+          // Use junior admin's COMMUNITY links only
+          const hasJuniorTgComm = userData.juniorCommunity && userData.juniorCommunity.trim() !== '';
+          const hasJuniorWaComm = userData.juniorWhatsappCommunity && userData.juniorWhatsappCommunity.trim() !== '';
 
-          const hasWaComm = userData.juniorWhatsappCommunity && userData.juniorWhatsappCommunity.trim() !== '';
-          const waUrl = (userData.juniorWhatsappCommunityActive === 1 && hasWaComm) ? userData.juniorWhatsappCommunity.trim() : defaultWaUrl;
-          const waActive = userData.juniorWhatsappCommunityActive === 1 ? (hasWaComm ? true : defaultWaActive) : defaultWaActive;
+          const tgCommActive = hasJuniorTgComm ? (userData.juniorCommunityActive === 1) : defaultCommunityTgActive;
+          const waCommActive = hasJuniorWaComm ? (userData.juniorWhatsappCommunityActive === 1) : defaultCommunityWaActive;
 
-          setupSocialPopupData(waActive, tgActive, formatExternalLink(waUrl, defaultWaUrl), formatExternalLink(tgUrl, defaultTgUrl));
+          const tgCommUrl = hasJuniorTgComm ? userData.juniorCommunity.trim() : defaultCommunityTgUrl;
+          const waCommUrl = hasJuniorWaComm ? userData.juniorWhatsappCommunity.trim() : defaultCommunityWaUrl;
+
+          setupSocialPopupData(waCommActive, tgCommActive, formatExternalLink(waCommUrl, defaultCommunityWaUrl), formatExternalLink(tgCommUrl, defaultCommunityTgUrl));
         } else {
-          setupSocialPopupData(defaultWaActive, defaultTgActive, formatExternalLink(defaultWaUrl, defaultWaUrl), formatExternalLink(telegramLink || defaultTgUrl, defaultTgUrl));
+          // No junior admin — use global community defaults
+          setupSocialPopupData(defaultCommunityWaActive, defaultCommunityTgActive, formatExternalLink(defaultCommunityWaUrl, defaultCommunityWaUrl), formatExternalLink(defaultCommunityTgUrl, defaultCommunityTgUrl));
         }
       }
 
       if (db) {
-        db.collection('settings').doc('payment').get()
+        db.collection('settings').doc('community').get()
           .then(function(doc) {
             if (doc.exists) {
               const data = doc.data();
-              defaultWaActive = data.whatsappLinkActive !== false;
-              defaultTgActive = data.telegramSupportLinkActive !== false;
-              defaultWaUrl = data.whatsappLink || "https://wa.me/2349000000000";
-              defaultTgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
+              if (data.telegramCommunityLink) defaultCommunityTgUrl = data.telegramCommunityLink;
+              if (data.whatsappCommunityLink) { defaultCommunityWaUrl = data.whatsappCommunityLink; defaultCommunityWaActive = true; }
             }
             resolveAndApplyPopup();
           })
-          .catch(function(err) {
-            resolveAndApplyPopup();
-          });
+          .catch(function() { resolveAndApplyPopup(); });
       } else {
         resolveAndApplyPopup();
       }
