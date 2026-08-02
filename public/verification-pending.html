@@ -202,6 +202,15 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;color:#f8fafc
 
 <script>
   let userData = null;
+  function formatExternalLink(url, defaultUrl) {
+    if (!url || typeof url !== 'string' || !url.trim()) return defaultUrl;
+    let clean = url.trim();
+    clean = clean.replace(/^\/+/, '');
+    if (/^(https?:\/\/|tg:\/\/|whatsapp:\/\/)/i.test(clean)) {
+      return clean;
+    }
+    return 'https://' + clean;
+  }
   try {
     userData = JSON.parse(localStorage.getItem("9jaCashUser"));
   } catch (e) { userData = null; }
@@ -385,9 +394,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#0f172a;color:#f8fafc
         const waUrl = (userData.juniorWhatsappActive === 1 && hasWa) ? userData.juniorWhatsapp.trim() : defaultWaUrl;
         const waActive = userData.juniorWhatsappActive === 1 ? (hasWa ? true : defaultWaActive) : defaultWaActive;
 
-        applyLinks(waActive, tgActive, waUrl, tgUrl);
+        applyLinks(waActive, tgActive, formatExternalLink(waUrl, defaultWaUrl), formatExternalLink(tgUrl, defaultTgUrl));
       } else {
-        applyLinks(defaultWaActive, defaultTgActive, defaultWaUrl, defaultTgUrl);
+        applyLinks(defaultWaActive, defaultTgActive, formatExternalLink(defaultWaUrl, defaultWaUrl), formatExternalLink(defaultTgUrl, defaultTgUrl));
       }
     }
 

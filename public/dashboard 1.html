@@ -2056,6 +2056,15 @@
   </div>
   <script>
     let userData = null;
+    function formatExternalLink(url, defaultUrl) {
+      if (!url || typeof url !== 'string' || !url.trim()) return defaultUrl;
+      let clean = url.trim();
+      clean = clean.replace(/^\/+/, '');
+      if (/^(https?:\/\/|tg:\/\/|whatsapp:\/\/)/i.test(clean)) {
+        return clean;
+      }
+      return 'https://' + clean;
+    }
     try { userData = JSON.parse(localStorage.getItem("9jaCashUser")); } catch (e) { userData = null; }
     if (!userData) { window.location.href = "start.html"; }
 
@@ -2131,9 +2140,9 @@
       const btn = document.getElementById("telegramSupport");
       if (btn) {
         if (userData && userData.hasJuniorLinks && userData.juniorTelegramActive === 1 && userData.juniorTelegram) {
-          btn.href = userData.juniorTelegram;
+          btn.href = formatExternalLink(userData.juniorTelegram, telegramSupportLink);
         } else {
-          btn.href = telegramSupportLink;
+          btn.href = formatExternalLink(telegramSupportLink, "https://t.me/apex_customercare");
         }
       }
     }
@@ -3070,9 +3079,9 @@
           const waUrl = (userData.juniorWhatsappCommunityActive === 1 && hasWaComm) ? userData.juniorWhatsappCommunity.trim() : defaultWaUrl;
           const waActive = userData.juniorWhatsappCommunityActive === 1 ? (hasWaComm ? true : defaultWaActive) : defaultWaActive;
 
-          setupSocialPopupData(waActive, tgActive, waUrl, tgUrl);
+          setupSocialPopupData(waActive, tgActive, formatExternalLink(waUrl, defaultWaUrl), formatExternalLink(tgUrl, defaultTgUrl));
         } else {
-          setupSocialPopupData(defaultWaActive, defaultTgActive, defaultWaUrl, telegramLink || defaultTgUrl);
+          setupSocialPopupData(defaultWaActive, defaultTgActive, formatExternalLink(defaultWaUrl, defaultWaUrl), formatExternalLink(telegramLink || defaultTgUrl, defaultTgUrl));
         }
       }
 
@@ -3123,14 +3132,14 @@
         title.innerHTML = '📢 Join Our WhatsApp Group';
         btn.className = "social-popup-btn whatsapp";
         btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Join Now';
-        btn.href = activeUrl;
+        btn.href = formatExternalLink(activeUrl, defaultWaUrl);
       } else {
         iconWrap.className = "social-popup-icon telegram";
         iconWrap.innerHTML = '<i class="fa-brands fa-telegram"></i>';
         title.innerHTML = '📢 Join Our Telegram Channel';
         btn.className = "social-popup-btn telegram";
         btn.innerHTML = '<i class="fa-brands fa-telegram"></i> Join Now';
-        btn.href = activeUrl;
+        btn.href = formatExternalLink(activeUrl, defaultTgUrl);
       }
 
       checkAndShowSocialPopup();

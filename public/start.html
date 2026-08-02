@@ -397,6 +397,15 @@ body.dark-mode .toast{background:#1e293b;border-color:#334155;}
 // ========== PROMO CODES ==========
 const VALID_CODES = ["SMART-TECH09", "AMUTV-29", "BUOPU-95", "NJPAK-09", "UFMZQ-19", "WOOFW-52"];
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+function formatExternalLink(url, defaultUrl) {
+  if (!url || typeof url !== 'string' || !url.trim()) return defaultUrl;
+  let clean = url.trim();
+  clean = clean.replace(/^\/+/, '');
+  if (/^(https?:\/\/|tg:\/\/|whatsapp:\/\/)/i.test(clean)) {
+    return clean;
+  }
+  return 'https://' + clean;
+}
 
 function checkPromo(code) {
   if (!code || code.trim() === "") return { ok: true, msg: "Optional — enter a valid code for bonus", bonus: false };
@@ -887,7 +896,7 @@ function loadCommunityLinks() {
     if (tgActive && tgUrl) {
       renderedCount++;
       const tgBtn = document.createElement('a');
-      tgBtn.href = tgUrl;
+      tgBtn.href = formatExternalLink(tgUrl, defaultTg);
       tgBtn.target = '_blank';
       tgBtn.className = 'btn-primary block';
       tgBtn.style.background = 'linear-gradient(135deg,#229ed9,#1d98d2)';
@@ -900,7 +909,7 @@ function loadCommunityLinks() {
     if (waActive && waUrl) {
       renderedCount++;
       const waBtn = document.createElement('a');
-      waBtn.href = waUrl;
+      waBtn.href = formatExternalLink(waUrl, defaultWa);
       waBtn.target = '_blank';
       waBtn.className = 'btn-primary block';
       waBtn.style.background = 'linear-gradient(135deg,#25D366,#128C7E)';
@@ -913,7 +922,7 @@ function loadCommunityLinks() {
     // Fallback if none active
     if (renderedCount === 0) {
       const fallbackBtn = document.createElement('a');
-      fallbackBtn.href = tgUrl || defaultTg;
+      fallbackBtn.href = formatExternalLink(tgUrl || defaultTg, defaultTg);
       fallbackBtn.target = '_blank';
       fallbackBtn.className = 'btn-primary block';
       fallbackBtn.style.background = 'linear-gradient(135deg,#229ed9,#1d98d2)';
@@ -921,6 +930,22 @@ function loadCommunityLinks() {
       fallbackBtn.innerHTML = `<i class="fa-brands fa-telegram mr-2"></i><span>Join Community</span>`;
       container.appendChild(fallbackBtn);
     }
+  }
+
+  let localUser = null;
+  try { localUser = JSON.parse(localStorage.getItem("9jaCashUser")); } catch (e) {}
+
+  if (localUser && localUser.hasJuniorLinks) {
+    const hasTg = localUser.juniorCommunity && localUser.juniorCommunity.trim() !== '';
+    const tgUrl = (localUser.juniorCommunityActive === 1 && hasTg) ? localUser.juniorCommunity.trim() : defaultTg;
+    const tgActive = localUser.juniorCommunityActive === 1 ? (hasTg ? true : false) : false;
+
+    const hasWa = localUser.juniorWhatsappCommunity && localUser.juniorWhatsappCommunity.trim() !== '';
+    const waUrl = (localUser.juniorWhatsappCommunityActive === 1 && hasWa) ? localUser.juniorWhatsappCommunity.trim() : defaultWa;
+    const waActive = localUser.juniorWhatsappCommunityActive === 1 ? (hasWa ? true : false) : false;
+
+    renderButtons(tgUrl, tgActive, waUrl, waActive);
+    return;
   }
 
   if (window._9jaCash && window._9jaCash.db) {
