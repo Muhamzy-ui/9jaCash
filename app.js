@@ -113,6 +113,68 @@ function sendResendEmail(to, subject, html, retries = 3, delay = 1000) {
   const resendApiKey = process.env.RESEND_API_KEY;
   const resendFrom = process.env.RESEND_FROM || '9jaCash <onboarding@resend.dev>';
 
+  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+
+  // Define fallback helper to SMTP
+  function sendSmtpFallback() {
+    // Simulation Fallback: If no credentials are set, simulate the email
+    if (!smtpUser || !smtpPass || smtpUser.includes('placeholder') || smtpPass.includes('placeholder')) {
+      console.log(`[EMAIL SIMULATION] To: ${to} | Subject: ${subject}`);
+      return Promise.resolve({ success: true, simulated: true });
+    }
+
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000
+    });
+
+    const mailOptions = {
+      from: `"9jaCash Alerts" <${smtpUser}>`,
+      to: to.trim(),
+      subject: subject,
+      html: html
+    };
+
+    console.log(`[EMAIL OUTBOUND] Attempting send to: ${to} | Sender: ${smtpUser}`);
+
+    return new Promise((resolve, reject) => {
+      function attempt(remainingAttempts, currentDelay) {
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error(`[SMTP ERROR] to: ${to} | Code: ${error.code || 'N/A'} | Message: ${error.message}`);
+
+            if (error.message.includes('535')) {
+              console.error('[SMTP CRITICAL] Gmail Authentication failed. Check App Password or account security blocks.');
+            } else if (error.message.includes('550')) {
+              console.error('[SMTP CRITICAL] Mailbox unavailable or rejected by spam filters.');
+            }
+
+            if (remainingAttempts > 1) {
+              console.warn(`[SMTP RETRY] Retrying in ${currentDelay}ms... (${remainingAttempts - 1} left)`);
+              setTimeout(() => attempt(remainingAttempts - 1, currentDelay * 2), currentDelay);
+            } else {
+              reject(error);
+            }
+          } else {
+            console.log(`[SMTP SUCCESS] Email successfully delivered! MsgId: ${info.messageId}`);
+            resolve({ success: true, messageId: info.messageId });
+          }
+        });
+      }
+      attempt(retries, delay);
+    });
+  }
+
   // Preferred Path: Resend API
   if (resendApiKey && !resendApiKey.includes('placeholder') && resendApiKey.trim() !== '') {
     console.log(`[EMAIL OUTBOUND] Sending via Resend API to: ${to}`);
@@ -158,7 +220,8 @@ function sendResendEmail(to, subject, html, retries = 3, delay = 1000) {
                   attemptResend(remainingAttempts - 1, currentDelay * 2);
                 }, currentDelay);
               } else {
-                reject(new Error(`Resend send failed: ${body}`));
+                console.warn(`[RESEND FAILURE] Resend API failed. Falling back to SMTP (Gmail)...`);
+                sendSmtpFallback().then(resolve).catch(reject);
               }
             }
           });
@@ -172,7 +235,8 @@ function sendResendEmail(to, subject, html, retries = 3, delay = 1000) {
               attemptResend(remainingAttempts - 1, currentDelay * 2);
             }, currentDelay);
           } else {
-            reject(err);
+            console.warn(`[RESEND FAILURE] Resend connection failed. Falling back to SMTP (Gmail)...`);
+            sendSmtpFallback().then(resolve).catch(reject);
           }
         });
 
@@ -184,68 +248,8 @@ function sendResendEmail(to, subject, html, retries = 3, delay = 1000) {
     });
   }
 
-  // Fallback Path: SMTP (Gmail)
-  const nodemailer = require('nodemailer');
-  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
-
-  // Simulation Fallback: If no credentials are set, simulate the email
-  if (!smtpUser || !smtpPass || smtpUser.includes('placeholder') || smtpPass.includes('placeholder')) {
-    console.log(`[EMAIL SIMULATION] To: ${to} | Subject: ${subject}`);
-    return Promise.resolve({ success: true, simulated: true });
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000
-  });
-
-  const mailOptions = {
-    from: `"9jaCash Alerts" <${smtpUser}>`,
-    to: to.trim(),
-    subject: subject,
-    html: html
-  };
-
-  console.log(`[EMAIL OUTBOUND] Attempting send to: ${to} | Sender: ${smtpUser}`);
-
-  return new Promise((resolve, reject) => {
-    function attempt(remainingAttempts, currentDelay) {
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error(`[SMTP ERROR] to: ${to} | Code: ${error.code || 'N/A'} | Message: ${error.message}`);
-
-          if (error.message.includes('535')) {
-            console.error('[SMTP CRITICAL] Gmail Authentication failed. Check App Password or account security blocks.');
-          } else if (error.message.includes('550')) {
-            console.error('[SMTP CRITICAL] Mailbox unavailable or rejected by spam filters.');
-          }
-
-          if (remainingAttempts > 1) {
-            console.warn(`[SMTP RETRY] Retrying in ${currentDelay}ms... (${remainingAttempts - 1} attempts left)`);
-            setTimeout(() => {
-              attempt(remainingAttempts - 1, currentDelay * 2);
-            }, currentDelay);
-          } else {
-            reject(new Error(`SMTP send failed: ${error.message}`));
-          }
-        } else {
-          console.log(`[SMTP SUCCESS] Email successfully delivered! MessageId: ${info.messageId} | Response: ${info.response}`);
-          resolve({ success: true, messageId: info.messageId });
-        }
-      });
-    }
-
-    attempt(retries, delay);
-  });
+  // If no Resend API key is configured, go straight to SMTP
+  return sendSmtpFallback();
 }
 
 // Helper to compile professional brand-themed HTML templates
@@ -1928,23 +1932,6 @@ app.get('/api/admin/super/stats', async (req, res) => {
       upgradeRevenue,
       approvedWithdrawalsAmount: (approvedWithdrawals && approvedWithdrawals[0] && parseFloat(approvedWithdrawals[0].total || 0)) || 0,
       keysSold: keysSold
-    });
-
-    res.json({
-      status: true,
-      totalUsers: parseInt(getCnt(uCount)),
-      totalJuniors: parseInt(getCnt(jCount)),
-      totalPendingWithdrawals: parseInt(getCnt(wCount)),
-      approvedReceiptsAmount: total,
-      today,
-      sevenDays,
-      month,
-      year,
-      keysRevenue,
-      verificationRevenue,
-      upgradeRevenue,
-      approvedWithdrawalsAmount: (approvedWithdrawals && approvedWithdrawals[0] && parseFloat(approvedWithdrawals[0].total || 0)) || 0,
-      keysSold: totalKeysSold
     });
   } catch (err) {
     console.error('Failed to fetch stats:', err.message);
