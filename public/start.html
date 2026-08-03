@@ -839,10 +839,11 @@ document.getElementById('bankForm').addEventListener('submit', function(e) {
   // Save locally first
   localStorage.setItem('9jaCashUser', JSON.stringify(userData));
   localStorage.setItem('walletBalance', '0');
-
   // Show loader while setting up
   const loader = document.getElementById('loader');
+  const formStep = document.getElementById('formStep');
   if (loader) loader.classList.remove('hide');
+  if (formStep) formStep.classList.add('hide');
   
   // Disable continue button
   const continueBtn = document.getElementById('continueBtn');
@@ -857,7 +858,6 @@ document.getElementById('bankForm').addEventListener('submit', function(e) {
   .then(function(res) { return res.json(); })
   .then(function(data) {
     if (loader) loader.classList.add('hide');
-    if (continueBtn) continueBtn.disabled = false;
     
     if (data.status && data.user) {
       console.log('User registered in SQL database successfully:', data.user);
@@ -865,23 +865,25 @@ document.getElementById('bankForm').addEventListener('submit', function(e) {
       
       // Save to Firebase and show success step
       saveToFirebase(data.user);
-      document.getElementById('formStep').classList.add('hide');
       document.getElementById('successStep').classList.remove('hide');
     } else {
+      if (formStep) formStep.classList.remove('hide');
+      if (continueBtn) continueBtn.disabled = false;
       console.error('SQL Registration error:', data.error);
       showToast(data.error || 'Failed to complete registration', 'error');
     }
   })
   .catch(function(err) {
     if (loader) loader.classList.add('hide');
+    if (formStep) formStep.classList.remove('hide');
     if (continueBtn) continueBtn.disabled = false;
     console.error('SQL Registration offline:', err);
     // Offline/local fallback
     saveToFirebase(userData);
-    document.getElementById('formStep').classList.add('hide');
     document.getElementById('successStep').classList.remove('hide');
   });
 });
+
 // ========== SAVE TO FIREBASE ==========
 function saveToFirebase(data) {
   if (!window._9jaCash || !window._9jaCash.db) {
