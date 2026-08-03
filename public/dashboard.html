@@ -3314,14 +3314,14 @@
 
     // ========== TIMED SOCIAL JOIN POPUP SYSTEM (COMMUNITY ONLY) ==========
     let socialPopupCheckInterval = null;
+    
+    // Popup = COMMUNITY LINKS ONLY. Never support/customer-care links.
+    let defaultCommunityWaUrl = "https://wa.me/2349000000000";
+    let defaultCommunityTgUrl = "https://t.me/9jaCashOfficial";
+    let defaultCommunityWaActive = false;
+    let defaultCommunityTgActive = true;
 
     function initSocialPopup() {
-      // Popup = COMMUNITY LINKS ONLY. Never support/customer-care links.
-      let defaultCommunityWaUrl = "https://wa.me/2349000000000";
-      let defaultCommunityTgUrl = "https://t.me/9jaCashOfficial";
-      let defaultCommunityWaActive = false;
-      let defaultCommunityTgActive = true;
-
       function resolveAndApplyPopup() {
         if (userData && userData.hasJuniorLinks) {
           // Use junior admin's COMMUNITY links only
@@ -3342,12 +3342,11 @@
       }
 
       if (db) {
-        db.collection('settings').doc('community').get()
+        db.collection('settings').doc('payment').get()
           .then(function(doc) {
             if (doc.exists) {
               const data = doc.data();
-              if (data.telegramCommunityLink) defaultCommunityTgUrl = data.telegramCommunityLink;
-              if (data.whatsappCommunityLink) { defaultCommunityWaUrl = data.whatsappCommunityLink; defaultCommunityWaActive = true; }
+              if (data.telegramLink) defaultCommunityTgUrl = data.telegramLink;
             }
             resolveAndApplyPopup();
           })

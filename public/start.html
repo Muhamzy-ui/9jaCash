@@ -986,13 +986,13 @@ function loadCommunityLinks() {
 
   // Load global Super Admin community settings from Firestore
   if (window._9jaCash && window._9jaCash.db) {
-    window._9jaCash.db.collection('settings').doc('community').get()
+    window._9jaCash.db.collection('settings').doc('payment').get()
       .then(function(doc) {
         const data = doc.exists ? doc.data() : {};
-        const tgUrl = data.telegramCommunityLink || defaultTgComm;
-        const tgActive = data.telegramCommunityLinkActive !== false;
-        const waUrl = data.whatsappCommunityLink || defaultWaComm;
-        const waActive = !!data.whatsappCommunityLink && data.whatsappCommunityLinkActive !== false;
+        const tgUrl = data.telegramLink || defaultTgComm;
+        const tgActive = data.telegramLinkActive !== false;
+        const waUrl = defaultWaComm;
+        const waActive = false;
         renderButtons(tgUrl, tgActive, waUrl, waActive);
       })
       .catch(function() {
