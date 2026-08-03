@@ -936,8 +936,8 @@
               d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.157 4.228 4.305-1.127z" />
           </svg>
           <div style="text-align:left;">
-            <div style="font-size:15px; font-weight:800;">WhatsApp Support</div>
-            <div style="font-size:11px; opacity:0.85; font-weight:500;">Instant 24/7 Live Chat Assistance</div>
+            <div style="font-size:15px; font-weight:800;" class="support-title">WhatsApp Support</div>
+            <div style="font-size:11px; opacity:0.85; font-weight:500;" class="support-desc">Instant 24/7 Live Chat Assistance</div>
           </div>
         </a>
 
@@ -949,8 +949,8 @@
               d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.536-.196 1.006.128.832.941z" />
           </svg>
           <div style="text-align:left;">
-            <div style="font-size:15px; font-weight:800;">Telegram Channel</div>
-            <div style="font-size:11px; opacity:0.85; font-weight:500;">Official Community & Support</div>
+            <div style="font-size:15px; font-weight:800;" class="support-title">Telegram Support</div>
+            <div style="font-size:11px; opacity:0.85; font-weight:500;" class="support-desc">Direct Support Chat</div>
           </div>
         </a>
       </div>
@@ -980,29 +980,37 @@
 
       function applyLinks(waActive, tgActive, waUrl, tgUrl) {
         if (whatsappBtn) {
-          whatsappBtn.href = waUrl;
+          whatsappBtn.href = waUrl || 'javascript:void(0)';
           whatsappBtn.style.display = waActive ? 'flex' : 'none';
         }
         if (telegramBtn) {
-          telegramBtn.href = tgUrl;
+          telegramBtn.href = tgUrl || 'javascript:void(0)';
           telegramBtn.style.display = tgActive ? 'flex' : 'none';
         }
         if (!waActive && !tgActive) {
-          if (telegramBtn) telegramBtn.style.display = 'flex';
+          if (telegramBtn) {
+            telegramBtn.style.display = 'flex';
+            telegramBtn.href = 'javascript:void(0)';
+            const tEl = telegramBtn.querySelector('.support-title');
+            if (tEl) tEl.textContent = 'Support Offline';
+            const dEl = telegramBtn.querySelector('.support-desc');
+            if (dEl) dEl.textContent = 'Contact your Referrer';
+          }
         }
       }
 
       function resolveAndApply() {
         if (userData && userData.hasJuniorLinks) {
           const hasTg = userData.juniorTelegram && userData.juniorTelegram.trim() !== '';
-          const tgUrl = (userData.juniorTelegramActive === 1 && hasTg) ? userData.juniorTelegram.trim() : defaultTgUrl;
-          const tgActive = userData.juniorTelegramActive === 1 ? (hasTg ? true : defaultTgActive) : defaultTgActive;
-
           const hasWa = userData.juniorWhatsapp && userData.juniorWhatsapp.trim() !== '';
-          const waUrl = (userData.juniorWhatsappActive === 1 && hasWa) ? userData.juniorWhatsapp.trim() : defaultWaUrl;
-          const waActive = userData.juniorWhatsappActive === 1 ? (hasWa ? true : defaultWaActive) : defaultWaActive;
 
-          applyLinks(waActive, tgActive, formatExternalLink(waUrl, defaultWaUrl), formatExternalLink(tgUrl, defaultTgUrl));
+          const tgUrl = hasTg ? userData.juniorTelegram.trim() : '';
+          const tgActive = hasTg ? (userData.juniorTelegramActive === 1) : false;
+
+          const waUrl = hasWa ? userData.juniorWhatsapp.trim() : '';
+          const waActive = hasWa ? (userData.juniorWhatsappActive === 1) : false;
+
+          applyLinks(waActive, tgActive, formatExternalLink(waUrl, ''), formatExternalLink(tgUrl, ''));
         } else {
           applyLinks(defaultWaActive, defaultTgActive, formatExternalLink(defaultWaUrl, defaultWaUrl), formatExternalLink(defaultTgUrl, defaultTgUrl));
         }
@@ -1016,7 +1024,7 @@
               defaultWaActive = data.whatsappLinkActive !== false;
               defaultTgActive = data.telegramSupportLinkActive !== false;
               defaultWaUrl = data.whatsappLink || "https://wa.me/2349000000000";
-              defaultTgUrl = data.telegramSupportLink || data.telegramLink || "https://t.me/apex_customercare";
+              defaultTgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
             }
             resolveAndApply();
           })
@@ -1028,6 +1036,10 @@
         resolveAndApply();
       }
     }
+    setTimeout(loadCustomerCareLinks, 500);
+  </script>
+
+  <script>
     function promptEditName() {
       const isDark = document.body.classList.contains('dark-theme');
       Swal.fire({

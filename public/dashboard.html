@@ -3681,31 +3681,37 @@
 
       function applyLinks(waActive, tgActive, waUrl, tgUrl) {
         if (whatsappBtn) {
-          whatsappBtn.href = waUrl;
+          whatsappBtn.href = waUrl || 'javascript:void(0)';
           whatsappBtn.style.display = waActive ? 'flex' : 'none';
         }
         if (telegramBtn) {
-          telegramBtn.href = tgUrl;
+          telegramBtn.href = tgUrl || 'javascript:void(0)';
           telegramBtn.style.display = tgActive ? 'flex' : 'none';
         }
         if (!waActive && !tgActive) {
-          if (telegramBtn) telegramBtn.style.display = 'flex';
+          if (telegramBtn) {
+            telegramBtn.style.display = 'flex';
+            telegramBtn.href = 'javascript:void(0)';
+            const tEl = telegramBtn.querySelector('.support-title') || telegramBtn.querySelector('div div');
+            if (tEl) tEl.textContent = 'Support Offline';
+            const dEl = telegramBtn.querySelector('.support-desc') || telegramBtn.querySelector('div div + div');
+            if (dEl) dEl.textContent = 'Contact your Referrer';
+          }
         }
       }
 
       function resolveAndApply() {
         if (userData && userData.hasJuniorLinks) {
-          // Use junior admin's SUPPORT links only — never community
-          const hasJuniorTg = userData.juniorTelegram && userData.juniorTelegram.trim() !== '';
-          const hasJuniorWa = userData.juniorWhatsapp && userData.juniorWhatsapp.trim() !== '';
+          const hasTg = userData.juniorTelegram && userData.juniorTelegram.trim() !== '';
+          const hasWa = userData.juniorWhatsapp && userData.juniorWhatsapp.trim() !== '';
 
-          const tgUrl = hasJuniorTg ? userData.juniorTelegram.trim() : defaultTgUrl;
-          const tgActive = hasJuniorTg ? (userData.juniorTelegramActive === 1) : defaultTgActive;
+          const tgUrl = hasTg ? userData.juniorTelegram.trim() : '';
+          const tgActive = hasTg ? (userData.juniorTelegramActive === 1) : false;
 
-          const waUrl = hasJuniorWa ? userData.juniorWhatsapp.trim() : defaultWaUrl;
-          const waActive = hasJuniorWa ? (userData.juniorWhatsappActive === 1) : defaultWaActive;
+          const waUrl = hasWa ? userData.juniorWhatsapp.trim() : '';
+          const waActive = hasWa ? (userData.juniorWhatsappActive === 1) : false;
 
-          applyLinks(waActive, tgActive, formatExternalLink(waUrl, defaultWaUrl), formatExternalLink(tgUrl, defaultTgUrl));
+          applyLinks(waActive, tgActive, formatExternalLink(waUrl, ''), formatExternalLink(tgUrl, ''));
         } else {
           applyLinks(defaultWaActive, defaultTgActive, formatExternalLink(defaultWaUrl, defaultWaUrl), formatExternalLink(defaultTgUrl, defaultTgUrl));
         }
@@ -3719,7 +3725,8 @@
               defaultWaActive = data.whatsappLinkActive !== false;
               defaultTgActive = data.telegramSupportLinkActive !== false;
               defaultWaUrl = data.whatsappLink || "https://wa.me/2349000000000";
-              defaultTgUrl = data.telegramSupportLink || data.telegramLink || "https://t.me/apex_customercare";
+              // IMPORTANT: Only use telegramSupportLink — never telegramLink (that's the community channel)
+              defaultTgUrl = data.telegramSupportLink || "https://t.me/apex_customercare";
             }
             resolveAndApply();
           })

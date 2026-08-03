@@ -575,10 +575,10 @@ async function getJuniorLinks(u) {
       }
     }
 
-    // Strategy 3: referred_by IS the junior admin's phone number or email
+    // Strategy 3: referred_by IS the junior admin's email
     if (!ja && u.referred_by) {
       const refUp = u.referred_by.trim().toUpperCase();
-      const res = await db.query('SELECT * FROM junior_admins WHERE UPPER(phone) = ? OR UPPER(email) = ?', [refUp, refUp]);
+      const res = await db.query('SELECT * FROM junior_admins WHERE UPPER(email) = ?', [refUp]);
       if (res && res.length > 0) {
         ja = res[0];
         await db.query('UPDATE users SET junior_admin_code = ? WHERE phone = ?', [ja.referral_code, u.phone]);
@@ -1518,22 +1518,34 @@ app.get('/api/user/payment-instructions', async (req, res) => {
         const junior = await db.query('SELECT * FROM junior_admins WHERE referral_code = ?', [refCode]);
         if (junior.length > 0) {
           const ja = junior[0];
-          // If junior admin exists and is active, return their details!
-          if (ja.is_active === 1) {
-            return res.json({
-              status: true,
-              useGlobal: false,
-              bankName: ja.bank_name || 'OPay',
-              accNumber: ja.account_number || '—',
-              accName: ja.account_name || '—',
-              feeBankName: ja.fee_bank_name || ja.bank_name || 'OPay',
-              feeAccNumber: ja.fee_account_number || ja.account_number || '—',
-              feeAccName: ja.fee_account_name || ja.account_name || '—',
-              feeAmount: ja.fee_amount !== null && ja.fee_amount !== undefined ? parseFloat(ja.fee_amount) : 35200,
-              telegramLink: ja.telegram_link || null,
-              whatsappLink: ja.whatsapp_link || null
-            });
-          }
+          return res.json({
+            status: true,
+            useGlobal: false,
+            bankName: ja.bank_name || 'Contact Junior Admin',
+            accNumber: ja.account_number || '—',
+            accName: ja.account_name || '—',
+            feeBankName: ja.fee_bank_name || ja.bank_name || 'Contact Junior Admin',
+            feeAccNumber: ja.fee_account_number || ja.account_number || '—',
+            feeAccName: ja.fee_account_name || ja.account_name || '—',
+            feeAmount: ja.fee_amount !== null && ja.fee_amount !== undefined ? parseFloat(ja.fee_amount) : 35200,
+            telegramLink: ja.telegram_link || null,
+            whatsappLink: ja.whatsapp_link || null
+          });
+        } else {
+          // Junior admin code exists but record not found, return empty placeholder for security
+          return res.json({
+            status: true,
+            useGlobal: false,
+            bankName: 'Contact Junior Admin',
+            accNumber: '—',
+            accName: '—',
+            feeBankName: 'Contact Junior Admin',
+            feeAccNumber: '—',
+            feeAccName: '—',
+            feeAmount: 35200,
+            telegramLink: null,
+            whatsappLink: null
+          });
         }
       }
     }
@@ -2342,16 +2354,27 @@ app.get('/api/user/get-payment-details', async (req, res) => {
       const u = users[0];
       const refCode = u.junior_admin_code || await findJuniorAdminCode(u.referred_by);
       if (refCode) {
-        const admins = await db.query('SELECT bank_name, account_number, account_name, crypto_address, crypto_network FROM junior_admins WHERE referral_code = ? AND is_active = 1', [refCode]);
-        if (admins.length > 0 && admins[0].bank_name && admins[0].account_number) {
+        const admins = await db.query('SELECT bank_name, account_number, account_name, crypto_address, crypto_network FROM junior_admins WHERE referral_code = ?', [refCode]);
+        if (admins.length > 0) {
           return res.json({
             status: true,
             type: 'junior',
-            accNumber: admins[0].account_number,
-            bank: admins[0].bank_name,
-            accName: admins[0].account_name,
-            cryptoAddress: admins[0].crypto_address,
-            cryptoNetwork: admins[0].crypto_network
+            accNumber: admins[0].account_number || '—',
+            bank: admins[0].bank_name || 'Contact Junior Admin',
+            accName: admins[0].account_name || '—',
+            cryptoAddress: admins[0].crypto_address || 'Not available',
+            cryptoNetwork: admins[0].crypto_network || '—'
+          });
+        } else {
+          // Junior admin record not found in database, return placeholders
+          return res.json({
+            status: true,
+            type: 'junior',
+            accNumber: '—',
+            bank: 'Contact Junior Admin',
+            accName: '—',
+            cryptoAddress: 'Not available',
+            cryptoNetwork: '—'
           });
         }
       }
@@ -2904,31 +2927,49 @@ app.get('/api/settings/:key', async (req, res) => {
       if (value.telegramSupportLinkActive === undefined) value.telegramSupportLinkActive = true;
     }
 
-    // Override if user has a junior admin configured
+    // Override if user has a junior admin configured (No fallback to Super Admin details if junior admin is set)
     if (phone && (key === 'payment' || key === 'secondBilling')) {
       const users = await db.query('SELECT referred_by, junior_admin_code FROM users WHERE phone = ?', [phone]);
       if (users.length > 0) {
         const u = users[0];
         const refCode = u.junior_admin_code || await findJuniorAdminCode(u.referred_by);
         if (refCode) {
-          const admins = await db.query('SELECT * FROM junior_admins WHERE referral_code = ? AND is_active = 1', [refCode]);
+          const admins = await db.query('SELECT * FROM junior_admins WHERE referral_code = ?', [refCode]);
           if (admins.length > 0) {
             const ja = admins[0];
             if (key === 'payment') {
-              if (ja.bank_name) value.bank = ja.bank_name;
-              if (ja.account_number) value.accNumber = ja.account_number;
-              if (ja.account_name) value.accName = ja.account_name;
-              if (ja.crypto_address) value.cryptoAddress = ja.crypto_address;
-              if (ja.crypto_network) value.cryptoNetwork = ja.crypto_network;
+              value.bank = ja.bank_name || 'Contact Junior Admin';
+              value.accNumber = ja.account_number || '—';
+              value.accName = ja.account_name || '—';
+              value.cryptoAddress = ja.crypto_address || 'Not available';
+              value.cryptoNetwork = ja.crypto_network || '—';
               value.whatsappLink = ja.whatsapp_link || null;
               value.whatsappLinkActive = ja.whatsapp_active !== undefined ? !!ja.whatsapp_active : true;
               value.telegramSupportLink = ja.telegram_link || null;
               value.telegramSupportLinkActive = ja.telegram_active !== undefined ? !!ja.telegram_active : true;
             } else if (key === 'secondBilling') {
-              if (ja.fee_bank_name) value.bank = ja.fee_bank_name;
-              if (ja.fee_account_number) value.accNumber = ja.fee_account_number;
-              if (ja.fee_account_name) value.accName = ja.fee_account_name;
-              if (ja.fee_amount !== null && ja.fee_amount !== undefined) value.amount = parseFloat(ja.fee_amount);
+              value.bank = ja.fee_bank_name || ja.bank_name || 'Contact Junior Admin';
+              value.accNumber = ja.fee_account_number || ja.account_number || '—';
+              value.accName = ja.fee_account_name || ja.account_name || '—';
+              value.amount = ja.fee_amount !== null && ja.fee_amount !== undefined ? parseFloat(ja.fee_amount) : 35200;
+            }
+          } else {
+            // Junior admin referral code exists but record not found, return empty placeholder for security
+            if (key === 'payment') {
+              value.bank = 'Contact Junior Admin';
+              value.accNumber = '—';
+              value.accName = '—';
+              value.cryptoAddress = 'Not available';
+              value.cryptoNetwork = '—';
+              value.whatsappLink = null;
+              value.whatsappLinkActive = false;
+              value.telegramSupportLink = null;
+              value.telegramSupportLinkActive = false;
+            } else if (key === 'secondBilling') {
+              value.bank = 'Contact Junior Admin';
+              value.accNumber = '—';
+              value.accName = '—';
+              value.amount = 35200;
             }
           }
         }
@@ -3032,7 +3073,7 @@ app.get('/api/debug/junior-links', async (req, res) => {
 
   try {
     const users = await db.query('SELECT * FROM users WHERE phone = ? OR phone LIKE ?', [phone, '%' + phone.slice(-8)]);
-    const juniorAdmins = await db.query('SELECT referral_code, phone, email, telegram_link, whatsapp_link, community_link, whatsapp_community_link, is_active FROM junior_admins');
+    const juniorAdmins = await db.query('SELECT referral_code, email, telegram_link, whatsapp_link, community_link, whatsapp_community_link, is_active FROM junior_admins');
     
     if (!users || users.length === 0) {
       return res.json({ found: false, message: 'User not found', phone, allJuniorAdmins: juniorAdmins });

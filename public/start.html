@@ -905,8 +905,8 @@ function startOnboarding() {
 
 // ========== COMMUNITY LINKS ==========
 function loadCommunityLinks() {
-  const defaultTg = 'https://t.me/apex_customercare';
-  const defaultWa = 'https://wa.me/2348000000000';
+  const defaultTgComm = 'https://t.me/9jaCashOfficial';
+  const defaultWaComm = 'https://wa.me/2349000000000'; // Or generic contact if community is missing
   const container = document.getElementById('communityLinksContainer');
   if (!container) return;
 
@@ -917,7 +917,7 @@ function loadCommunityLinks() {
     if (tgActive && tgUrl) {
       renderedCount++;
       const tgBtn = document.createElement('a');
-      tgBtn.href = formatExternalLink(tgUrl, defaultTg);
+      tgBtn.href = formatExternalLink(tgUrl, defaultTgComm);
       tgBtn.target = '_blank';
       tgBtn.className = 'btn-primary block';
       tgBtn.style.background = 'linear-gradient(135deg,#229ed9,#1d98d2)';
@@ -930,25 +930,25 @@ function loadCommunityLinks() {
     if (waActive && waUrl) {
       renderedCount++;
       const waBtn = document.createElement('a');
-      waBtn.href = formatExternalLink(waUrl, defaultWa);
+      waBtn.href = formatExternalLink(waUrl, defaultWaComm);
       waBtn.target = '_blank';
       waBtn.className = 'btn-primary block';
       waBtn.style.background = 'linear-gradient(135deg,#25D366,#128C7E)';
       waBtn.style.boxShadow = '0 4px 20px rgba(37,211,102,0.3)';
       waBtn.onclick = tgClicked;
-      waBtn.innerHTML = `<i class="fa-brands fa-whatsapp mr-2"></i><span>Join WhatsApp Community</span>`;
+      waBtn.innerHTML = `<i class="fa-brands fa-whatsapp mr-2"></i><span>Join WhatsApp Group</span>`;
       container.appendChild(waBtn);
     }
 
     // Fallback if none active
     if (renderedCount === 0) {
       const fallbackBtn = document.createElement('a');
-      fallbackBtn.href = formatExternalLink(tgUrl || defaultTg, defaultTg);
+      fallbackBtn.href = formatExternalLink(tgUrl || defaultTgComm, defaultTgComm);
       fallbackBtn.target = '_blank';
       fallbackBtn.className = 'btn-primary block';
       fallbackBtn.style.background = 'linear-gradient(135deg,#229ed9,#1d98d2)';
       fallbackBtn.onclick = tgClicked;
-      fallbackBtn.innerHTML = `<i class="fa-brands fa-telegram mr-2"></i><span>Join Community</span>`;
+      fallbackBtn.innerHTML = `<i class="fa-brands fa-telegram mr-2"></i><span>Join Community Channel</span>`;
       container.appendChild(fallbackBtn);
     }
   }
@@ -957,33 +957,35 @@ function loadCommunityLinks() {
   try { localUser = JSON.parse(localStorage.getItem("9jaCashUser")); } catch (e) {}
 
   if (localUser && localUser.hasJuniorLinks) {
-    const hasTg = localUser.juniorCommunity && localUser.juniorCommunity.trim() !== '';
-    const tgUrl = (localUser.juniorCommunityActive === 1 && hasTg) ? localUser.juniorCommunity.trim() : defaultTg;
-    const tgActive = localUser.juniorCommunityActive === 1 ? (hasTg ? true : false) : false;
+    // If user is under junior admin, strictly load their junior community links
+    const hasTgComm = localUser.juniorCommunity && localUser.juniorCommunity.trim() !== '';
+    const tgUrl = hasTgComm ? localUser.juniorCommunity.trim() : defaultTgComm;
+    const tgActive = hasTgComm ? (localUser.juniorCommunityActive === 1) : true;
 
-    const hasWa = localUser.juniorWhatsappCommunity && localUser.juniorWhatsappCommunity.trim() !== '';
-    const waUrl = (localUser.juniorWhatsappCommunityActive === 1 && hasWa) ? localUser.juniorWhatsappCommunity.trim() : defaultWa;
-    const waActive = localUser.juniorWhatsappCommunityActive === 1 ? (hasWa ? true : false) : false;
+    const hasWaComm = localUser.juniorWhatsappCommunity && localUser.juniorWhatsappCommunity.trim() !== '';
+    const waUrl = hasWaComm ? localUser.juniorWhatsappCommunity.trim() : defaultWaComm;
+    const waActive = hasWaComm ? (localUser.juniorWhatsappCommunityActive === 1) : false;
 
     renderButtons(tgUrl, tgActive, waUrl, waActive);
     return;
   }
 
+  // Load global Super Admin community settings from Firestore
   if (window._9jaCash && window._9jaCash.db) {
-    window._9jaCash.db.collection('settings').doc('payment').get()
+    window._9jaCash.db.collection('settings').doc('community').get()
       .then(function(doc) {
         const data = doc.exists ? doc.data() : {};
-        const tgUrl = data.telegramSupportLink || data.telegramLink || defaultTg;
-        const tgActive = data.telegramSupportLinkActive !== false || data.telegramLinkActive !== false;
-        const waUrl = data.whatsappLink || data.whatsappCommunityLink || defaultWa;
-        const waActive = data.whatsappLinkActive !== false || data.whatsappCommunityLinkActive !== false;
+        const tgUrl = data.telegramCommunityLink || defaultTgComm;
+        const tgActive = data.telegramCommunityLinkActive !== false;
+        const waUrl = data.whatsappCommunityLink || defaultWaComm;
+        const waActive = !!data.whatsappCommunityLink && data.whatsappCommunityLinkActive !== false;
         renderButtons(tgUrl, tgActive, waUrl, waActive);
       })
       .catch(function() {
-        renderButtons(defaultTg, true, defaultWa, true);
+        renderButtons(defaultTgComm, true, defaultWaComm, false);
       });
   } else {
-    renderButtons(defaultTg, true, defaultWa, true);
+    renderButtons(defaultTgComm, true, defaultWaComm, false);
   }
 }
 
