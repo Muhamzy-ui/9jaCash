@@ -3174,7 +3174,8 @@
         }, 3000);
       } else {
         const timeDiff = now - parseInt(lastDismissed);
-        if (timeDiff >= 600000) {
+        // Show again after 3 minutes (180000 ms)
+        if (timeDiff >= 180000) {
           popup.classList.add("show");
         }
       }

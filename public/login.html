@@ -87,6 +87,15 @@ body.dark-mode .theme-toggle:hover{background:#334155;color:#818cf8;}
 .toast i{color:#10b981;}
 .toast.error i{color:#ef4444;}
 body.dark-mode .toast{background:#1e293b;border-color:#334155;}
+/* Loader */
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;}
+.loader-ring{width:56px;height:56px;border:4px solid rgba(99,102,241,0.1);border-top:4px solid #6366f1;border-radius:50%;animation:spin 1s linear infinite;}
+.loader-text{color:#1e293b;font-size:20px;font-weight:800;margin-top:24px;letter-spacing:-0.3px;}
+.loader-sub{color:#94a3b8;font-size:14px;margin-top:8px;font-weight:500;}
+@keyframes spin{to{transform:rotate(360deg);}}
+body.dark-mode .loader-text{color:#f8fafc;}
+body.dark-mode .loader-sub{color:#94a3b8;}
+.hide{display:none !important;}
 </style>
 </head>
 <body>
@@ -103,6 +112,13 @@ body.dark-mode .toast{background:#1e293b;border-color:#334155;}
   <!-- Toast -->
   <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Done</span></div>
   
+  <!-- LOADING -->
+  <div id="loader" class="hide loader">
+    <div class="loader-ring"></div>
+    <div class="loader-text">Logging in...</div>
+    <div class="loader-sub">Please wait</div>
+  </div>
+
   <!-- App Container -->
   <div class="app">
     <div class="card s1">
@@ -242,7 +258,20 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     showToast('Password must be at least 6 characters', 'error');
     return;
   }
-  
+  function showLoader() {
+    const loader = document.getElementById('loader');
+    const app = document.querySelector('.app');
+    if (loader) loader.classList.remove('hide');
+    if (app) app.classList.add('hide');
+  }
+  function hideLoader() {
+    const loader = document.getElementById('loader');
+    const app = document.querySelector('.app');
+    if (loader) loader.classList.add('hide');
+    if (app) app.classList.remove('hide');
+  }
+
+  showLoader();
   btn.disabled = true;
   btn.innerHTML = '<span>Verifying...</span> <i class="fa-solid fa-circle-notch fa-spin text-sm"></i>';
   
@@ -291,16 +320,15 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
       showToast('Welcome back, ' + (user.fullName || 'User') + '!');
       setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
     } else {
-      attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, data.error);
+      attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, data.error, hideLoader);
     }
   })
   .catch(err => {
     console.warn("SQL login error, trying fallback:", err);
-    attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, null);
+    attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, null, hideLoader);
   });
 });
-
-function attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, apiError) {
+function attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, apiError, hideLoaderCallback) {
   if (window._9jaCash && window._9jaCash.db) {
     const firestoreDb = window._9jaCash.db;
     let queryPromise;
@@ -352,17 +380,18 @@ function attemptFallbackLogin(phoneOrEmailVal, password, isEmail, btn, apiError)
         setTimeout(function() { window.location.href = 'dashboard.html'; }, 1200);
       })
       .catch(function(err) {
+        if (typeof hideLoaderCallback === 'function') hideLoaderCallback();
         showToast(err.message || apiError || 'Login failed.', 'error');
         btn.disabled = false;
         btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
       });
   } else {
+    if (typeof hideLoaderCallback === 'function') hideLoaderCallback();
     showToast(apiError || 'Invalid credentials or account does not exist.', 'error');
     btn.disabled = false;
     btn.innerHTML = '<span>Access Account</span> <i class="fa-solid fa-chevron-right text-sm"></i>';
   }
 }
-
 // ========== INIT ==========
 window.addEventListener('DOMContentLoaded', function() {
   initTheme();
