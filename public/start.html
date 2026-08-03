@@ -836,11 +836,18 @@ document.getElementById('bankForm').addEventListener('submit', function(e) {
     lastWithdraw: null,
     status: 'active'
   };
-  
   // Save locally first
   localStorage.setItem('9jaCashUser', JSON.stringify(userData));
   localStorage.setItem('walletBalance', '0');
+
+  // Show loader while setting up
+  const loader = document.getElementById('loader');
+  if (loader) loader.classList.remove('hide');
   
+  // Disable continue button
+  const continueBtn = document.getElementById('continueBtn');
+  if (continueBtn) continueBtn.disabled = true;
+
   // Send registration request to SQL backend
   fetch(API_URL + '/api/register', {
     method: 'POST',
@@ -849,25 +856,32 @@ document.getElementById('bankForm').addEventListener('submit', function(e) {
   })
   .then(function(res) { return res.json(); })
   .then(function(data) {
+    if (loader) loader.classList.add('hide');
+    if (continueBtn) continueBtn.disabled = false;
+    
     if (data.status && data.user) {
       console.log('User registered in SQL database successfully:', data.user);
       localStorage.setItem('9jaCashUser', JSON.stringify(data.user));
+      
+      // Save to Firebase and show success step
+      saveToFirebase(data.user);
+      document.getElementById('formStep').classList.add('hide');
+      document.getElementById('successStep').classList.remove('hide');
     } else {
       console.error('SQL Registration error:', data.error);
+      showToast(data.error || 'Failed to complete registration', 'error');
     }
   })
   .catch(function(err) {
+    if (loader) loader.classList.add('hide');
+    if (continueBtn) continueBtn.disabled = false;
     console.error('SQL Registration offline:', err);
+    // Offline/local fallback
+    saveToFirebase(userData);
+    document.getElementById('formStep').classList.add('hide');
+    document.getElementById('successStep').classList.remove('hide');
   });
-
-  // Also call Firebase save
-  saveToFirebase(userData);
-  
-  // Show success
-  document.getElementById('formStep').classList.add('hide');
-  document.getElementById('successStep').classList.remove('hide');
 });
-
 // ========== SAVE TO FIREBASE ==========
 function saveToFirebase(data) {
   if (!window._9jaCash || !window._9jaCash.db) {
@@ -1100,7 +1114,14 @@ window.addEventListener('DOMContentLoaded', function() {
   const ref = urlParams.get('ref') || urlParams.get('referral');
   if (ref) {
     localStorage.setItem('9jaCashReferralCode', ref);
+    sessionStorage.setItem('9jaCashReferralCode', ref);
     console.log('Referral code captured and saved:', ref);
+  } else {
+    // If no ref parameter is present in URL, check sessionStorage to see if they clicked one in the current browser session
+    const sessionRef = sessionStorage.getItem('9jaCashReferralCode');
+    if (!sessionRef) {
+      localStorage.removeItem('9jaCashReferralCode');
+    }
   }
   
   // Pre-fill and lock promoCode field if referral is present

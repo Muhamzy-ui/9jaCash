@@ -579,7 +579,14 @@ window.addEventListener("DOMContentLoaded", function() {
   const ref = urlParams.get('ref') || urlParams.get('referral');
   if (ref) {
     localStorage.setItem('9jaCashReferralCode', ref);
+    sessionStorage.setItem('9jaCashReferralCode', ref);
     console.log('Referral code captured and saved:', ref);
+  } else {
+    // If no ref parameter is present in URL, check sessionStorage to see if they clicked one in the current browser session
+    const sessionRef = sessionStorage.getItem('9jaCashReferralCode');
+    if (!sessionRef) {
+      localStorage.removeItem('9jaCashReferralCode');
+    }
   }
 });
 </script>

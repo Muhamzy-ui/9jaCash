@@ -3377,21 +3377,20 @@
       } else {
         return;
       }
-
       if (isWhatsApp) {
         iconWrap.className = "social-popup-icon whatsapp";
         iconWrap.innerHTML = '<i class="fa-brands fa-whatsapp"></i>';
         title.innerHTML = '📢 Join Our WhatsApp Group';
         btn.className = "social-popup-btn whatsapp";
         btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Join Now';
-        btn.href = formatExternalLink(activeUrl, defaultWaUrl);
+        btn.href = formatExternalLink(activeUrl, defaultCommunityWaUrl);
       } else {
         iconWrap.className = "social-popup-icon telegram";
         iconWrap.innerHTML = '<i class="fa-brands fa-telegram"></i>';
         title.innerHTML = '📢 Join Our Telegram Channel';
         btn.className = "social-popup-btn telegram";
         btn.innerHTML = '<i class="fa-brands fa-telegram"></i> Join Now';
-        btn.href = formatExternalLink(activeUrl, defaultTgUrl);
+        btn.href = formatExternalLink(activeUrl, defaultCommunityTgUrl);
       }
 
       checkAndShowSocialPopup();
