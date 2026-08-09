@@ -1319,10 +1319,12 @@ app.get('/api/admin/junior/withdrawals', async (req, res) => {
 
   try {
     const list = await db.query(`
-      SELECT * FROM withdrawals 
-      WHERE referred_by = ? 
-         OR phone IN (SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?)
-      ORDER BY created_at DESC
+      SELECT w.*, u.is_verified 
+      FROM withdrawals w 
+      LEFT JOIN users u ON w.phone = u.phone 
+      WHERE w.referred_by = ? 
+         OR w.phone IN (SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?)
+      ORDER BY w.created_at DESC
     `, [referralCode, referralCode, referralCode]);
     res.json({ status: true, withdrawals: list });
   } catch (err) {
@@ -1616,7 +1618,12 @@ app.get('/api/admin/seed-junior', async (req, res) => {
 // GET /api/admin/super/withdrawals — Fetch all withdrawals on the platform
 app.get('/api/admin/super/withdrawals', async (req, res) => {
   try {
-    const list = await db.query('SELECT * FROM withdrawals ORDER BY created_at DESC');
+    const list = await db.query(`
+      SELECT w.*, u.is_verified 
+      FROM withdrawals w 
+      LEFT JOIN users u ON w.phone = u.phone 
+      ORDER BY w.created_at DESC
+    `);
     res.json({ status: true, withdrawals: list || [] });
   } catch (err) {
     console.error('Failed to fetch withdrawals:', err.message);
@@ -2083,6 +2090,31 @@ app.post('/api/admin/super/delete-user', async (req, res) => {
   } catch (err) {
     console.error('Delete user error:', err.message);
     res.status(500).json({ status: false, error: 'Failed to delete user' });
+  }
+});
+
+// POST /api/admin/super/clear-balance — Clear a user's balance to 0 from the Super Admin console
+app.post('/api/admin/super/clear-balance', async (req, res) => {
+  const { phone } = req.body || {};
+  if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
+
+  try {
+    const users = await db.query('SELECT phone FROM users WHERE phone = ?', [phone]);
+    if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
+
+    await db.query('UPDATE users SET balance = 0 WHERE phone = ?', [phone]);
+
+    // Add a notification alert for the user
+    const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+    await db.query(`
+      INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+      VALUES (?, ?, 'alert', 'Account Balance Reset ⚠️', 'Your account balance has been reset to ₦0 by the administration.', '0', ?)
+    `, [notifId, phone, new Date().toISOString()]);
+
+    res.json({ status: true, message: 'User balance cleared successfully' });
+  } catch (err) {
+    console.error('Clear user balance error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to clear user balance' });
   }
 });
 

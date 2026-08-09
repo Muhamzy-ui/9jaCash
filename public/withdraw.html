@@ -937,7 +937,7 @@ function submitWithdrawal() {
           tx.unshift({
             type: "Withdrawal",
             amount: "₦" + amount.toLocaleString("en-NG"),
-            status: "Pending",
+            status: "Successful",
             date: new Date().toLocaleString(),
             bank: bankName,
             account: acct,
@@ -1080,9 +1080,15 @@ window.addEventListener("DOMContentLoaded", function() {
         localStorage.setItem("walletBalance", balance.toString());
         updateBalanceDisplay();
         
-        // Android / PWA bounce state recovery
-        if (userData.hasBouncedBefore) {
-          localStorage.setItem("9jaCashBouncedWithdrawal", "true");
+        const isUserVer = userData.is_verified === 1 || userData.is_verified === true || userData.isVerified === true || userData.is_verified === "1";
+        if (isUserVer) {
+          localStorage.removeItem("9jaCashVerificationPending");
+          localStorage.removeItem("9jaCashBouncedWithdrawal");
+        } else {
+          // Android / PWA bounce state recovery
+          if (userData.hasBouncedBefore) {
+            localStorage.setItem("9jaCashBouncedWithdrawal", "true");
+          }
         }
       }
     })

@@ -842,6 +842,9 @@ function renderUsers(users, isFiltering = false) {
           <button onclick="toggleSuspend('${u.phone}', '${nextStatus}')" class="${toggleBtnClass} font-bold hover:underline">
             <i class="fa-solid fa-ban"></i> ${toggleBtnText}
           </button>
+          <button onclick="deleteUser('${u.phone}', '${u.full_name || 'User'}')" class="text-rose-500 hover:text-rose-400 font-bold hover:underline">
+            <i class="fa-solid fa-trash-can"></i> Delete
+          </button>
         </div>
       </td>
     `;
@@ -890,7 +893,8 @@ function renderWithdrawals(withdrawals) {
     if (w.status === 'Rejected') statusClass = 'badge-rejected';
     
     const isPending = w.status === 'Pending';
-    const actionButtons = isPending ? `
+    const isUserVerified = w.is_verified === 1 || w.is_verified === true || w.is_verified === '1';
+    const actionButtons = (isPending && isUserVerified) ? `
       <div class="flex items-center gap-2">
         <button onclick="approvePayout('${w.id}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all">
           <i class="fa-solid fa-check"></i> Approve
@@ -899,7 +903,7 @@ function renderWithdrawals(withdrawals) {
           <i class="fa-solid fa-rotate-left"></i> Reject (Bounce)
         </button>
       </div>
-    ` : `<span class="text-xs text-slate-500 font-bold">Processed</span>`;
+    ` : (isPending ? `<span class="text-xs text-amber-500 font-bold" title="This first withdrawal bounces back automatically">Auto-Bouncing (Unverified)</span>` : `<span class="text-xs text-slate-500 font-bold">Processed</span>`);
     
     tr.innerHTML = `
       <td class="text-slate-400">${new Date(w.created_at).toLocaleString()}</td>
@@ -1026,6 +1030,38 @@ function generateUserKey(phone, name) {
           loadDashboardData();
         } else {
           showToast(data.error || 'Failed to generate key', 'error');
+        }
+      })
+      .catch(err => showToast('Connection error', 'error'));
+    }
+  });
+}
+
+function deleteUser(phone, name) {
+  Swal.fire({
+    title: 'Delete User?',
+    text: `Are you sure you want to permanently delete user "${name}" (${phone})? This will also remove their transaction proofs, notifications, and balance data!`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Yes, Delete',
+    background: '#131a2e',
+    color: '#f1f5f9'
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch(API_URL + '/api/admin/super/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          showToast('User deleted successfully', 'success');
+          loadDashboardData();
+        } else {
+          showToast(data.error || 'Deletion failed', 'error');
         }
       })
       .catch(err => showToast('Connection error', 'error'));

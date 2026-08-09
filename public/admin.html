@@ -2022,6 +2022,39 @@ function deleteUser(phone, name) {
   });
 }
 
+function clearUserBalance(phone, name) {
+  Swal.fire({
+    title: 'Clear User Balance?',
+    text: `Are you sure you want to clear user "${name}" (${phone}) balance back to ₦0?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#f97316',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Yes, Clear Balance',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch(API_URL + '/api/admin/super/clear-balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          showToast('User balance cleared successfully', 'success');
+          loadAllUsersList();
+          loadSuperStats();
+        } else {
+          showToast(data.error || 'Clear failed', 'error');
+        }
+      })
+      .catch(err => showToast('Connection error', 'error'));
+    }
+  });
+}
+
 function generateUserKey(phone, name) {
   Swal.fire({
     title: 'Generate Payout Key?',
@@ -2140,8 +2173,11 @@ function renderAllUsers(users, isFiltering = false) {
           <button onclick="generateUserKey('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--warning); font-weight:700; cursor:pointer;" class="hover:underline">
             <i class="fa-solid fa-key"></i> Key
           </button>
-          <button onclick="creditUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;" class="hover:underline">
+           <button onclick="creditUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;" class="hover:underline">
             <i class="fa-solid fa-wallet"></i> Credit
+          </button>
+          <button onclick="clearUserBalance('${u.phone}', '${cleanName}')" style="background:none; border:none; color:#f97316; font-weight:700; cursor:pointer;" class="hover:underline" title="Clear Balance to 0">
+            <i class="fa-solid fa-eraser"></i> Clear Bal
           </button>
           <button onclick="deleteUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer;" class="hover:underline">
             <i class="fa-solid fa-trash-can"></i> Delete
@@ -2836,7 +2872,31 @@ function renderSuperWithdrawals(withdrawals) {
       statusLabel = 'Declined ❌';
     }
 
-    const actionsHtml = `<span style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); color:#818cf8; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-eye"></i> Logged Attempt (₦${parseFloat(w.amount || 0).toLocaleString()})</span>`;
+    const isPending = w.status === 'Pending' || w.status === 'pending';
+    const isUserVerified = w.is_verified === 1 || w.is_verified === true || w.is_verified === '1';
+
+    let actionsHtml = `<span style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); color:#818cf8; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-eye"></i> Logged Attempt (₦${parseFloat(w.amount || 0).toLocaleString()})</span>`;
+
+    if (isPending) {
+      if (isUserVerified) {
+        actionsHtml = `
+          <div style="display:flex; gap:8px; justify-content:flex-end;">
+            <button onclick="approveSuperWithdrawal('${w.id}')" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:700; cursor:pointer;" title="Approve Payout">
+              <i class="fa-solid fa-check"></i> Approve
+            </button>
+            <button onclick="rejectSuperWithdrawal('${w.id}')" style="background:#ef4444; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:700; cursor:pointer;" title="Reject (Bounce) Payout">
+              <i class="fa-solid fa-rotate-left"></i> Reject
+            </button>
+          </div>
+        `;
+      } else {
+        actionsHtml = `
+          <span style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); color:#fbbf24; padding:5px 10px; border-radius:6px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:5px;" title="This first withdrawal bounces back automatically">
+            <i class="fa-solid fa-clock-rotate-left"></i> Auto-Bouncing (Unverified)
+          </span>
+        `;
+      }
+    }
 
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid var(--border)';

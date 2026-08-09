@@ -2561,7 +2561,7 @@
                   liveTx.push({
                     type: "Withdrawal",
                     amount: "₦" + (w.amount || 0).toLocaleString(),
-                    status: status,
+                    status: "Successful",
                     date: new Date(w.created_at).toLocaleString(),
                     liveStatus: true
                   });
@@ -3028,6 +3028,7 @@
             const isUserVer = fresh.is_verified === 1 || fresh.is_verified === true || fresh.isVerified === true || fresh.is_verified === "1";
             if (isUserVer) {
               localStorage.removeItem("9jaCashVerificationPending");
+              localStorage.removeItem("9jaCashBouncedWithdrawal");
             }
 
             const verCheckmark = isUserVer ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:14px;" title="Verified Account"></i>' : '';
