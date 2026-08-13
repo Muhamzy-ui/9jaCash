@@ -1276,55 +1276,11 @@ app.post('/api/withdraw', async (req, res) => {
   }
 });
 
-// Function: 1-Hour Auto Bounce-Back for Pending Verified Withdrawals
-async function autoBounceExpiredWithdrawals() {
-  try {
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    // Find pending withdrawals > 1 hour old for VERIFIED users
-    const pendingVerified = await db.query(`
-      SELECT w.id, w.phone, w.amount, w.created_at
-      FROM withdrawals w 
-      JOIN users u ON w.phone = u.phone 
-      WHERE LOWER(w.status) = 'pending' 
-        AND (u.is_verified = 1 OR CAST(u.is_verified AS text) = '1')
-        AND w.created_at <= ?
-    `, [oneHourAgo]);
-
-    if (!pendingVerified || pendingVerified.length === 0) return;
-
-    for (const w of pendingVerified) {
-      const amount = parseFloat(w.amount || 0);
-      // 1. Update withdrawal status to Rejected
-      await db.query(`
-        UPDATE withdrawals 
-        SET status = 'Rejected', decline_reason = 'Auto-Bounced: 1-hour admin processing window elapsed.' 
-        WHERE id = ? AND LOWER(status) = 'pending'
-      `, [w.id]);
-
-      // 2. Refund withdrawal amount back to user's balance
-      if (amount > 0) {
-        await db.query(`UPDATE users SET balance = balance + ? WHERE phone = ?`, [amount, w.phone]);
-      }
-
-      console.log(`[AutoBounce] Withdrawal #${w.id} for user ${w.phone} (₦${amount.toLocaleString()}) auto-bounced after 1 hour.`);
-    }
-
-    juniorAnalyticsCache = {};
-    superStatsCache = null;
-  } catch (err) {
-    console.error('[AutoBounce] Error in autoBounceExpiredWithdrawals:', err.message);
-  }
-}
-
-// Check auto-bounce periodically every 60 seconds
-setInterval(autoBounceExpiredWithdrawals, 60000);
-
 // GET /api/user/withdrawals — Fetch live list of withdrawals for a user
 app.get('/api/user/withdrawals', async (req, res) => {
   const { phone } = req.query || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone parameter required' });
   try {
-    await autoBounceExpiredWithdrawals();
     const list = await db.query('SELECT * FROM withdrawals WHERE phone = ? ORDER BY created_at DESC LIMIT 10', [phone]);
     res.json({ status: true, withdrawals: list });
   } catch (err) {
@@ -1376,7 +1332,6 @@ app.get('/api/admin/junior/withdrawals', async (req, res) => {
   if (!referralCode) return res.status(400).json({ status: false, error: 'Referral code required' });
 
   try {
-    await autoBounceExpiredWithdrawals();
     const list = await db.query(`
       SELECT w.*, u.is_verified 
       FROM withdrawals w 
@@ -1959,7 +1914,6 @@ app.get('/api/admin/seed-junior', async (req, res) => {
 app.get('/api/admin/super/withdrawals', async (req, res) => {
   const { page, limit, status, search } = req.query || {};
   try {
-    await autoBounceExpiredWithdrawals();
     let queryStr = `
       SELECT w.*, u.is_verified 
       FROM withdrawals w 
@@ -2237,8 +2191,16 @@ app.post('/api/admin/super/bulk-reject-withdrawals', async (req, res) => {
 });
 
 // GET /api/admin/super/juniors — List all Junior Admins with Earnings & Commission stats
+let superJuniorsCache = null;
+let superJuniorsCachedAt = 0;
+
 app.get('/api/admin/super/juniors', async (req, res) => {
   try {
+    const nowTime = Date.now();
+    if (superJuniorsCache && (nowTime - superJuniorsCachedAt < 10000)) {
+      return res.json(superJuniorsCache);
+    }
+
     const list = await db.query('SELECT email, referral_code, bank_name, account_number, account_name, is_active, created_at, reset_at FROM junior_admins ORDER BY created_at DESC');
 
     // Get setting for admin percentage
@@ -2249,98 +2211,95 @@ app.get('/api/admin/super/juniors', async (req, res) => {
         const parsed = typeof settingRes[0].value === 'string' ? JSON.parse(settingRes[0].value) : settingRes[0].value;
         adminPercentage = parseFloat(parsed.percentage) ?? 20;
       }
-    } catch (e) {
-      console.error('Error fetching admin_percentage:', e);
-    }
+    } catch (e) {}
 
     const juniorCodes = list.map(j => (j.referral_code || '').trim().toUpperCase()).filter(Boolean);
 
-    // 1. Get all users
-    const users = juniorCodes.length > 0
-      ? await db.query('SELECT phone, junior_admin_code, referred_by, created_at FROM users WHERE junior_admin_code IS NOT NULL OR referred_by IS NOT NULL')
-      : [];
+    // 1. Get users, receipts, and settlements in parallel
+    const [users, receipts, settlements] = juniorCodes.length > 0
+      ? await Promise.all([
+          db.query('SELECT phone, junior_admin_code, referred_by, created_at FROM users WHERE junior_admin_code IS NOT NULL OR referred_by IS NOT NULL'),
+          db.query(`SELECT phone, amount, created_at FROM receipts WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success') AND (type != 'junior_settlement' OR type IS NULL)`),
+          db.query(`SELECT phone as email, status, amount, created_at FROM receipts WHERE type = 'junior_settlement'`)
+        ])
+      : [[], [], []];
 
-    // 2. Get all approved receipts for user deposits
-    const receipts = juniorCodes.length > 0
-      ? await db.query(`
-          SELECT phone, amount, created_at FROM receipts 
-          WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success')
-          AND (type != 'junior_settlement' OR type IS NULL)
-        `)
-      : [];
+    // Pre-index receipts by phone number for O(1) instant lookup
+    const receiptsByPhoneMap = new Map();
+    for (const r of receipts) {
+      if (!receiptsByPhoneMap.has(r.phone)) receiptsByPhoneMap.set(r.phone, []);
+      receiptsByPhoneMap.get(r.phone).push(r);
+    }
 
-    // 3. Query all settlements (approved and pending)
-    const settlements = juniorCodes.length > 0
-      ? await db.query(`
-          SELECT phone as email, status, amount, created_at FROM receipts 
-          WHERE type = 'junior_settlement'
-        `)
-      : [];
+    // Pre-index users by code for O(1) instant lookup
+    const usersByCodeMap = new Map();
+    for (const u of users) {
+      const jaCode = (u.junior_admin_code || '').trim().toUpperCase();
+      const refCode = (u.referred_by || '').trim().toUpperCase();
+      if (jaCode) {
+        if (!usersByCodeMap.has(jaCode)) usersByCodeMap.set(jaCode, []);
+        usersByCodeMap.get(jaCode).push(u);
+      }
+      if (refCode && refCode !== jaCode) {
+        if (!usersByCodeMap.has(refCode)) usersByCodeMap.set(refCode, []);
+        usersByCodeMap.get(refCode).push(u);
+      }
+    }
 
-    const nowTime = Date.now();
+    // Pre-index settlements by email
+    const settlementsByEmailMap = new Map();
+    for (const s of settlements) {
+      const em = (s.email || '').trim().toLowerCase();
+      if (!settlementsByEmailMap.has(em)) settlementsByEmailMap.set(em, []);
+      settlementsByEmailMap.get(em).push(s);
+    }
+
     const sevenDaysAgo = nowTime - (7 * 24 * 60 * 60 * 1000);
-
-    // 4. Build the final array matching the exact original structure
     const juniorsWithStats = [];
+
     for (const j of list) {
       const code = (j.referral_code || '').trim().toUpperCase();
       const manualResetTime = j.reset_at ? safeParseDate(j.reset_at).getTime() : 0;
-      // Auto-reset commission every 1 week (7 days), or manual reset_at, whichever is more recent
       const resetTime = Math.max(sevenDaysAgo, manualResetTime);
 
-      // Filter referred users created after resetTime
-      const juniorUsers = users.filter(u => {
-        const jaCode = (u.junior_admin_code || '').trim().toUpperCase();
-        const refCode = (u.referred_by || '').trim().toUpperCase();
-        const matchesCode = (jaCode === code || refCode === code);
-        if (!matchesCode) return false;
-        
+      const candidateUsers = usersByCodeMap.get(code) || [];
+      const juniorUsers = candidateUsers.filter(u => {
         const createdTime = u.created_at ? safeParseDate(u.created_at).getTime() : 0;
         return createdTime >= resetTime;
       });
 
       const totalUsers = juniorUsers.length;
-      const juniorUserPhones = juniorUsers.map(u => u.phone);
-
-      // Filter receipts of those users created after resetTime
       let totalEarnings = 0;
-      if (juniorUserPhones.length > 0) {
-        const juniorReceipts = receipts.filter(r => {
-          const isUserMatch = juniorUserPhones.includes(r.phone);
-          if (!isUserMatch) return false;
-          
-          const createdTime = r.created_at ? safeParseDate(r.created_at).getTime() : 0;
-          return createdTime >= resetTime;
-        });
 
-        for (const r of juniorReceipts) {
-          let amt = parseFloat(r.amount);
-          if (isNaN(amt) || amt <= 0) amt = 35200;
-          totalEarnings += amt;
+      for (const u of juniorUsers) {
+        const userReceipts = receiptsByPhoneMap.get(u.phone) || [];
+        for (const r of userReceipts) {
+          const createdTime = r.created_at ? safeParseDate(r.created_at).getTime() : 0;
+          if (createdTime >= resetTime) {
+            let amt = parseFloat(r.amount);
+            if (isNaN(amt) || amt <= 0) amt = 35200;
+            totalEarnings += amt;
+          }
         }
       }
 
       const commission = totalEarnings * ((100 - adminPercentage) / 100);
 
-      // Filter settlements (commission payouts) after resetTime
       let totalPaid = 0;
       let pendingSettlement = 0;
       const lowerEmail = j.email.trim().toLowerCase();
-      const juniorSettlements = settlements.filter(s => {
-        const isEmailMatch = (s.email || '').trim().toLowerCase() === lowerEmail;
-        if (!isEmailMatch) return false;
-        
-        const createdTime = s.created_at ? safeParseDate(s.created_at).getTime() : 0;
-        return createdTime >= resetTime;
-      });
+      const candidateSettlements = settlementsByEmailMap.get(lowerEmail) || [];
 
-      for (const s of juniorSettlements) {
-        const amt = parseFloat(s.amount) || 0;
-        const status = (s.status || '').toLowerCase();
-        if (status === 'approved' || status === 'verified' || status === 'completed' || status === 'success') {
-          totalPaid += amt;
-        } else if (status === 'pending') {
-          pendingSettlement += amt;
+      for (const s of candidateSettlements) {
+        const createdTime = s.created_at ? safeParseDate(s.created_at).getTime() : 0;
+        if (createdTime >= resetTime) {
+          const amt = parseFloat(s.amount) || 0;
+          const status = (s.status || '').toLowerCase();
+          if (status === 'approved' || status === 'verified' || status === 'completed' || status === 'success') {
+            totalPaid += amt;
+          } else if (status === 'pending') {
+            pendingSettlement += amt;
+          }
         }
       }
 

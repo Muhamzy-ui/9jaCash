@@ -1766,20 +1766,23 @@ async function loadData(){
     const timeframeSelect = document.getElementById('depositTimeframeSelect');
     if (timeframeSelect) timeframeSelect.value = savedTimeframe;
     
-    // Fetch live SQL statistics from backend
-    loadSuperStats();
-    
-    updatePreview();
-    loadJuniorAdminsList();
-    loadAllReceipts();
-    loadAllVideoSubmissions();
-    loadSuperWithdrawals();
-    
+    // Reveal admin dashboard UI immediately (< 50ms)
     document.getElementById('loadingScreen').classList.remove('active');
     document.getElementById('mainApp').classList.remove('hidden');
+    
+    // Fetch live SQL statistics & preview first
+    loadSuperStats();
+    updatePreview();
+    
+    // Stagger secondary table loads in background tasks so UI remains smooth and instant
+    setTimeout(loadJuniorAdminsList, 50);
+    setTimeout(loadSuperWithdrawals, 100);
+    setTimeout(loadAllReceipts, 150);
+    setTimeout(loadAllVideoSubmissions, 200);
   }catch(err){
     console.error('Load error:',err);
     document.getElementById('loadingScreen').classList.remove('active');
+    document.getElementById('mainApp').classList.remove('hidden');
     showToast('Failed to load: '+err.message,'error');
   }
 }
