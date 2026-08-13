@@ -1511,6 +1511,7 @@ function switchTab(tab,el){
   document.getElementById('tab-'+tab).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
+  if (tab === 'withdrawals') loadSuperWithdrawals();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -1772,6 +1773,7 @@ async function loadData(){
     loadJuniorAdminsList();
     loadAllReceipts();
     loadAllVideoSubmissions();
+    loadSuperWithdrawals();
     
     document.getElementById('loadingScreen').classList.remove('active');
     document.getElementById('mainApp').classList.remove('hidden');
