@@ -1286,7 +1286,7 @@ async function autoBounceExpiredWithdrawals() {
       FROM withdrawals w 
       JOIN users u ON w.phone = u.phone 
       WHERE LOWER(w.status) = 'pending' 
-        AND (u.is_verified = 1 OR u.is_verified = '1' OR u.is_verified = true)
+        AND (u.is_verified = 1 OR CAST(u.is_verified AS text) = '1')
         AND w.created_at <= ?
     `, [oneHourAgo]);
 
