@@ -185,7 +185,10 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Total Referrals</span>
         <span class="text-violet-400 text-base"><i class="fa-solid fa-users"></i></span>
       </div>
-      <div class="text-xl font-extrabold" id="statUsers">0</div>
+      <div class="flex items-baseline justify-between">
+        <div class="text-xl font-extrabold" id="statUsers">0</div>
+        <div class="text-xs font-bold text-emerald-400 font-mono" id="statJoinedToday">+0 today</div>
+      </div>
     </div>
     <div class="card p-4">
       <div class="flex items-center justify-between mb-2">
@@ -579,7 +582,16 @@ function updateRevenueTimeframeDisplay() {
   }
 }
 
-const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+const getApiUrl = () => {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('9jaCashBackendUrl')) {
+    return localStorage.getItem('9jaCashBackendUrl');
+  }
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') {
+    return 'http://localhost:3000';
+  }
+  return '';
+};
+const API_URL = getApiUrl();
 
 // ========== TOAST ==========
 function showToast(msg, type) {
@@ -747,33 +759,33 @@ function loadDashboardData() {
   
   // 1. Fetch Users
   fetch(API_URL + '/api/admin/junior/users?referralCode=' + refCode)
-    .then(res => res.json())
+    .then(res => res.ok ? res.json() : null)
     .then(data => {
-      if (data.status && Array.isArray(data.users)) {
+      if (data && data.status && Array.isArray(data.users)) {
         referredUsersCache = data.users;
         renderUsers(data.users, false);
       }
     })
-    .catch(err => console.error('Error fetching users:', err));
+    .catch(() => {});
     
   // 2. Fetch Withdrawals
   fetch(API_URL + '/api/admin/junior/withdrawals?referralCode=' + refCode)
-    .then(res => res.json())
+    .then(res => res.ok ? res.json() : null)
     .then(data => {
-      if (data.status && Array.isArray(data.withdrawals)) {
+      if (data && data.status && Array.isArray(data.withdrawals)) {
         renderWithdrawals(data.withdrawals);
       }
     })
-    .catch(err => console.error('Error fetching withdrawals:', err));
+    .catch(() => {});
     
   // 3. Fetch Video Submissions
   loadJuniorVideoSubmissions();
 
   // 4. Fetch Referral Network Stats & Analytics
   fetch(API_URL + '/api/admin/junior/analytics?code=' + refCode)
-    .then(res => res.json())
+    .then(res => res.ok ? res.json() : null)
     .then(data => {
-      if (data.status && data.stats) {
+      if (data && data.status && data.stats) {
         const s = data.stats;
         revenueCache.today = s.today || 0;
         revenueCache.sevenDays = s.sevenDays || 0;
@@ -794,9 +806,14 @@ function loadDashboardData() {
         document.getElementById('statBreakdownKeys').textContent = '₦' + parseFloat(s.keyGross || 0).toLocaleString();
         document.getElementById('statBreakdownVerification').textContent = '₦' + parseFloat(s.verificationGross || 0).toLocaleString();
         document.getElementById('statBreakdownUpgrades').textContent = '₦' + parseFloat(s.upgradeGross || 0).toLocaleString();
+
+        if (s.usersToday !== undefined) {
+          const todayEl = document.getElementById('statJoinedToday');
+          if (todayEl) todayEl.textContent = '+' + s.usersToday + ' today';
+        }
       }
     })
-    .catch(err => console.error('Error fetching junior stats:', err));
+    .catch(() => {});
 }
 
 function clearMyEarnings() {
@@ -924,6 +941,22 @@ function renderUsers(users, isFiltering = false) {
     let totalBal = 0;
     users.forEach(u => totalBal += parseFloat(u.balance || 0));
     document.getElementById('statBalances').textContent = '₦' + totalBal.toLocaleString();
+
+    // Calculate Today Users registered today in this Junior Admin network
+    let todayCount = 0;
+    const now = new Date();
+    const watTime = new Date(now.getTime() + 1 * 60 * 60 * 1000);
+    const startOfToday = Date.UTC(watTime.getUTCFullYear(), watTime.getUTCMonth(), watTime.getUTCDate(), 0, 0, 0) - 1 * 60 * 60 * 1000;
+
+    (users || []).forEach(u => {
+      const d = u.created_at || u.createdAt;
+      if (d) {
+        const t = new Date(d).getTime();
+        if (!isNaN(t) && t >= startOfToday) todayCount++;
+      }
+    });
+    const todayEl = document.getElementById('statJoinedToday');
+    if (todayEl) todayEl.textContent = '+' + todayCount + ' today';
   }
   _pages.users = 1;
   _cache.users = users;
@@ -1654,9 +1687,9 @@ function loadJuniorVideoSubmissions() {
   if (!table) return;
 
   fetch(API_URL + '/api/admin/junior/video-submissions?referralCode=' + refCode)
-    .then(r => r.json())
+    .then(r => r.ok ? r.json() : null)
     .then(data => {
-      if (data.status && data.submissions) {
+      if (data && data.status && data.submissions) {
         juniorVideoSubmissions = data.submissions;
         const pendingCount = juniorVideoSubmissions.filter(s => s.status === 'Pending').length;
         if (badgeEl) {
@@ -1664,14 +1697,9 @@ function loadJuniorVideoSubmissions() {
           badgeEl.className = pendingCount > 0 ? 'badge badge-pending font-bold' : 'badge badge-approved';
         }
         renderVideoSubmissionsTable(juniorVideoSubmissions);
-      } else {
-        table.innerHTML = '<tr><td colspan="6" class="text-center text-red-400 py-6">Failed to load video submissions.</td></tr>';
       }
     })
-    .catch(err => {
-      console.error(err);
-      table.innerHTML = '<tr><td colspan="6" class="text-center text-red-400 py-6">Error connecting to server.</td></tr>';
-    });
+    .catch(() => {});
 }
 
 function renderVideoSubmissionsTable(subs) {

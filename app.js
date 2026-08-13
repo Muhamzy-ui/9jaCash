@@ -1276,11 +1276,55 @@ app.post('/api/withdraw', async (req, res) => {
   }
 });
 
+// Function: 1-Hour Auto Bounce-Back for Pending Verified Withdrawals
+async function autoBounceExpiredWithdrawals() {
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    // Find pending withdrawals > 1 hour old for VERIFIED users
+    const pendingVerified = await db.query(`
+      SELECT w.id, w.phone, w.amount, w.created_at
+      FROM withdrawals w 
+      JOIN users u ON w.phone = u.phone 
+      WHERE LOWER(w.status) = 'pending' 
+        AND (u.is_verified = 1 OR u.is_verified = '1' OR u.is_verified = true)
+        AND w.created_at <= ?
+    `, [oneHourAgo]);
+
+    if (!pendingVerified || pendingVerified.length === 0) return;
+
+    for (const w of pendingVerified) {
+      const amount = parseFloat(w.amount || 0);
+      // 1. Update withdrawal status to Rejected
+      await db.query(`
+        UPDATE withdrawals 
+        SET status = 'Rejected', decline_reason = 'Auto-Bounced: 1-hour admin processing window elapsed.' 
+        WHERE id = ? AND LOWER(status) = 'pending'
+      `, [w.id]);
+
+      // 2. Refund withdrawal amount back to user's balance
+      if (amount > 0) {
+        await db.query(`UPDATE users SET balance = balance + ? WHERE phone = ?`, [amount, w.phone]);
+      }
+
+      console.log(`[AutoBounce] Withdrawal #${w.id} for user ${w.phone} (₦${amount.toLocaleString()}) auto-bounced after 1 hour.`);
+    }
+
+    juniorAnalyticsCache = {};
+    superStatsCache = null;
+  } catch (err) {
+    console.error('[AutoBounce] Error in autoBounceExpiredWithdrawals:', err.message);
+  }
+}
+
+// Check auto-bounce periodically every 60 seconds
+setInterval(autoBounceExpiredWithdrawals, 60000);
+
 // GET /api/user/withdrawals — Fetch live list of withdrawals for a user
 app.get('/api/user/withdrawals', async (req, res) => {
   const { phone } = req.query || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone parameter required' });
   try {
+    await autoBounceExpiredWithdrawals();
     const list = await db.query('SELECT * FROM withdrawals WHERE phone = ? ORDER BY created_at DESC LIMIT 10', [phone]);
     res.json({ status: true, withdrawals: list });
   } catch (err) {
@@ -1332,6 +1376,7 @@ app.get('/api/admin/junior/withdrawals', async (req, res) => {
   if (!referralCode) return res.status(400).json({ status: false, error: 'Referral code required' });
 
   try {
+    await autoBounceExpiredWithdrawals();
     const list = await db.query(`
       SELECT w.*, u.is_verified 
       FROM withdrawals w 
@@ -1911,6 +1956,7 @@ app.get('/api/admin/seed-junior', async (req, res) => {
 app.get('/api/admin/super/withdrawals', async (req, res) => {
   const { page, limit, status, search } = req.query || {};
   try {
+    await autoBounceExpiredWithdrawals();
     let queryStr = `
       SELECT w.*, u.is_verified 
       FROM withdrawals w 
@@ -4474,11 +4520,11 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
       return res.json(cached.data);
     }
 
-    const users = await db.query('SELECT phone FROM users WHERE UPPER(junior_admin_code) = ? OR UPPER(referred_by) = ?', [juniorCode, juniorCode]);
+    const users = await db.query('SELECT phone, created_at FROM users WHERE UPPER(junior_admin_code) = ? OR UPPER(referred_by) = ?', [juniorCode, juniorCode]);
     const phones = (users || []).map(u => u.phone);
 
     if (phones.length === 0) {
-      const emptyResponse = { status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0, adminPercentage: 20, adminShare: 0, juniorShare: 0, keyGross: 0, verificationGross: 0, upgradeGross: 0 } };
+      const emptyResponse = { status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0, adminPercentage: 20, adminShare: 0, juniorShare: 0, keyGross: 0, verificationGross: 0, upgradeGross: 0, usersToday: 0, usersTotal: 0 } };
       juniorAnalyticsCache[juniorCode] = { data: emptyResponse, cachedAt: nowTime };
       return res.json(emptyResponse);
     }
@@ -4509,6 +4555,12 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
 
     let today = 0, sevenDays = 0, month = 0, year = 0, total = 0;
     let keyGross = 0, verificationGross = 0, upgradeGross = 0;
+    let usersToday = 0;
+
+    (users || []).forEach(u => {
+      const cTime = safeParseDate(u.created_at).getTime();
+      if (cTime >= startOfToday) usersToday++;
+    });
 
     (receipts || []).forEach(r => {
       const amt = parseFloat(r.amount || 0);
@@ -4554,7 +4606,9 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
         juniorShare: total * ((100 - adminPercentage) / 100),
         keyGross,
         verificationGross,
-        upgradeGross
+        upgradeGross,
+        usersToday,
+        usersTotal: phones.length
       }
     };
     juniorAnalyticsCache[juniorCode] = { data: responseData, cachedAt: nowTime };
