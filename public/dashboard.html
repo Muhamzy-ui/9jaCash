@@ -1868,6 +1868,13 @@
     </div>
     <!-- VERIFY BUTTON: ONLY shows after withdrawal has been bounced back and money returned -->
     <div class="verify-btn-wrap" id="verifyBankWrap">
+      <div id="verificationVideoContainer" style="display:none; margin-bottom:15px; background:var(--surface2); border:1.5px solid var(--border); border-radius:16px; padding:16px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <i class="fa-solid fa-circle-play" style="color:#10b981; font-size:16px;"></i>
+          <span>How To Verify Your Account</span>
+        </div>
+        <video id="verificationVideoPlayer" controls style="width:100%; border-radius:10px; background:#000; outline:none; border:1px solid var(--border); max-height:220px;"></video>
+      </div>
       <button class="verify-btn" onclick="verifyBankLink()" id="verifyBankBtn">
         <i class="fa-solid fa-shield-halved"></i><span>Verify Linked Account</span>
       </button>
@@ -3061,6 +3068,11 @@
       const hasBounced = (localStorage.getItem("9jaCashBouncedWithdrawal") === "true") || (userData && userData.hasBouncedBefore);
       const isPending = localStorage.getItem("9jaCashVerificationPending") !== null;
       const hasWithdrawn = userData && (userData.withdrawalCount >= 1 || userData.withdrawal_count >= 1);
+      const hasPayoutKey = userData && (userData.payout_key || userData.payoutKey);
+
+      // Verification video elements
+      const videoContainer = document.getElementById("verificationVideoContainer");
+      const videoPlayer = document.getElementById("verificationVideoPlayer");
 
       if (isVerified) {
         wrap.style.display = "block";
@@ -3070,15 +3082,34 @@
         btn.onclick = function () {
           showToast("Your account is verified!");
         };
-      } else if (hasBounced || isPending || hasWithdrawn) {
+        if (videoContainer) videoContainer.style.display = "none";
+      } else if (hasBounced || isPending || hasWithdrawn || hasPayoutKey) {
         wrap.style.display = "block";
         btn.style.background = "linear-gradient(135deg, #ef4444, #dc2626)";
         btn.style.boxShadow = "0 4px 20px rgba(239, 68, 68, 0.4)";
         btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i><span>Verify Linked Account</span>';
         btn.onclick = verifyBankLink;
+
+        // Toggle verification video challenge online status
+        if (videoContainer && videoPlayer) {
+          fetch(API_URL + '/api/settings/verificationVideo')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+              if (data.status && data.value && data.value.active && data.value.videoUrl) {
+                videoPlayer.src = data.value.videoUrl;
+                videoContainer.style.display = "block";
+              } else {
+                videoContainer.style.display = "none";
+              }
+            })
+            .catch(function() {
+              videoContainer.style.display = "none";
+            });
+        }
       } else {
         // HIDDEN BY DEFAULT FOR NEW SIGNUPS AND UNBOUNCED ACCOUNTS
         wrap.style.display = "none";
+        if (videoContainer) videoContainer.style.display = "none";
       }
     }
 

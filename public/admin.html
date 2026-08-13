@@ -419,7 +419,10 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
     </div>
     <div class="stat-card purple" style="border: 1px solid var(--border); background: var(--surface);">
       <div class="stat-icon purple" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;"><i class="fa-solid fa-users"></i></div>
-      <div class="stat-num purple" id="statUsers" style="color: #8b5cf6;">0</div>
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <div class="stat-num purple" id="statUsers" style="color: #8b5cf6; font-size: 26px;">0</div>
+        <div style="font-size: 11px; font-weight: bold; color: #10b981; font-family: 'JetBrains Mono', monospace;" id="statJoinedToday">+0 today</div>
+      </div>
       <div class="stat-label">Total Users</div>
     </div>
     <div class="stat-card red">
@@ -492,6 +495,40 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <div class="stat-icon purple" style="background: rgba(139, 92, 246, 0.08); color: #8b5cf6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-circle-up"></i></div>
       <div class="stat-num purple" id="statUpgradeRevenue" style="color: #8b5cf6; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">₦0</div>
       <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Plan Upgrades Revenue</div>
+    </div>
+  </div>
+
+  <div class="stats-row" style="grid-template-columns: repeat(4, 1fr); display: grid; gap: 16px; margin-bottom: 24px;">
+    <!-- Approved Receipts Card -->
+    <div class="stat-card green" style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15); padding: 16px;">
+      <div class="stat-icon green" style="background: rgba(16, 185, 129, 0.08); color: #10b981; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-file-circle-check"></i></div>
+      <div class="stat-num green" id="statApprovedReceiptsCount" style="color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Approved Proofs</div>
+    </div>
+
+    <!-- Declined Receipts Card -->
+    <div class="stat-card red" style="background: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.15); padding: 16px;">
+      <div class="stat-icon red" style="background: rgba(239, 68, 68, 0.08); color: #ef4444; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-file-circle-xmark"></i></div>
+      <div class="stat-num red" id="statDeclinedReceiptsCount" style="color: #ef4444; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Declined Proofs</div>
+    </div>
+
+    <!-- Verified Users Card -->
+    <div class="stat-card blue" style="background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.15); padding: 16px;">
+      <div class="stat-icon blue" style="background: rgba(59, 130, 246, 0.08); color: #3b82f6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-user-shield"></i></div>
+      <div class="stat-num blue" id="statVerifiedUsersCount" style="color: #3b82f6; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 800; margin: 8px 0;">0</div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Verified Accounts</div>
+    </div>
+
+    <!-- Plan Upgrade Counts Card -->
+    <div class="stat-card purple" style="background: rgba(139, 92, 246, 0.03); border: 1px solid rgba(139, 92, 246, 0.15); padding: 16px;">
+      <div class="stat-icon purple" style="background: rgba(139, 92, 246, 0.08); color: #8b5cf6; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 12px;"><i class="fa-solid fa-gem"></i></div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#fff; font-weight:700; margin:8px 0; line-height:1.5;">
+        <div>Silver: <span id="statPlanSilver" style="color:#8b5cf6;">0</span></div>
+        <div>Gold: <span id="statPlanGold" style="color:#f59e0b;">0</span></div>
+        <div>Diamond: <span id="statPlanDiamond" style="color:#10b981;">0</span></div>
+      </div>
+      <div class="stat-label" style="font-size: 11px; color: #94a3b8; font-weight: 600;">Plan Upgrade Split</div>
     </div>
   </div>
 
@@ -758,6 +795,12 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         </tbody>
       </table>
     </div>
+    <!-- Withdrawals Pagination -->
+    <div id="withdrawalsPagination" style="display: none; align-items: center; justify-content: space-between; margin-top: 15px; padding: 10px 0; border-top: 1px solid var(--border); font-size: 13px;">
+      <button onclick="changeWithdrawalsPage(-1)" id="btnWithdrawalsPrev" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">Previous</button>
+      <span id="txtWithdrawalsPage" style="color: var(--text3);">Page 1 of 1</span>
+      <button onclick="changeWithdrawalsPage(1)" id="btnWithdrawalsNext" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">Next</button>
+    </div>
   </div>
 </div>
 
@@ -903,11 +946,18 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
   <div class="panel">
     <div class="panel-header">
       <div class="panel-icon green" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="fa-solid fa-circle-play"></i></div>
-      <div><div class="panel-title">Video Testimonial Challenge</div><div class="panel-sub">Configure user campaign and Cloudinary settings</div></div>
+      <div>
+        <div class="panel-title" style="display:flex; align-items:center; gap:8px;">
+          Video Testimonial Challenge
+          <span id="challengeVideoIndicator" style="width:8px; height:8px; border-radius:50%; background-color:#9ca3af; display:inline-block; margin-left:4px;"></span>
+          <span id="challengeVideoIndicatorText" style="font-size:10px; font-weight:bold; color:var(--text3);">Offline</span>
+        </div>
+        <div class="panel-sub">Configure user campaign and Cloudinary settings</div>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Video Challenge Status</label>
-      <select id="videoChallengeActive" class="form-input" style="margin-bottom:12px;">
+      <select id="videoChallengeActive" onchange="updateChallengeVideoIndicator()" class="form-input" style="margin-bottom:12px;">
         <option value="true">Active (Enabled)</option>
         <option value="false">Inactive (Disabled)</option>
       </select>
@@ -921,6 +971,33 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         <label class="form-label">Cloudinary Upload Preset (Unsigned)</label>
         <input type="text" id="cloudinaryUploadPreset" class="form-input" placeholder="e.g. video_unsigned">
       </div>
+    </div>
+  </div>
+  
+  <div class="card" style="margin-top:20px;">
+    <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="panel-icon purple" style="background:rgba(139,92,246,0.1); color:#8b5cf6;"><i class="fa-solid fa-graduation-cap"></i></div>
+        <div>
+          <div class="panel-title" style="display:flex; align-items:center; gap:8px;">
+            Verification Tutorial Video
+            <span id="verificationVideoIndicator" style="width:8px; height:8px; border-radius:50%; background-color:#9ca3af; display:inline-block; margin-left:4px;"></span>
+            <span id="verificationVideoIndicatorText" style="font-size:10px; font-weight:bold; color:var(--text3);">Offline</span>
+          </div>
+          <div class="panel-sub">Show tutorial on how users can verify their account</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Verification Tutorial Status</label>
+      <select id="verificationVideoActive" onchange="updateVerificationVideoIndicator()" class="form-input" style="margin-bottom:12px;">
+        <option value="true">Active (Enabled)</option>
+        <option value="false">Inactive (Disabled)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tutorial Video Source Link (MP4/Direct Link)</label>
+      <input type="text" id="verificationVideoUrl" class="form-input" placeholder="e.g. https://domain.com/videos/tutorial.mp4">
     </div>
   </div>
 </div>
@@ -1130,6 +1207,12 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
           </tr>
         </tbody>
       </table>
+    </div>
+    <!-- Users Pagination -->
+    <div id="usersPagination" style="display: none; align-items: center; justify-content: space-between; margin-top: 15px; padding: 10px 0; border-top: 1px solid var(--border); font-size: 13px;">
+      <button onclick="changeUsersPage(-1)" id="btnUsersPrev" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">Previous</button>
+      <span id="txtUsersPage" style="color: var(--text3);">Page 1 of 1</span>
+      <button onclick="changeUsersPage(1)" id="btnUsersNext" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">Next</button>
     </div>
   </div>
 </div>
@@ -1592,7 +1675,7 @@ function updateTaskBtn(){
 // ========== LOAD DATA (NO USERS) ==========
 async function loadData(){
   try{
-    const [payDoc,feeDoc,taskDoc,wdDoc,pmDoc,keyDoc,redirDoc,videoChallengeDoc,adminPctDoc,referralBonusDoc]=await Promise.all([
+    const [payDoc,feeDoc,taskDoc,wdDoc,pmDoc,keyDoc,redirDoc,videoChallengeDoc,adminPctDoc,referralBonusDoc,verificationVideoDoc]=await Promise.all([
       db.collection('settings').doc('payment').get(),
       db.collection('settings').doc('secondBilling').get(),
       db.collection('settings').doc('tasks').get(),
@@ -1602,7 +1685,8 @@ async function loadData(){
       db.collection('settings').doc('redirects').get(),
       db.collection('settings').doc('videoChallenge').get(),
       db.collection('settings').doc('admin_percentage').get().catch(() => ({ exists: false })),
-      db.collection('settings').doc('referral_bonus').get().catch(() => ({ exists: false }))
+      db.collection('settings').doc('referral_bonus').get().catch(() => ({ exists: false })),
+      db.collection('settings').doc('verificationVideo').get().catch(() => ({ exists: false }))
     ]);
     
     const pay=payDoc.exists?payDoc.data():{};
@@ -1613,6 +1697,7 @@ async function loadData(){
     const keyData=keyDoc.exists?keyDoc.data():{};
     const redirData=redirDoc.exists?redirDoc.data():{};
     const videoChallengeData=videoChallengeDoc.exists?videoChallengeDoc.data():{active:true};
+    const verificationVideoData=verificationVideoDoc.exists?verificationVideoDoc.data():{active:false, videoUrl:''};
     const adminPct = adminPctDoc.exists ? (adminPctDoc.data().percentage || 20) : 20;
     const refBonus = referralBonusDoc.exists ? (referralBonusDoc.data().amount || 10000) : 10000;
     
@@ -1640,6 +1725,11 @@ async function loadData(){
     document.getElementById('videoChallengeActive').value=videoChallengeData.active === false ? 'false' : 'true';
     document.getElementById('cloudinaryCloudName').value=videoChallengeData.cloudinaryCloudName||'';
     document.getElementById('cloudinaryUploadPreset').value=videoChallengeData.cloudinaryUploadPreset||'';
+    
+    document.getElementById('verificationVideoUrl').value=verificationVideoData.videoUrl||'';
+    document.getElementById('verificationVideoActive').value=verificationVideoData.active === true ? 'true' : 'false';
+    updateVerificationVideoIndicator();
+    updateChallengeVideoIndicator();
     
     wdSuccess=wdData.success===true;updateWdToggleUI();
     pmSuccess=pmData.success===true;updatePmToggleUI();
@@ -1681,6 +1771,28 @@ async function loadData(){
     console.error('Load error:',err);
     document.getElementById('loadingScreen').classList.remove('active');
     showToast('Failed to load: '+err.message,'error');
+  }
+}
+
+function updateVerificationVideoIndicator() {
+  const active = document.getElementById('verificationVideoActive').value === 'true';
+  const dot = document.getElementById('verificationVideoIndicator');
+  const txt = document.getElementById('verificationVideoIndicatorText');
+  if (dot && txt) {
+    dot.style.backgroundColor = active ? '#10b981' : '#9ca3af';
+    txt.textContent = active ? 'Online' : 'Offline';
+    txt.style.color = active ? '#10b981' : 'var(--text3)';
+  }
+}
+
+function updateChallengeVideoIndicator() {
+  const active = document.getElementById('videoChallengeActive').value === 'true';
+  const dot = document.getElementById('challengeVideoIndicator');
+  const txt = document.getElementById('challengeVideoIndicatorText');
+  if (dot && txt) {
+    dot.style.backgroundColor = active ? '#10b981' : '#9ca3af';
+    txt.textContent = active ? 'Online' : 'Offline';
+    txt.style.color = active ? '#10b981' : 'var(--text3)';
   }
 }
 
@@ -1759,6 +1871,11 @@ async function saveAll(){
     cloudinaryUploadPreset:document.getElementById('cloudinaryUploadPreset').value.trim(),
     updatedAt:new Date().toISOString()
   };
+  const verificationVideo={
+    active:document.getElementById('verificationVideoActive').value==='true',
+    videoUrl:document.getElementById('verificationVideoUrl').value.trim(),
+    updatedAt:new Date().toISOString()
+  };
   const adminPctVal = Number(document.getElementById('adminPercentageInput').value) || 20;
   const adminPct = { percentage: adminPctVal, updatedAt: new Date().toISOString() };
   const refBonusVal = Number(document.getElementById('referralBonusInput').value) || 10000;
@@ -1778,6 +1895,7 @@ async function saveAll(){
       db.collection('settings').doc('payoutKeys').set(keyD),
       db.collection('settings').doc('redirects').set(redir),
       db.collection('settings').doc('videoChallenge').set(videoChallenge),
+      db.collection('settings').doc('verificationVideo').set(verificationVideo),
       db.collection('settings').doc('admin_percentage').set(adminPct),
       db.collection('settings').doc('referral_bonus').set(refBonus)
     ]);
@@ -1952,27 +2070,36 @@ function deleteJuniorAdmin(email) {
 function creditUser(phone, name) {
   Swal.fire({
     title: 'Credit User Account',
-    text: `Enter amount (₦) to add to the balance of ${name}:`,
-    input: 'number',
-    inputPlaceholder: 'e.g. 50000',
+    html: `
+      <p style="color:#94a3b8; font-size:13px; margin-bottom:12px;">Enter amount (₦) to add to the balance of ${name}:</p>
+      <input id="swal-credit-amount" class="swal2-input" type="number" placeholder="e.g. 50000" style="margin-bottom: 12px; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;">
+        <input id="swal-credit-notif" type="checkbox" checked style="width: 16px; height: 16px; cursor: pointer;">
+        <label for="swal-credit-notif" style="color: #94a3b8; font-size: 13px; cursor: pointer; user-select: none;">Send Credit Alert Notification</label>
+      </div>
+    `,
     showCancelButton: true,
     confirmButtonColor: '#6366f1',
     cancelButtonColor: '#2f3542',
     confirmButtonText: 'Credit Balance',
     background: '#0f1623',
     color: '#c8d6e5',
-    inputValidator: (value) => {
-      if (!value || isNaN(parseFloat(value)) || parseFloat(value) <= 0) {
-        return 'Please enter a valid amount greater than zero!';
+    preConfirm: () => {
+      const amount = parseFloat(document.getElementById('swal-credit-amount').value);
+      const sendNotif = document.getElementById('swal-credit-notif').checked;
+      if (isNaN(amount) || amount <= 0) {
+        Swal.showValidationMessage('Please enter a valid amount greater than zero!');
+        return false;
       }
+      return { amount, sendNotif };
     }
   }).then(result => {
     if (result.isConfirmed && result.value) {
-      const amount = parseFloat(result.value);
+      const { amount, sendNotif } = result.value;
       fetch(API_URL + '/api/admin/super/credit-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, amount })
+        body: JSON.stringify({ phone, amount, sendNotification: sendNotif })
       })
       .then(res => res.json())
       .then(data => {
@@ -1985,6 +2112,52 @@ function creditUser(phone, name) {
         }
       })
       .catch(err => showToast('Connection error', 'error'));
+    }
+  });
+}
+
+function editUserPlan(phone, name, currentPlan) {
+  Swal.fire({
+    title: 'Update User Plan',
+    html: `
+      <p style="color:#94a3b8; font-size:13px; margin-bottom:12px;">Manually select a mining plan for ${name} (${phone}):</p>
+      <select id="swal-user-plan" class="swal2-input" style="background:#1e293b; color:#fff; border:1px solid #334155; border-radius:8px; width:80%; max-width:320px; font-size:14px; padding:8px;">
+        <option value="Free Miner" ${currentPlan === 'Free Miner' ? 'selected' : ''}>Free Miner (1x)</option>
+        <option value="Basic Miner" ${currentPlan.includes('Basic') ? 'selected' : ''}>Basic Miner (2x)</option>
+        <option value="Silver Miner" ${currentPlan.includes('Silver') ? 'selected' : ''}>Silver Miner (5x)</option>
+        <option value="Gold Miner" ${currentPlan.includes('Gold') ? 'selected' : ''}>Gold Miner (10x)</option>
+        <option value="Diamond Miner" ${currentPlan.includes('Diamond') ? 'selected' : ''}>Diamond Miner (25x)</option>
+      </select>
+    `,
+    showCancelButton: true,
+    confirmButtonColor: '#8b5cf6',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Update Plan',
+    background: '#0f1623',
+    color: '#c8d6e5',
+    preConfirm: () => {
+      return document.getElementById('swal-user-plan').value;
+    }
+  }).then(result => {
+    if (result.isConfirmed && result.value) {
+      const plan = result.value;
+      Swal.fire({ title: 'Updating plan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/super/update-user-plan-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, plan })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          showToast(`Successfully updated ${name}'s plan to ${plan}!`, 'success');
+          loadAllUsersList(usersCurrentPage);
+          loadSuperStats();
+        } else {
+          showToast(data.error || 'Failed to update plan', 'error');
+        }
+      })
+      .catch(() => showToast('Connection error', 'error'));
     }
   });
 }
@@ -2097,14 +2270,38 @@ function generateUserKey(phone, name) {
 
 // ========== REGISTERED USERS DIRECTORY ==========
 let allUsersCache = [];
+let usersCurrentPage = 1;
+const usersLimit = 50;
+let usersTotalPages = 1;
+let usersSearchQuery = '';
 
-function loadAllUsersList() {
-  fetch(API_URL + '/api/admin/super/users')
+function loadAllUsersList(page = 1) {
+  usersCurrentPage = page;
+  
+  const tbody = document.getElementById('allUsersListTable');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center; color:var(--text3);"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading users...</td></tr>';
+  }
+
+  let url = `${API_URL}/api/admin/super/users?page=${page}&limit=${usersLimit}`;
+  if (usersSearchQuery) {
+    url += `&search=${encodeURIComponent(usersSearchQuery)}`;
+  }
+
+  fetch(url)
     .then(res => res.json())
     .then(data => {
-      if (data.status && Array.isArray(data.users) && data.users.length > 0) {
+      if (data.status && Array.isArray(data.users)) {
         allUsersCache = data.users;
-        renderAllUsers(data.users, false);
+        usersTotalPages = data.pages || 1;
+        
+        const countLabel = document.getElementById('usersListCount');
+        if (countLabel) {
+          countLabel.textContent = data.total !== undefined ? data.total : data.users.length;
+        }
+
+        renderAllUsers(data.users, true);
+        updateUsersPaginationUI(data.page || page, usersTotalPages);
       } else {
         loadUsersFromFallback();
       }
@@ -2113,6 +2310,35 @@ function loadAllUsersList() {
       console.error('Error fetching registered users list:', err);
       loadUsersFromFallback();
     });
+}
+
+function updateUsersPaginationUI(currentPage, totalPages) {
+  const prevBtn = document.getElementById('btnUsersPrev');
+  const nextBtn = document.getElementById('btnUsersNext');
+  const txtPage = document.getElementById('txtUsersPage');
+  const paginationContainer = document.getElementById('usersPagination');
+
+  if (!prevBtn || !nextBtn || !txtPage) return;
+
+  txtPage.textContent = `Page ${currentPage} of ${totalPages}`;
+  prevBtn.disabled = currentPage <= 1;
+  nextBtn.disabled = currentPage >= totalPages;
+
+  prevBtn.style.opacity = currentPage <= 1 ? '0.5' : '1';
+  prevBtn.style.cursor = currentPage <= 1 ? 'not-allowed' : 'pointer';
+  nextBtn.style.opacity = currentPage >= totalPages ? '0.5' : '1';
+  nextBtn.style.cursor = currentPage >= totalPages ? 'not-allowed' : 'pointer';
+  
+  if (paginationContainer) {
+    paginationContainer.style.display = totalPages > 1 ? 'flex' : 'none';
+  }
+}
+
+function changeUsersPage(delta) {
+  const targetPage = usersCurrentPage + delta;
+  if (targetPage >= 1 && targetPage <= usersTotalPages) {
+    loadAllUsersList(targetPage);
+  }
 }
 
 function loadUsersFromFallback() {
@@ -2166,9 +2392,12 @@ function renderAllUsers(users, isFiltering = false) {
       <td style="padding:10px; color:var(--text); font-weight:700;">₦${(u.balance || 0).toLocaleString()}</td>
       <td style="padding:10px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase;">${u.status || 'ACTIVE'}</td>
       <td style="padding:10px; text-align:right;">
-        <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <div style="display:flex; gap:12px; justify-content:flex-end; align-items:center;">
           <button onclick="toggleVerifyUser('${u.phone}', ${isUserVerified ? 'false' : 'true'})" style="background:none; border:none; color:${isUserVerified ? '#1d9bf0' : 'var(--text3)'}; font-weight:700; cursor:pointer;" class="hover:underline" title="Toggle Verified Badge">
             <i class="fa-solid fa-certificate"></i> ${isUserVerified ? 'Verified' : 'Verify'}
+          </button>
+          <button onclick="editUserPlan('${u.phone}', '${cleanName}', '${u.plan_name || 'Free Miner'}')" style="background:none; border:none; color:#8b5cf6; font-weight:700; cursor:pointer;" class="hover:underline" title="Change User Mining Plan">
+            <i class="fa-solid fa-gem"></i> Plan
           </button>
           <button onclick="generateUserKey('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--warning); font-weight:700; cursor:pointer;" class="hover:underline">
             <i class="fa-solid fa-key"></i> Key
@@ -2199,7 +2428,7 @@ function toggleVerifyUser(phone, isVerified) {
   .then(data => {
     if (data.status) {
       showToast(data.message, 'success');
-      loadAllUsersList();
+      loadAllUsersList(usersCurrentPage);
     } else {
       showToast(data.error || 'Failed to toggle verification status', 'error');
     }
@@ -2207,19 +2436,14 @@ function toggleVerifyUser(phone, isVerified) {
   .catch(err => showToast('Connection error', 'error'));
 }
 
+let usersSearchTimeout = null;
 function filterUsers() {
-  const query = document.getElementById('userSearchInput').value.toLowerCase().trim();
-  if (!query) {
-    renderAllUsers(allUsersCache, true);
-    return;
-  }
-  const filtered = allUsersCache.filter(u => {
-    const name = (u.full_name || '').toLowerCase();
-    const phone = (u.phone || '').toLowerCase();
-    const email = (u.email || '').toLowerCase();
-    return name.includes(query) || phone.includes(query) || email.includes(query);
-  });
-  renderAllUsers(filtered, true);
+  if (usersSearchTimeout) clearTimeout(usersSearchTimeout);
+  usersSearchTimeout = setTimeout(() => {
+    const query = document.getElementById('userSearchInput').value.trim();
+    usersSearchQuery = query;
+    loadAllUsersList(1);
+  }, 300);
 }
 
 // ========== STATS LOADER ==========
@@ -2302,6 +2526,35 @@ function renderStatsOnPage(users, pending, receipts, withdrawals, keys, today = 
   if (wdBadge) {
     wdBadge.textContent = pending;
     wdBadge.style.display = pending > 0 ? 'inline-block' : 'none';
+  }
+  
+  // Joined today
+  const joinedTodayEl = document.getElementById('statJoinedToday');
+  if (joinedTodayEl) {
+    const todayJoined = data.joinedToday || 0;
+    joinedTodayEl.textContent = '+' + todayJoined + ' today';
+  }
+
+  // Volume & plan breakdowns
+  const statApprovedReceiptsCount = document.getElementById('statApprovedReceiptsCount');
+  if (statApprovedReceiptsCount) {
+    statApprovedReceiptsCount.textContent = (data.totalApprovedCount || 0).toLocaleString();
+  }
+  const statDeclinedReceiptsCount = document.getElementById('statDeclinedReceiptsCount');
+  if (statDeclinedReceiptsCount) {
+    statDeclinedReceiptsCount.textContent = (data.totalDeclinedCount || 0).toLocaleString();
+  }
+  const statVerifiedUsersCount = document.getElementById('statVerifiedUsersCount');
+  if (statVerifiedUsersCount) {
+    statVerifiedUsersCount.textContent = (data.totalVerifiedUsers || 0).toLocaleString();
+  }
+  if (data.planCounts) {
+    const silverEl = document.getElementById('statPlanSilver');
+    if (silverEl) silverEl.textContent = (data.planCounts.silver || 0).toLocaleString();
+    const goldEl = document.getElementById('statPlanGold');
+    if (goldEl) goldEl.textContent = (data.planCounts.gold || 0).toLocaleString();
+    const diamondEl = document.getElementById('statPlanDiamond');
+    if (diamondEl) diamondEl.textContent = (data.planCounts.diamond || 0).toLocaleString();
   }
   
   depositsCache.today = today;
@@ -2836,13 +3089,25 @@ function sendAdminNotification() {
 }
 
 // ========== SUPER WITHDRAWALS ==========
-function loadSuperWithdrawals() {
+let withdrawalsCurrentPage = 1;
+const withdrawalsLimit = 50;
+let withdrawalsTotalPages = 1;
+
+function loadSuperWithdrawals(page = 1) {
+  withdrawalsCurrentPage = page;
+  
   const table = document.getElementById('superWithdrawalsTable');
-  fetch(API_URL + '/api/admin/super/withdrawals')
+  if (table) {
+    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading withdrawals...</td></tr>';
+  }
+
+  fetch(`${API_URL}/api/admin/super/withdrawals?page=${page}&limit=${withdrawalsLimit}`)
     .then(res => res.json())
     .then(data => {
       if (data.status && Array.isArray(data.withdrawals)) {
+        withdrawalsTotalPages = data.pages || 1;
         renderSuperWithdrawals(data.withdrawals);
+        updateWithdrawalsPaginationUI(data.page || page, withdrawalsTotalPages);
       } else {
         table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No withdrawal requests found</td></tr>';
       }
@@ -2851,6 +3116,35 @@ function loadSuperWithdrawals() {
       console.error(err);
       table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--danger);">Failed to load withdrawals</td></tr>';
     });
+}
+
+function updateWithdrawalsPaginationUI(currentPage, totalPages) {
+  const prevBtn = document.getElementById('btnWithdrawalsPrev');
+  const nextBtn = document.getElementById('btnWithdrawalsNext');
+  const txtPage = document.getElementById('txtWithdrawalsPage');
+  const paginationContainer = document.getElementById('withdrawalsPagination');
+
+  if (!prevBtn || !nextBtn || !txtPage) return;
+
+  txtPage.textContent = `Page ${currentPage} of ${totalPages}`;
+  prevBtn.disabled = currentPage <= 1;
+  nextBtn.disabled = currentPage >= totalPages;
+
+  prevBtn.style.opacity = currentPage <= 1 ? '0.5' : '1';
+  prevBtn.style.cursor = currentPage <= 1 ? 'not-allowed' : 'pointer';
+  nextBtn.style.opacity = currentPage >= totalPages ? '0.5' : '1';
+  nextBtn.style.cursor = currentPage >= totalPages ? 'not-allowed' : 'pointer';
+  
+  if (paginationContainer) {
+    paginationContainer.style.display = totalPages > 1 ? 'flex' : 'none';
+  }
+}
+
+function changeWithdrawalsPage(delta) {
+  const targetPage = withdrawalsCurrentPage + delta;
+  if (targetPage >= 1 && targetPage <= withdrawalsTotalPages) {
+    loadSuperWithdrawals(targetPage);
+  }
 }
 
 function renderSuperWithdrawals(withdrawals) {
@@ -2941,7 +3235,7 @@ function approveSuperWithdrawal(id) {
       .then(data => {
         if (data.status) {
           Swal.fire({ icon: 'success', title: 'Approved', text: 'Payout approved successfully!', confirmButtonColor: '#6366f1' });
-          loadSuperWithdrawals();
+          loadSuperWithdrawals(withdrawalsCurrentPage);
           loadSuperStats();
         } else {
           Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Approval failed', confirmButtonColor: '#6366f1' });
@@ -2981,7 +3275,7 @@ function rejectSuperWithdrawal(id) {
       .then(data => {
         if (data.status) {
           Swal.fire({ icon: 'success', title: 'Declined', text: 'Payout declined and balance refunded!', confirmButtonColor: '#6366f1' });
-          loadSuperWithdrawals();
+          loadSuperWithdrawals(withdrawalsCurrentPage);
           loadSuperStats();
         } else {
           Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Operation failed', confirmButtonColor: '#6366f1' });
@@ -3368,14 +3662,103 @@ function savePromoVideo(id, btn) {
       btn.innerHTML = origHtml;
       return;
     }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      payload.videoData = e.target.result;
-      sendUpdateReq(payload);
-    };
-    reader.readAsDataURL(file);
+
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Initializing upload...';
+
+    // 1. Fetch Cloudinary signature for the 'promo_videos' folder
+    const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+    fetch(API_URL + '/api/cloudinary-signature?folder=promo_videos')
+      .then(res => res.json())
+      .then(sigData => {
+        if (!sigData.status) {
+          throw new Error(sigData.error || "Failed to sign upload.");
+        }
+
+        const { signature, timestamp, apiKey, cloudName, folder } = sigData;
+
+        // 2. Upload directly to Cloudinary
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', folder);
+        formData.append('timestamp', timestamp);
+        formData.append('api_key', apiKey);
+        formData.append('signature', signature);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, true);
+
+        xhr.upload.onprogress = function(evt) {
+          if (evt.lengthComputable) {
+            const progress = Math.round((evt.loaded / evt.total) * 100);
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading (${progress}%)...`;
+          }
+        };
+
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            try {
+              const resp = JSON.parse(xhr.responseText);
+              payload.videoUrl = resp.secure_url || resp.url;
+              sendUpdateReq(payload);
+            } catch(e) {
+              handleUploadError("Failed to parse Cloudinary response.");
+            }
+          } else {
+            console.error("Cloudinary error:", xhr.responseText);
+            // Fallback to local Base64 upload if Cloudinary fails, but warn about file size
+            if (file.size <= 5 * 1024 * 1024) {
+              btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cloudinary failed. Trying local upload...';
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                payload.videoData = e.target.result;
+                sendUpdateReq(payload);
+              };
+              reader.readAsDataURL(file);
+            } else {
+              handleUploadError("Cloudinary upload failed. Video is too large for local fallback (max 5MB).");
+            }
+          }
+        };
+
+        xhr.onerror = function() {
+          // Fallback to local Base64 upload
+          if (file.size <= 5 * 1024 * 1024) {
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connection failed. Trying local upload...';
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              payload.videoData = e.target.result;
+              sendUpdateReq(payload);
+            };
+            reader.readAsDataURL(file);
+          } else {
+            handleUploadError("Network error uploading to Cloudinary. Video is too large for local fallback (max 5MB).");
+          }
+        };
+
+        xhr.send(formData);
+      })
+      .catch(err => {
+        // Fallback to local Base64 upload
+        if (file.size <= 5 * 1024 * 1024) {
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signature failed. Trying local upload...';
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            payload.videoData = e.target.result;
+            sendUpdateReq(payload);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          handleUploadError("Failed to initialize Cloudinary upload: " + err.message + ". Video is too large for local fallback (max 5MB).");
+        }
+      });
   } else {
     sendUpdateReq(payload);
+  }
+
+  function handleUploadError(msg) {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+    alert(msg);
   }
 
   function sendUpdateReq(body) {

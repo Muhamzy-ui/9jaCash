@@ -322,18 +322,24 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     
     <!-- Payout Requests -->
     <div class="card">
-      <div class="card-header">
+      <div class="card-header flex justify-between items-center" style="cursor: pointer;" onclick="toggleCardBody(this)">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-money-bill-transfer text-amber-400"></i>
           <h3 class="font-extrabold text-base">Withdrawal Payout Requests</h3>
         </div>
-        <span class="badge badge-pending" id="pendingLabel">0 Pending</span>
+        <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+          <button id="btnBulkApproveWithdrawals" onclick="bulkApproveWithdrawals()" class="btn py-1 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-500 font-bold text-white rounded-md mr-2" style="display:none; border:none; cursor:pointer;">Bulk Approve</button>
+          <button id="btnBulkDeclineWithdrawals" onclick="bulkDeclineWithdrawals()" class="btn py-1 px-2.5 text-xs bg-rose-600 hover:bg-rose-500 font-bold text-white rounded-md mr-2" style="display:none; border:none; cursor:pointer;">Bulk Decline</button>
+          <span class="badge badge-pending" id="pendingLabel">0 Pending</span>
+          <i class="fa-solid fa-chevron-down toggle-chevron text-slate-400 transition-transform duration-300 ml-2" onclick="toggleCardBody(this.closest('.card-header'))" style="cursor:pointer;"></i>
+        </div>
       </div>
       
-      <div class="table-wrap">
+      <div class="table-wrap" style="display: none;">
         <table>
           <thead>
             <tr>
+              <th style="width:40px; text-align:center;"><input type="checkbox" id="selectAll_withdrawals" onchange="toggleSelectAll(this, 'withdrawals')" style="cursor:pointer; width:15px; height:15px;"></th>
               <th>Date</th>
               <th>Name / Phone</th>
               <th>Bank Account</th>
@@ -344,7 +350,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           </thead>
           <tbody id="withdrawalTable">
             <tr>
-              <td colspan="6" class="text-center text-slate-400 py-6">No withdrawal requests found</td>
+              <td colspan="7" class="text-center text-slate-400 py-6">No withdrawal requests found</td>
             </tr>
           </tbody>
         </table>
@@ -353,20 +359,23 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
     <!-- Referred Users -->
     <div class="card">
-      <div class="card-header flex justify-between items-center flex-wrap gap-4">
+      <div class="card-header flex justify-between items-center flex-wrap gap-4" style="cursor: pointer;" onclick="toggleCardBody(this)">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-users text-violet-400"></i>
           <h3 class="font-extrabold text-base">My Referred Users Network</h3>
         </div>
-        <div>
+        <div style="display:flex; align-items:center; gap:12px;" onclick="event.stopPropagation()">
           <input type="text" id="userSearchInput" oninput="filterUsers()" placeholder="Search users by name, phone or email..." class="inp py-2 px-3 text-xs w-64 bg-slate-800 border-slate-700 text-slate-200 rounded-lg" style="margin-bottom:0; width:220px; font-size:12px; height: 36px;">
+          <button id="btnBulkDeleteUsers" onclick="bulkDeleteUsers()" class="btn py-1 px-2.5 text-xs bg-rose-600 hover:bg-rose-500 font-bold text-white rounded-md mr-2" style="display:none; border:none; cursor:pointer;">Bulk Delete</button>
+          <i class="fa-solid fa-chevron-down toggle-chevron text-slate-400 transition-transform duration-300 ml-2" onclick="toggleCardBody(this.closest('.card-header'))" style="cursor:pointer;"></i>
         </div>
       </div>
       
-      <div class="table-wrap">
+      <div class="table-wrap" style="display: none;">
         <table>
           <thead>
             <tr>
+              <th style="width:40px; text-align:center;"><input type="checkbox" id="selectAll_users" onchange="toggleSelectAll(this, 'users')" style="cursor:pointer; width:15px; height:15px;"></th>
               <th>Joined Date</th>
               <th>Full Name</th>
               <th>Phone / Email</th>
@@ -380,14 +389,16 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           </thead>
           <tbody id="userTable">
             <tr>
-              <td colspan="9" class="text-center text-slate-400 py-6">No referred users in your network</td>
+              <td colspan="10" class="text-center text-slate-400 py-6">No referred users in your network</td>
             </tr>
           </tbody>
         </table>
       </div>
+    </div>
+
     <!-- Payment & Verification Receipts -->
     <div class="card mt-8" style="margin-top: 32px;">
-      <div class="card-header">
+      <div class="card-header flex justify-between items-center" style="cursor: pointer;" onclick="toggleCardBody(this)">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-file-invoice-dollar text-violet-400"></i>
           <div>
@@ -395,15 +406,20 @@ tr:hover td{background:rgba(255,255,255,0.02);}
             <p class="text-xs text-slate-400">Approve plan upgrades, payout key purchases, and verification requests for your network</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="purgeNetworkReceipts()" class="btn btn-secondary py-1.5 px-3 text-xs text-red-400 border-red-950 hover:bg-red-950/20 font-bold" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-trash-can"></i> Purge Network History</button>
-          <span class="text-xs font-bold bg-violet-600/10 text-violet-400 px-3 py-1.5 rounded-full border border-violet-500/20" id="receiptsBadge" style="display:none;">0 Pending</span>
+        <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+          <button id="btnBulkApproveReceipts" onclick="bulkApproveReceipts()" class="btn py-1 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-500 font-bold text-white rounded-md mr-2" style="display:none; border:none; cursor:pointer;">Bulk Approve</button>
+          <button id="btnBulkDeclineReceipts" onclick="bulkDeclineReceipts()" class="btn py-1 px-2.5 text-xs bg-rose-600 hover:bg-rose-500 font-bold text-white rounded-md mr-2" style="display:none; border:none; cursor:pointer;">Bulk Decline</button>
+          <button id="btnBulkDeleteReceipts" onclick="bulkDeleteReceipts()" class="btn py-1 px-2.5 text-xs bg-red-600 hover:bg-red-500 font-bold text-white rounded-md mr-2" style="display:none; border:none; cursor:pointer;">Bulk Delete</button>
+          <button onclick="purgeNetworkReceipts()" class="btn btn-secondary py-1.5 px-3 text-xs text-red-400 border-red-950 hover:bg-red-950/20 font-bold mr-2" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-trash-can"></i> Purge Network History</button>
+          <span class="text-xs font-bold bg-violet-600/10 text-violet-400 px-3 py-1.5 rounded-full border border-violet-500/20 mr-2" id="receiptsBadge" style="display:none;">0 Pending</span>
+          <i class="fa-solid fa-chevron-down toggle-chevron text-slate-400 transition-transform duration-300 ml-2" onclick="toggleCardBody(this.closest('.card-header'))" style="cursor:pointer;"></i>
         </div>
       </div>
-      <div class="overflow-x-auto table-wrap">
+      <div class="overflow-x-auto table-wrap" style="display: none;">
         <table class="w-full text-left" style="border-collapse: collapse; min-width: 800px; width:100%;">
           <thead>
             <tr>
+              <th style="width:40px; text-align:center;"><input type="checkbox" id="selectAll_receipts" onchange="toggleSelectAll(this, 'receipts')" style="cursor:pointer; width:15px; height:15px;"></th>
               <th>Date</th>
               <th>User Name / Phone</th>
               <th>Request Type</th>
@@ -414,23 +430,27 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           </thead>
           <tbody id="receiptListTable">
             <tr>
-              <td colspan="6" class="text-center text-slate-400 py-6">Loading network receipts from Firestore...</td>
+              <td colspan="7" class="text-center text-slate-400 py-6">Loading network receipts from Firestore...</td>
             </tr>
           </tbody>
         </table>
+      </div>
     </div>
 
     <!-- Video Testimony Submissions -->
     <div class="card">
-      <div class="card-header">
+      <div class="card-header flex justify-between items-center" style="cursor: pointer;" onclick="toggleCardBody(this)">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-video text-violet-400"></i>
           <h3 class="font-extrabold text-base">Video Testimony Challenge Submissions</h3>
         </div>
-        <span class="badge badge-pending" id="videoPendingLabel">0 Pending</span>
+        <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+          <span class="badge badge-pending" id="videoPendingLabel">0 Pending</span>
+          <i class="fa-solid fa-chevron-down toggle-chevron text-slate-400 transition-transform duration-300" onclick="toggleCardBody(this.closest('.card-header'))" style="cursor:pointer;"></i>
+        </div>
       </div>
       
-      <div class="overflow-x-auto table-wrap">
+      <div class="overflow-x-auto table-wrap" style="display: none;">
         <table class="w-full text-left" style="border-collapse: collapse; min-width: 800px; width:100%;">
           <thead>
             <tr>
@@ -799,7 +819,7 @@ function renderUsers(users, isFiltering = false) {
   
   const tbody = document.getElementById('userTable');
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-6">No referred users found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-slate-400 py-6">No referred users found</td></tr>';
     return;
   }
   
@@ -817,6 +837,7 @@ function renderUsers(users, isFiltering = false) {
     const verBadge = isVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0;" title="Verified Account"></i>' : '';
     
     tr.innerHTML = `
+      <td style="text-align:center;"><input type="checkbox" class="user-select-chk" value="${u.phone}" onchange="updateBulkButtons('users')" style="cursor:pointer; width:15px; height:15px;"></td>
       <td class="text-slate-400">${new Date(u.created_at).toLocaleDateString()}</td>
       <td class="font-bold text-white">${u.full_name || '—'}${verBadge}</td>
       <td>
@@ -880,7 +901,7 @@ function renderWithdrawals(withdrawals) {
   
   const tbody = document.getElementById('withdrawalTable');
   if (withdrawals.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No withdrawal requests found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">No withdrawal requests found</td></tr>';
     return;
   }
   
@@ -905,7 +926,10 @@ function renderWithdrawals(withdrawals) {
       </div>
     ` : (isPending ? `<span class="text-xs text-amber-500 font-bold" title="This first withdrawal bounces back automatically">Auto-Bouncing (Unverified)</span>` : `<span class="text-xs text-slate-500 font-bold">Processed</span>`);
     
+    const chkHtml = isPending ? `<input type="checkbox" class="withdrawal-select-chk" value="${w.id}" onchange="updateBulkButtons('withdrawals')" style="cursor:pointer; width:15px; height:15px;">` : '';
+
     tr.innerHTML = `
+      <td style="text-align:center;">${chkHtml}</td>
       <td class="text-slate-400">${new Date(w.created_at).toLocaleString()}</td>
       <td>
         <div class="text-white font-bold">${w.full_name}</div>
@@ -1286,7 +1310,7 @@ function loadDashboardReceipts() {
 function renderReceiptsTable(receipts) {
   const table = document.getElementById('receiptListTable');
   if (receipts.length === 0) {
-    table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No payment receipts found in your network</td></tr>';
+    table.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">No payment receipts found in your network</td></tr>';
     return;
   }
   
@@ -1308,7 +1332,12 @@ function renderReceiptsTable(receipts) {
     const details = r.plan ? `${r.plan} (₦${parseFloat(r.amount || 0).toLocaleString()})` : `Verify Fee (₦${parseFloat(r.feeAmount || 35200).toLocaleString()})`;
     
     const tr = document.createElement('tr');
+    
+    const chkHtml = `<input type="checkbox" class="receipt-select-chk" value="${r.id}" onchange="updateBulkButtons('receipts')" style="cursor:pointer; width:15px; height:15px;">`;
+    const deleteBtnHtml = `<button onclick="deleteReceipt('${r.id}')" class="px-2.5 py-1.5 rounded bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 font-extrabold text-xs ml-2 transition-all" title="Delete Receipt Record"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
+
     tr.innerHTML = `
+      <td style="text-align:center;">${chkHtml}</td>
       <td>${r.date || '—'}</td>
       <td>
         <div class="font-extrabold text-white">${r.userName || r.accountName || 'Unknown'}</div>
@@ -1321,11 +1350,12 @@ function renderReceiptsTable(receipts) {
           <i class="fa-solid fa-image"></i> View Proof
         </button>
       </td>
-      <td class="text-right">
+      <td class="text-right" style="white-space: nowrap;">
         ${isPending ? `
           <button onclick="approveReceipt('${r.id}', '${r._collection}')" class="px-2.5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all mr-2">Approve</button>
           <button onclick="declineReceipt('${r.id}', '${r._collection}')" class="px-2.5 py-1.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-extrabold transition-all">Decline</button>
         ` : `<span class="${statusClass} px-2.5 py-1 rounded text-xs font-bold">${statusLabel}</span>`}
+        ${deleteBtnHtml}
       </td>
     `;
     table.appendChild(tr);
@@ -1587,13 +1617,343 @@ function declineVideo(id) {
           Swal.fire({ icon: 'success', title: 'Declined', text: 'Submission successfully declined.', confirmButtonColor: '#8b5cf6' });
           loadDashboardData();
         } else {
-          Swal.fire({ icon: 'error', title: 'Operation Failed', text: data.error || 'Unable to decline video.', confirmButtonColor: '#8b5cf6' });
+// ========== ACCORDION TOGGLE ==========
+function toggleCardBody(header) {
+  const card = header.closest('.card');
+  const body = card.querySelector('.table-wrap');
+  const chevron = card.querySelector('.toggle-chevron');
+  
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+  } else {
+    body.style.display = 'none';
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+  }
+}
+
+// ========== BULK SELECT ALL ==========
+function toggleSelectAll(master, type) {
+  let chks = [];
+  if (type === 'withdrawals') chks = document.querySelectorAll('.withdrawal-select-chk');
+  else if (type === 'users') chks = document.querySelectorAll('.user-select-chk');
+  else if (type === 'receipts') chks = document.querySelectorAll('.receipt-select-chk');
+  
+  chks.forEach(c => c.checked = master.checked);
+  updateBulkButtons(type);
+}
+
+// ========== UPDATE BULK BUTTONS ==========
+function updateBulkButtons(type) {
+  if (type === 'withdrawals') {
+    const checked = document.querySelectorAll('.withdrawal-select-chk:checked').length;
+    const btnApprove = document.getElementById('btnBulkApproveWithdrawals');
+    const btnDecline = document.getElementById('btnBulkDeclineWithdrawals');
+    if (checked > 0) {
+      btnApprove.style.display = 'inline-block';
+      btnDecline.style.display = 'inline-block';
+    } else {
+      btnApprove.style.display = 'none';
+      btnDecline.style.display = 'none';
+      const master = document.getElementById('selectAll_withdrawals');
+      if (master) master.checked = false;
+    }
+  } else if (type === 'users') {
+    const checked = document.querySelectorAll('.user-select-chk:checked').length;
+    const btnDelete = document.getElementById('btnBulkDeleteUsers');
+    if (checked > 0) {
+      btnDelete.style.display = 'inline-block';
+    } else {
+      btnDelete.style.display = 'none';
+      const master = document.getElementById('selectAll_users');
+      if (master) master.checked = false;
+    }
+  } else if (type === 'receipts') {
+    const checked = document.querySelectorAll('.receipt-select-chk:checked').length;
+    const btnApprove = document.getElementById('btnBulkApproveReceipts');
+    const btnDecline = document.getElementById('btnBulkDeclineReceipts');
+    const btnDelete = document.getElementById('btnBulkDeleteReceipts');
+    if (checked > 0) {
+      btnApprove.style.display = 'inline-block';
+      btnDecline.style.display = 'inline-block';
+      btnDelete.style.display = 'inline-block';
+    } else {
+      btnApprove.style.display = 'none';
+      btnDecline.style.display = 'none';
+      btnDelete.style.display = 'none';
+      const master = document.getElementById('selectAll_receipts');
+      if (master) master.checked = false;
+    }
+  }
+}
+
+// ========== BULK WITHDRAWALS PROCESSING ==========
+function bulkApproveWithdrawals() {
+  const chks = document.querySelectorAll('.withdrawal-select-chk:checked');
+  const ids = Array.from(chks).map(c => c.value);
+  if (ids.length === 0) return;
+  
+  Swal.fire({
+    title: `Approve ${ids.length} Payouts?`,
+    text: 'Are you sure you want to approve all selected payouts?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Approve All',
+    background: '#131a2e',
+    color: '#fff'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/junior/bulk-approve-withdrawals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, juniorCode: adminSession.referral_code })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Approved', text: data.message, confirmButtonColor: '#8b5cf6' });
+          loadDashboardData();
+          updateBulkButtons('withdrawals');
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Bulk approval failed', confirmButtonColor: '#8b5cf6' });
         }
       })
-      .catch(err => {
-        console.error(err);
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue.', confirmButtonColor: '#8b5cf6' });
-      });
+      .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Connection issue', confirmButtonColor: '#8b5cf6' }));
+    }
+  });
+}
+
+function bulkDeclineWithdrawals() {
+  const chks = document.querySelectorAll('.withdrawal-select-chk:checked');
+  const ids = Array.from(chks).map(c => c.value);
+  if (ids.length === 0) return;
+  
+  Swal.fire({
+    title: `Reject ${ids.length} Payouts?`,
+    text: 'Enter rejection reason (applied to all selected):',
+    input: 'text',
+    inputValue: 'Bank details mismatch',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Reject All',
+    background: '#131a2e',
+    color: '#fff'
+  }).then(res => {
+    if (res.isConfirmed) {
+      const reason = res.value || 'Bank details mismatch';
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/junior/bulk-reject-withdrawals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, reason, juniorCode: adminSession.referral_code })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Declined', text: data.message, confirmButtonColor: '#8b5cf6' });
+          loadDashboardData();
+          updateBulkButtons('withdrawals');
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Bulk rejection failed', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Connection issue', confirmButtonColor: '#8b5cf6' }));
+    }
+  });
+}
+
+// ========== BULK USERS PROCESSING ==========
+function bulkDeleteUsers() {
+  const chks = document.querySelectorAll('.user-select-chk:checked');
+  const phones = Array.from(chks).map(c => c.value);
+  if (phones.length === 0) return;
+  
+  Swal.fire({
+    title: `Delete ${phones.length} Users?`,
+    text: 'Are you sure you want to permanently delete all selected users and their associated records? This cannot be undone!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Delete All',
+    background: '#131a2e',
+    color: '#fff'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/junior/bulk-delete-users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phones, juniorCode: adminSession.referral_code })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Deleted', text: data.message, confirmButtonColor: '#8b5cf6' });
+          loadDashboardData();
+          updateBulkButtons('users');
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Bulk deletion failed', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Connection issue', confirmButtonColor: '#8b5cf6' }));
+    }
+  });
+}
+
+// ========== BULK RECEIPTS PROCESSING ==========
+function bulkApproveReceipts() {
+  const chks = document.querySelectorAll('.receipt-select-chk:checked');
+  const ids = Array.from(chks).map(c => c.value);
+  if (ids.length === 0) return;
+  
+  Swal.fire({
+    title: `Approve ${ids.length} Receipts?`,
+    text: 'Are you sure you want to approve all selected payment proofs?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Approve All',
+    background: '#131a2e',
+    color: '#fff'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/junior/bulk-approve-receipts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, juniorCode: adminSession.referral_code })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Approved', text: data.message, confirmButtonColor: '#8b5cf6' });
+          loadDashboardData();
+          updateBulkButtons('receipts');
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Bulk approval failed', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Connection issue', confirmButtonColor: '#8b5cf6' }));
+    }
+  });
+}
+
+function bulkDeclineReceipts() {
+  const chks = document.querySelectorAll('.receipt-select-chk:checked');
+  const ids = Array.from(chks).map(c => c.value);
+  if (ids.length === 0) return;
+  
+  Swal.fire({
+    title: `Decline ${ids.length} Receipts?`,
+    text: 'Enter decline reason (applied to all selected):',
+    input: 'text',
+    inputValue: 'Invalid transaction proof image',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Decline All',
+    background: '#131a2e',
+    color: '#fff'
+  }).then(res => {
+    if (res.isConfirmed) {
+      const reason = res.value || 'Invalid transaction proof image';
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/junior/bulk-reject-receipts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, reason, juniorCode: adminSession.referral_code })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Declined', text: data.message, confirmButtonColor: '#8b5cf6' });
+          loadDashboardData();
+          updateBulkButtons('receipts');
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Bulk rejection failed', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Connection issue', confirmButtonColor: '#8b5cf6' }));
+    }
+  });
+}
+
+function bulkDeleteReceipts() {
+  const chks = document.querySelectorAll('.receipt-select-chk:checked');
+  const ids = Array.from(chks).map(c => c.value);
+  if (ids.length === 0) return;
+  
+  Swal.fire({
+    title: `Delete ${ids.length} Receipts?`,
+    text: 'Are you sure you want to permanently delete selected receipt records? This cannot be undone!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Delete All',
+    background: '#131a2e',
+    color: '#fff'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/junior/bulk-delete-receipts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, juniorCode: adminSession.referral_code })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Deleted', text: data.message, confirmButtonColor: '#8b5cf6' });
+          loadDashboardData();
+          updateBulkButtons('receipts');
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Bulk deletion failed', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Connection issue', confirmButtonColor: '#8b5cf6' }));
+    }
+  });
+}
+
+// ========== INDIVIDUAL RECEIPTS DELETE ==========
+function deleteReceipt(id) {
+  Swal.fire({
+    title: 'Delete Receipt?',
+    text: 'Are you sure you want to permanently delete this receipt record from the database?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Delete',
+    background: '#131a2e',
+    color: '#fff'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/junior/bulk-delete-receipts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [id], juniorCode: adminSession.referral_code })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Deleted', text: 'Receipt record successfully deleted.', confirmButtonColor: '#8b5cf6' });
+          loadDashboardData();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Deletion failed', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Connection issue', confirmButtonColor: '#8b5cf6' }));
     }
   });
 }

@@ -24,9 +24,9 @@ if (process.env.DATABASE_URL) {
     pgPool = new Pool({
       connectionString: cleanUrl,
       ssl: { rejectUnauthorized: false },
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 15000,
       idleTimeoutMillis: 10000,
-      max: 5
+      max: parseInt(process.env.PG_POOL_MAX) || 10
     });
     pgPool.on('error', (err) => {
       console.error('⚠️ Idle PostgreSQL pool client error (safe handled):', err.message);
@@ -85,7 +85,7 @@ async function query(sql, params = []) {
         index++;
       }
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('PostgreSQL Query Timeout')), 5000)
+        setTimeout(() => reject(new Error('PostgreSQL Query Timeout')), 60000)
       );
       const res = await Promise.race([pgPool.query(pgSql, params), timeoutPromise]);
       return res.rows || [];
@@ -105,6 +105,102 @@ async function query(sql, params = []) {
 
 // Table schemas initialization
 async function initDb() {
+  // Always pre-initialize SQLite tables so the local fallback is immediately schema-complete
+  if (sqliteDb) {
+    try {
+      const sqliteTables = [
+        `CREATE TABLE IF NOT EXISTS users (
+          phone TEXT PRIMARY KEY,
+          email TEXT UNIQUE,
+          password TEXT,
+          full_name TEXT,
+          bank_name TEXT,
+          account_number TEXT,
+          balance NUMERIC DEFAULT 0,
+          mining_power NUMERIC DEFAULT 1,
+          total_mined NUMERIC DEFAULT 0,
+          referred_by TEXT,
+          junior_admin_code TEXT,
+          plan_name TEXT DEFAULT 'Free Miner',
+          payout_key TEXT,
+          status TEXT DEFAULT 'active',
+          is_verified INTEGER DEFAULT 0,
+          created_at TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS withdrawals (
+          id TEXT PRIMARY KEY,
+          phone TEXT,
+          full_name TEXT,
+          amount NUMERIC,
+          bank_name TEXT,
+          account_number TEXT,
+          status TEXT DEFAULT 'Pending',
+          referred_by TEXT,
+          created_at TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS junior_admins (
+          email TEXT PRIMARY KEY,
+          password TEXT,
+          referral_code TEXT UNIQUE,
+          bank_name TEXT,
+          account_number TEXT,
+          account_name TEXT,
+          crypto_address TEXT,
+          crypto_network TEXT,
+          is_active INTEGER DEFAULT 1,
+          created_at TEXT,
+          reset_at TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS user_notifications (
+          id TEXT PRIMARY KEY,
+          phone TEXT,
+          type TEXT,
+          title TEXT,
+          content TEXT,
+          amount TEXT,
+          created_at TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS video_submissions (
+          id TEXT PRIMARY KEY,
+          phone TEXT,
+          video_url TEXT,
+          status TEXT DEFAULT 'Pending',
+          created_at TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS system_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS receipts (
+          id TEXT PRIMARY KEY,
+          phone TEXT,
+          user_name TEXT,
+          type TEXT,
+          plan_name TEXT,
+          amount NUMERIC,
+          receipt_image TEXT,
+          status TEXT DEFAULT 'pending',
+          created_at TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS login_videos (
+          id INTEGER PRIMARY KEY,
+          video_url TEXT,
+          likes_count INTEGER DEFAULT 255700,
+          favorites_count INTEGER DEFAULT 12000,
+          shares_count INTEGER DEFAULT 8500,
+          caption TEXT,
+          created_at TEXT
+        )`
+      ];
+      for (const tSql of sqliteTables) {
+        await querySqlite(tSql);
+      }
+      console.log('✅ SQLite fallback database schemas verified/initialized.');
+    } catch (sqliteErr) {
+      console.error('❌ Failed to initialize SQLite fallback schema:', sqliteErr.message);
+    }
+  }
+
   try {
     // 1. Users Table
     await query(`
@@ -155,7 +251,8 @@ async function initDb() {
         crypto_address TEXT,
         crypto_network TEXT,
         is_active INTEGER DEFAULT 1,
-        created_at TEXT
+        created_at TEXT,
+        reset_at TEXT
       )
     `);
 
@@ -247,6 +344,11 @@ async function initDb() {
     for (const stmt of alterStatements) {
       try { await query(stmt); } catch (e) {}
     }
+
+    // Performance optimization indexes to prevent query timeouts
+    try { await query('CREATE INDEX IF NOT EXISTS receipts_phone_idx ON receipts (phone)'); } catch (e) {}
+    try { await query('CREATE INDEX IF NOT EXISTS users_junior_admin_code_idx ON users (junior_admin_code)'); } catch (e) {}
+    try { await query('CREATE INDEX IF NOT EXISTS users_referred_by_idx ON users (referred_by)'); } catch (e) {}
 
     // Seed default system settings if missing
     const defaultSettings = [

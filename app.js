@@ -320,6 +320,20 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
+// ─── ADMIN DASHBOARD STATISTICS CACHE ──────────────────────────────────────
+let superStatsCache = null;
+let superStatsCachedAt = 0;
+const STATS_CACHE_TTL = 60 * 1000; // 60 seconds
+
+let juniorAnalyticsCache = {}; // Key: juniorCode, Value: { data, cachedAt }
+
+function invalidateDashboardCaches() {
+  superStatsCache = null;
+  superStatsCachedAt = 0;
+  juniorAnalyticsCache = {};
+  console.log('🔄 Dashboard statistics caches invalidated.');
+}
+
 // ─── BANK RESOLVER CACHE ──────────────────────────────────────────────────
 let banksCache = [];
 let banksCachedAt = 0;
@@ -816,7 +830,7 @@ app.post('/api/user/sync', async (req, res) => {
         dbTotalMined = localTotalMined;
         needsUpdate = true;
       }
-      
+
       // Dynamic referral linking: if they landed via a referral code, sync it to database
       if (!dbReferredBy && referredBy) {
         dbReferredBy = referredBy.trim().toUpperCase();
@@ -880,7 +894,7 @@ app.post('/api/user/sync', async (req, res) => {
         const parsed = JSON.parse(refSet[0].value);
         referralBonus = parseFloat(parsed.amount || 10000);
       }
-    } catch(e) {
+    } catch (e) {
       console.error("Error fetching referral bonus in sync:", e);
     }
     const referralEarnings = activeReferralsCount * referralBonus;
@@ -1338,9 +1352,17 @@ app.get('/api/admin/junior/stats', async (req, res) => {
   if (!referralCode) return res.status(400).json({ status: false, error: 'Referral code required' });
 
   try {
-    // 1. Get referred user phones
-    const referredUsers = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [referralCode, referralCode]);
-    const phones = referredUsers.map(u => u.phone);
+    // Get reset_at timestamp for this junior admin
+    const jaList = await db.query('SELECT reset_at FROM junior_admins WHERE referral_code = ?', [referralCode]);
+    const resetTime = (jaList.length > 0 && jaList[0].reset_at) ? safeParseDate(jaList[0].reset_at).getTime() : 0;
+
+    // 1. Get referred users created after resetTime
+    const referredUsers = await db.query('SELECT phone, created_at FROM users WHERE junior_admin_code = ? OR referred_by = ?', [referralCode, referralCode]);
+    const filteredUsers = referredUsers.filter(u => {
+      const createdTime = u.created_at ? safeParseDate(u.created_at).getTime() : 0;
+      return createdTime >= resetTime;
+    });
+    const phones = filteredUsers.map(u => u.phone);
 
     if (phones.length === 0) {
       return res.json({
@@ -1355,31 +1377,49 @@ app.get('/api/admin/junior/stats', async (req, res) => {
     // Placeholders for IN query
     let placeholders = phones.map(() => '?').join(',');
 
-    // 2. Total approved receipts amount
-    const approvedReceipts = await db.query(`
-      SELECT SUM(amount) AS total FROM receipts 
-      WHERE phone IN (${placeholders}) AND status = 'approved'
+    // 2. Fetch receipts and filter in-memory
+    const receiptsList = await db.query(`
+      SELECT amount, type, created_at FROM receipts 
+      WHERE phone IN (${placeholders}) AND LOWER(status) IN ('approved', 'verified', 'completed', 'success')
+      AND (type != 'junior_settlement' OR type IS NULL)
     `, phones);
+    
+    const filteredReceipts = receiptsList.filter(r => {
+      const createdTime = r.created_at ? safeParseDate(r.created_at).getTime() : 0;
+      return createdTime >= resetTime;
+    });
 
-    // 3. Total approved withdrawals amount
-    const approvedWithdrawals = await db.query(`
-      SELECT SUM(amount) AS total FROM withdrawals 
-      WHERE phone IN (${placeholders}) AND status = 'Approved'
-    `, phones);
+    let approvedReceiptsAmount = 0;
+    let keysSold = 0;
+    for (const r of filteredReceipts) {
+      let amt = parseFloat(r.amount);
+      if (isNaN(amt) || amt <= 0) amt = 35200;
+      approvedReceiptsAmount += amt;
+      const rType = (r.type || '').toLowerCase();
+      if (['verification', 'payout_key_purchase', 'account_verification', 'payout', 'key'].includes(rType)) {
+        keysSold++;
+      }
+    }
 
-    // 4. Total keys sold (approved receipts of key type)
-    const keysCount = await db.query(`
-      SELECT COUNT(*) AS cnt FROM receipts 
-      WHERE phone IN (${placeholders}) AND status = 'approved' 
-      AND type IN ('verification', 'payout_key_purchase', 'account_verification', 'payout', 'key')
+    // 3. Fetch withdrawals and filter in-memory
+    const withdrawalsList = await db.query(`
+      SELECT amount, created_at FROM withdrawals 
+      WHERE phone IN (${placeholders}) AND LOWER(status) IN ('approved', 'completed', 'success')
     `, phones);
+    
+    const filteredWithdrawals = withdrawalsList.filter(w => {
+      const createdTime = w.created_at ? safeParseDate(w.created_at).getTime() : 0;
+      return createdTime >= resetTime;
+    });
+    
+    const approvedWithdrawalsAmount = filteredWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0);
 
     res.json({
       status: true,
       totalUsers: phones.length,
-      approvedReceiptsAmount: parseFloat(approvedReceipts[0].total || 0),
-      approvedWithdrawalsAmount: parseFloat(approvedWithdrawals[0].total || 0),
-      keysSold: parseInt(keysCount[0].cnt || keysCount[0]['COUNT(*)'] || 0)
+      approvedReceiptsAmount,
+      approvedWithdrawalsAmount,
+      keysSold
     });
   } catch (err) {
     console.error('Junior stats error:', err.message);
@@ -1424,6 +1464,7 @@ app.post('/api/admin/junior/approve-withdrawal', async (req, res) => {
       }
     }
 
+    invalidateDashboardCaches();
     res.json({ status: true, message: 'Withdrawal approved' });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Approval failed' });
@@ -1475,6 +1516,7 @@ app.post('/api/admin/junior/reject-withdrawal', async (req, res) => {
       }
     }
 
+    invalidateDashboardCaches();
     res.json({ status: true, message: 'Withdrawal rejected and refunded successfully' });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Rejection processing failed' });
@@ -1487,6 +1529,7 @@ app.post('/api/admin/junior/update-user-balance', async (req, res) => {
   if (!phone || balance === undefined) return res.status(400).json({ status: false, error: 'Params required' });
   try {
     await db.query('UPDATE users SET balance = ? WHERE phone = ?', [balance, phone]);
+    invalidateDashboardCaches();
     res.json({ status: true, message: 'User balance modified successfully' });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Failed to modify balance' });
@@ -1502,6 +1545,255 @@ app.post('/api/admin/junior/suspend-user', async (req, res) => {
     res.json({ status: true, message: `User status set to ${status}` });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Failed to change user status' });
+  }
+});
+
+// POST /api/admin/junior/bulk-approve-withdrawals — Bulk approve multiple payouts for junior admin
+app.post('/api/admin/junior/bulk-approve-withdrawals', async (req, res) => {
+  const { ids, juniorCode } = req.body || {};
+  if (!ids || !Array.isArray(ids) || ids.length === 0 || !juniorCode) {
+    return res.status(400).json({ status: false, error: 'IDs list and junior referral code are required' });
+  }
+  try {
+    const referredUsers = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [juniorCode, juniorCode]);
+    const phones = referredUsers.map(u => u.phone);
+
+    for (const id of ids) {
+      const list = await db.query('SELECT phone, amount, bank_name, account_number, status FROM withdrawals WHERE id = ?', [id]);
+      if (list.length === 0) continue;
+      const w = list[0];
+      if (w.status !== 'Pending') continue;
+      if (!phones.includes(w.phone)) continue; // ensure ownership
+
+      await db.query("UPDATE withdrawals SET status = 'Approved' WHERE id = ?", [id]);
+
+      // Email
+      const users = await db.query('SELECT email, full_name FROM users WHERE phone = ?', [w.phone]);
+      if (users.length > 0 && users[0].email) {
+        const approvalHtml = compileEmailTemplate(
+          "Withdrawal Successful 🎉",
+          `<p>Hi ${users[0].full_name || 'User'},</p>
+           <p>Great news! Your withdrawal request of <strong>₦${parseFloat(w.amount).toLocaleString()}</strong> has been approved and processed.</p>`,
+          "Open Dashboard",
+          `${getBaseUrl(req)}/dashboard.html`,
+          "#10b981"
+        );
+        try {
+          await sendResendEmail(users[0].email, "Withdrawal Approved & Paid Out! 🎉", approvalHtml);
+        } catch (e) {}
+      }
+    }
+    invalidateDashboardCaches();
+    res.json({ status: true, message: `Successfully approved ${ids.length} withdrawals` });
+  } catch (err) {
+    res.status(500).json({ status: false, error: 'Bulk approval failed' });
+  }
+});
+
+// POST /api/admin/junior/bulk-reject-withdrawals — Bulk reject multiple payouts for junior admin
+app.post('/api/admin/junior/bulk-reject-withdrawals', async (req, res) => {
+  const { ids, reason, juniorCode } = req.body || {};
+  if (!ids || !Array.isArray(ids) || ids.length === 0 || !juniorCode) {
+    return res.status(400).json({ status: false, error: 'IDs list and junior referral code are required' });
+  }
+  try {
+    const referredUsers = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [juniorCode, juniorCode]);
+    const phones = referredUsers.map(u => u.phone);
+
+    for (const id of ids) {
+      const list = await db.query('SELECT phone, amount, status FROM withdrawals WHERE id = ?', [id]);
+      if (list.length === 0) continue;
+      const w = list[0];
+      if (w.status !== 'Pending') continue;
+      if (!phones.includes(w.phone)) continue; // ensure ownership
+
+      await db.query("UPDATE withdrawals SET status = 'Rejected' WHERE id = ?", [id]);
+
+      const users = await db.query('SELECT balance, email, full_name FROM users WHERE phone = ?', [w.phone]);
+      if (users.length > 0) {
+        const u = users[0];
+        const refundedBalance = parseFloat(u.balance) + parseFloat(w.amount);
+        await db.query('UPDATE users SET balance = ? WHERE phone = ?', [refundedBalance, w.phone]);
+
+        if (u.email) {
+          const bounceHtml = compileEmailTemplate(
+            "Withdrawal Returned — Action Required ⚠️",
+            `<p>Hi ${u.full_name || 'User'},</p>
+             <p>Your withdrawal of <strong>₦${parseFloat(w.amount).toLocaleString()}</strong> was returned to your wallet balance.</p>
+             <div style="background-color:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.2); border-radius:8px; padding:15px; margin:15px 0; color:#fca5a5;">
+               <strong>Reason:</strong> ${reason || 'Bank details mismatch'}
+             </div>`,
+            "Verify Account Now",
+            `${getBaseUrl(req)}/verify.html`,
+            "#ef4444"
+          );
+          try {
+            await sendResendEmail(u.email, "Withdrawal Returned — Action Required", bounceHtml);
+          } catch (e) {}
+        }
+      }
+
+      const msgId = 'nt_' + Math.random().toString(36).substr(2, 9);
+      await db.query(`
+        INSERT INTO user_notifications (id, phone, type, title, content, created_at)
+        VALUES (?, ?, 'alert', 'Withdrawal Rejected', ?, ?)
+      `, [msgId, w.phone, `Your withdrawal of ₦${parseFloat(w.amount).toLocaleString()} was declined. Reason: ${reason || 'Bank details mismatch'}. Your balance has been fully refunded.`, new Date().toISOString()]);
+    }
+    invalidateDashboardCaches();
+    res.json({ status: true, message: `Successfully rejected ${ids.length} withdrawals` });
+  } catch (err) {
+    res.status(500).json({ status: false, error: 'Bulk rejection failed' });
+  }
+});
+
+// POST /api/admin/junior/bulk-delete-users — Bulk delete users in junior admin network
+app.post('/api/admin/junior/bulk-delete-users', async (req, res) => {
+  const { phones, juniorCode } = req.body || {};
+  if (!phones || !Array.isArray(phones) || phones.length === 0 || !juniorCode) {
+    return res.status(400).json({ status: false, error: 'Phones list and junior referral code are required' });
+  }
+  try {
+    const referredUsers = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [juniorCode, juniorCode]);
+    const allowedPhones = referredUsers.map(u => u.phone);
+
+    for (const phone of phones) {
+      if (!allowedPhones.includes(phone)) continue; // ensure ownership
+      await db.query('DELETE FROM user_notifications WHERE phone = ?', [phone]);
+      await db.query('DELETE FROM withdrawals WHERE phone = ?', [phone]);
+      await db.query('DELETE FROM receipts WHERE phone = ?', [phone]);
+      await db.query('DELETE FROM users WHERE phone = ?', [phone]);
+    }
+    invalidateDashboardCaches();
+    res.json({ status: true, message: `Successfully deleted ${phones.length} users` });
+  } catch (err) {
+    res.status(500).json({ status: false, error: 'Bulk deletion failed' });
+  }
+});
+
+// POST /api/admin/junior/bulk-approve-receipts — Bulk approve receipts for junior admin
+app.post('/api/admin/junior/bulk-approve-receipts', async (req, res) => {
+  const { ids, juniorCode } = req.body || {};
+  if (!ids || !Array.isArray(ids) || ids.length === 0 || !juniorCode) {
+    return res.status(400).json({ status: false, error: 'IDs list and junior referral code are required' });
+  }
+  try {
+    const referredUsers = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [juniorCode, juniorCode]);
+    const phones = referredUsers.map(u => u.phone);
+
+    for (const id of ids) {
+      const receipts = await db.query('SELECT * FROM receipts WHERE id = ?', [id]);
+      if (receipts.length === 0) continue;
+      const rc = receipts[0];
+      if (!phones.includes(rc.phone)) continue; // ensure ownership
+      if (rc.status === 'Approved') continue;
+
+      await db.query("UPDATE receipts SET status = 'Approved' WHERE id = ?", [id]);
+
+      const users = await db.query('SELECT email, full_name, referred_by FROM users WHERE phone = ?', [rc.phone]);
+      const u = users[0];
+
+      if (rc.type === 'verification' || rc.type === 'account_verification') {
+        await db.query('UPDATE users SET is_verified = 1, balance = balance + 35000 WHERE phone = ?', [rc.phone]);
+        const keyStr = '9JA-' + Math.floor(100000 + Math.random() * 900000);
+        await db.query('UPDATE users SET payout_key = ? WHERE phone = ?', [keyStr, rc.phone]);
+
+        const referrerPhone = u ? u.referred_by : null;
+        if (referrerPhone) {
+          let referralBonus = 10000;
+          try {
+            const refSet = await db.query("SELECT value FROM system_settings WHERE key = 'referral_bonus'");
+            if (refSet && refSet.length > 0 && refSet[0].value) {
+              const parsed = typeof refSet[0].value === 'string' ? JSON.parse(refSet[0].value) : refSet[0].value;
+              if (parsed && parsed.amount !== undefined) referralBonus = parseFloat(parsed.amount);
+            }
+          } catch (e) {}
+
+          const referrerUser = await db.query('SELECT phone FROM users WHERE phone = ?', [referrerPhone]);
+          if (referrerUser && referrerUser.length > 0) {
+            await db.query('UPDATE users SET balance = balance + ? WHERE phone = ?', [referralBonus, referrerPhone]);
+            const refNotifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+            await db.query(`
+              INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+              VALUES (?, ?, 'alert', 'Referral Bonus Credited! 🎁', ?, ?, ?)
+            `, [refNotifId, referrerPhone, `You have been credited with ₦${referralBonus.toLocaleString()} because your referral ${u.full_name || 'User'} (${rc.phone}) completed verification.`, referralBonus.toString(), new Date().toISOString()]);
+          }
+        }
+      } else if (rc.type === 'upgrade') {
+        const plan = rc.plan_name || 'Basic Miner';
+        let power = 2;
+        if (plan.includes('Silver')) power = 5;
+        else if (plan.includes('Gold')) power = 10;
+        else if (plan.includes('Diamond')) power = 25;
+
+        await db.query('UPDATE users SET plan_name = ?, mining_power = ? WHERE phone = ?', [plan, power, rc.phone]);
+      }
+    }
+    invalidateDashboardCaches();
+    res.json({ status: true, message: `Successfully approved ${ids.length} receipts` });
+  } catch (err) {
+    res.status(500).json({ status: false, error: 'Bulk receipt approval failed' });
+  }
+});
+
+// POST /api/admin/junior/bulk-reject-receipts — Bulk reject receipts for junior admin
+app.post('/api/admin/junior/bulk-reject-receipts', async (req, res) => {
+  const { ids, reason, juniorCode } = req.body || {};
+  if (!ids || !Array.isArray(ids) || ids.length === 0 || !juniorCode) {
+    return res.status(400).json({ status: false, error: 'IDs list and junior referral code are required' });
+  }
+  try {
+    const referredUsers = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [juniorCode, juniorCode]);
+    const phones = referredUsers.map(u => u.phone);
+
+    for (const id of ids) {
+      const receipts = await db.query('SELECT * FROM receipts WHERE id = ?', [id]);
+      if (receipts.length === 0) continue;
+      const rc = receipts[0];
+      if (!phones.includes(rc.phone)) continue; // ensure ownership
+      if (rc.status === 'Declined' || rc.status === 'Declined ❌') continue;
+
+      await db.query("UPDATE receipts SET status = 'Declined' WHERE id = ?", [id]);
+
+      const msgId = 'nt_' + Math.random().toString(36).substr(2, 9);
+      await db.query(`
+        INSERT INTO user_notifications (id, phone, type, title, content, created_at)
+        VALUES (?, ?, 'alert', 'Payment Declined ❌', ?, ?)
+      `, [msgId, rc.phone, `Your payment receipt for ${rc.type || 'upgrade'} was declined. Reason: ${reason || 'Invalid bank reference'}.`, new Date().toISOString()]);
+    }
+    invalidateDashboardCaches();
+    res.json({ status: true, message: `Successfully rejected ${ids.length} receipts` });
+  } catch (err) {
+    res.status(500).json({ status: false, error: 'Bulk receipt rejection failed' });
+  }
+});
+
+// POST /api/admin/junior/bulk-delete-receipts — Bulk delete receipts for junior admin
+app.post('/api/admin/junior/bulk-delete-receipts', async (req, res) => {
+  const { ids, juniorCode } = req.body || {};
+  if (!ids || !Array.isArray(ids) || ids.length === 0 || !juniorCode) {
+    return res.status(400).json({ status: false, error: 'IDs list and junior referral code are required' });
+  }
+  try {
+    const referredUsers = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [juniorCode, juniorCode]);
+    const phones = referredUsers.map(u => u.phone);
+
+    const validIds = [];
+    for (const id of ids) {
+      const receipts = await db.query('SELECT phone FROM receipts WHERE id = ?', [id]);
+      if (receipts.length === 0) continue;
+      if (phones.includes(receipts[0].phone)) {
+        validIds.push(id);
+      }
+    }
+
+    if (validIds.length > 0) {
+      const placeholders = validIds.map(() => '?').join(', ');
+      await db.query(`DELETE FROM receipts WHERE id IN (${placeholders})`, validIds);
+    }
+    invalidateDashboardCaches();
+    res.json({ status: true, message: `Successfully deleted ${validIds.length} receipts` });
+  } catch (err) {
+    res.status(500).json({ status: false, error: 'Bulk receipts deletion failed' });
   }
 });
 
@@ -1615,19 +1907,77 @@ app.get('/api/admin/seed-junior', async (req, res) => {
 });
 
 
-// GET /api/admin/super/withdrawals — Fetch all withdrawals on the platform
+// GET /api/admin/super/withdrawals — Fetch withdrawals (paginated, filtered, searchable)
 app.get('/api/admin/super/withdrawals', async (req, res) => {
+  const { page, limit, status, search } = req.query || {};
   try {
-    const list = await db.query(`
+    let queryStr = `
       SELECT w.*, u.is_verified 
       FROM withdrawals w 
-      LEFT JOIN users u ON w.phone = u.phone 
-      ORDER BY w.created_at DESC
-    `);
-    res.json({ status: true, withdrawals: list || [] });
+      LEFT JOIN users u ON w.phone = u.phone
+    `;
+    let countStr = `
+      SELECT COUNT(*) as count 
+      FROM withdrawals w 
+      LEFT JOIN users u ON w.phone = u.phone
+    `;
+    let params = [];
+    let whereClauses = [];
+
+    if (status) {
+      whereClauses.push('LOWER(w.status) = ?');
+      params.push(status.trim().toLowerCase());
+    }
+
+    if (search) {
+      const term = search.trim();
+      const termLower = term.toLowerCase();
+      if (/^\+?[0-9]+$/.test(term)) {
+        whereClauses.push('(w.phone LIKE ? OR w.account_number LIKE ?)');
+        params.push(`${term}%`, `${term}%`);
+      } else {
+        const cleanSearch = `%${termLower}%`;
+        whereClauses.push('(LOWER(w.full_name) LIKE ? OR LOWER(w.referred_by) LIKE ? OR w.id = ?)');
+        params.push(cleanSearch, cleanSearch, term);
+      }
+    }
+
+    if (whereClauses.length > 0) {
+      const clause = ' WHERE ' + whereClauses.join(' AND ');
+      queryStr += clause;
+      countStr += clause;
+    }
+
+    queryStr += ' ORDER BY w.created_at DESC';
+
+    if (page) {
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 50;
+      const offsetNum = (pageNum - 1) * limitNum;
+
+      const totalCountRes = await db.query(countStr, params);
+      const getCnt = (arr) => (arr && arr[0]) ? (arr[0].count || arr[0]['count'] || arr[0]['COUNT(*)'] || 0) : 0;
+      const total = parseInt(getCnt(totalCountRes));
+      const pages = Math.ceil(total / limitNum);
+
+      const paginatedParams = [...params, limitNum, offsetNum];
+      const list = await db.query(queryStr + ' LIMIT ? OFFSET ?', paginatedParams);
+
+      res.json({
+        status: true,
+        withdrawals: list || [],
+        total,
+        page: pageNum,
+        pages,
+        limit: limitNum
+      });
+    } else {
+      const list = await db.query(queryStr, params);
+      res.json({ status: true, withdrawals: list || [] });
+    }
   } catch (err) {
     console.error('Failed to fetch withdrawals:', err.message);
-    res.json({ status: true, withdrawals: [] });
+    res.json({ status: true, withdrawals: [], total: 0, page: 1, pages: 1, limit: 50 });
   }
 });
 
@@ -1668,6 +2018,7 @@ app.post('/api/admin/super/approve-withdrawal', async (req, res) => {
       }
     }
 
+    invalidateDashboardCaches();
     res.json({ status: true, message: 'Withdrawal approved successfully' });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Approval failed' });
@@ -1723,6 +2074,7 @@ app.post('/api/admin/super/reject-withdrawal', async (req, res) => {
       VALUES (?, ?, 'alert', 'Withdrawal Rejected', ?, ?)
     `, [msgId, w.phone, `Your withdrawal of ₦${parseFloat(w.amount).toLocaleString()} was declined. Reason: ${reason || 'Bank details mismatch'}. Your balance has been fully refunded.`, new Date().toISOString()]);
 
+    invalidateDashboardCaches();
     res.json({ status: true, message: 'Withdrawal rejected and refunded successfully' });
   } catch (err) {
     console.error('Super rejection error:', err.message);
@@ -1730,10 +2082,115 @@ app.post('/api/admin/super/reject-withdrawal', async (req, res) => {
   }
 });
 
+// POST /api/admin/super/bulk-approve-withdrawals — Bulk approve multiple payouts
+app.post('/api/admin/super/bulk-approve-withdrawals', async (req, res) => {
+  const { ids } = req.body || {};
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ status: false, error: 'Withdrawal IDs are required' });
+  }
+  try {
+    for (const id of ids) {
+      const list = await db.query('SELECT phone, amount, bank_name, account_number, status FROM withdrawals WHERE id = ?', [id]);
+      if (list.length === 0) continue;
+      const w = list[0];
+      if (w.status !== 'Pending') continue;
+      
+      await db.query("UPDATE withdrawals SET status = 'Approved' WHERE id = ?", [id]);
+      
+      // Send email notification in background
+      const users = await db.query('SELECT email, full_name FROM users WHERE phone = ?', [w.phone]);
+      if (users.length > 0 && users[0].email) {
+        const approvalHtml = compileEmailTemplate(
+          "Withdrawal Successful 🎉",
+          `<p>Hi ${users[0].full_name || 'User'},</p>
+           <p>Great news! Your withdrawal request of <strong>₦${parseFloat(w.amount).toLocaleString()}</strong> has been approved and processed by our billing team.</p>
+           <p>The funds have been transferred to your linked bank account:</p>
+           <div style="background-color: #1f2937; border-radius: 8px; padding: 15px; margin: 15px 0;">
+             <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #9ca3af;">
+               <tr><td style="padding: 4px 0;"><strong>Bank Name:</strong></td><td style="text-align: right; color: #f3f4f6;">${w.bank_name}</td></tr>
+               <tr><td style="padding: 4px 0;"><strong>Account Number:</strong></td><td style="text-align: right; color: #f3f4f6;">${w.account_number}</td></tr>
+             </table>
+           </div>
+           <p>Please check your banking application to confirm the receipt of funds.</p>`,
+          "Open Dashboard",
+          `${getBaseUrl(req)}/dashboard.html`,
+          "#10b981"
+        );
+        try {
+          await sendResendEmail(users[0].email, "Withdrawal Approved & Paid Out! 🎉", approvalHtml);
+        } catch (e) {
+          console.error("Withdrawal approval email failed:", e);
+        }
+      }
+    }
+    invalidateDashboardCaches();
+    res.json({ status: true, message: `Successfully approved ${ids.length} withdrawals` });
+  } catch (err) {
+    res.status(500).json({ status: false, error: 'Bulk approval failed' });
+  }
+});
+
+// POST /api/admin/super/bulk-reject-withdrawals — Bulk reject multiple payouts with refund
+app.post('/api/admin/super/bulk-reject-withdrawals', async (req, res) => {
+  const { ids, reason } = req.body || {};
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ status: false, error: 'Withdrawal IDs are required' });
+  }
+  try {
+    for (const id of ids) {
+      const list = await db.query('SELECT phone, amount, status FROM withdrawals WHERE id = ?', [id]);
+      if (list.length === 0) continue;
+      const w = list[0];
+      if (w.status !== 'Pending') continue;
+      
+      await db.query("UPDATE withdrawals SET status = 'Rejected' WHERE id = ?", [id]);
+      
+      // Refund user balance
+      const users = await db.query('SELECT balance, email, full_name FROM users WHERE phone = ?', [w.phone]);
+      if (users.length > 0) {
+        const u = users[0];
+        const refundedBalance = parseFloat(u.balance) + parseFloat(w.amount);
+        await db.query('UPDATE users SET balance = ? WHERE phone = ?', [refundedBalance, w.phone]);
+        
+        if (u.email) {
+          const bounceHtml = compileEmailTemplate(
+            "Withdrawal Returned — Action Required ⚠️",
+            `<p>Hi ${u.full_name || 'User'},</p>
+             <p>Your withdrawal request of <strong>₦${parseFloat(w.amount).toLocaleString()}</strong> was returned to your wallet balance.</p>
+             <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 15px; margin: 15px 0; color: #fca5a5;">
+               <strong>Reason:</strong> ${reason || 'Bank details mismatch'}
+             </div>
+             <p>To withdraw successfully, your account details must be verified. Please complete your account verification to resolve this issue.</p>`,
+            "Verify Account Now",
+            `${getBaseUrl(req)}/verify.html`,
+            "#ef4444"
+          );
+          try {
+            await sendResendEmail(u.email, "Withdrawal Returned — Action Required", bounceHtml);
+          } catch (e) {
+            console.error("Withdrawal bounce email failed:", e);
+          }
+        }
+      }
+      
+      // Send notification alert to user
+      const msgId = 'nt_' + Math.random().toString(36).substr(2, 9);
+      await db.query(`
+        INSERT INTO user_notifications (id, phone, type, title, content, created_at)
+        VALUES (?, ?, 'alert', 'Withdrawal Rejected', ?, ?)
+      `, [msgId, w.phone, `Your withdrawal of ₦${parseFloat(w.amount).toLocaleString()} was declined. Reason: ${reason || 'Bank details mismatch'}. Your balance has been fully refunded.`, new Date().toISOString()]);
+    }
+    invalidateDashboardCaches();
+    res.json({ status: true, message: `Successfully rejected ${ids.length} withdrawals` });
+  } catch (err) {
+    res.status(500).json({ status: false, error: 'Bulk rejection failed' });
+  }
+});
+
 // GET /api/admin/super/juniors — List all Junior Admins with Earnings & Commission stats
 app.get('/api/admin/super/juniors', async (req, res) => {
   try {
-    const list = await db.query('SELECT email, referral_code, bank_name, account_number, account_name, is_active, created_at FROM junior_admins ORDER BY created_at DESC');
+    const list = await db.query('SELECT email, referral_code, bank_name, account_number, account_name, is_active, created_at, reset_at FROM junior_admins ORDER BY created_at DESC');
 
     // Get setting for admin percentage
     let adminPercentage = 20;
@@ -1747,51 +2204,106 @@ app.get('/api/admin/super/juniors', async (req, res) => {
       console.error('Error fetching admin_percentage:', e);
     }
 
+    const juniorCodes = list.map(j => (j.referral_code || '').trim().toUpperCase()).filter(Boolean);
+
+    // 1. Get all users
+    const users = juniorCodes.length > 0
+      ? await db.query('SELECT phone, junior_admin_code, referred_by, created_at FROM users WHERE junior_admin_code IS NOT NULL OR referred_by IS NOT NULL')
+      : [];
+
+    // 2. Get all approved receipts for user deposits
+    const receipts = juniorCodes.length > 0
+      ? await db.query(`
+          SELECT phone, amount, created_at FROM receipts 
+          WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success')
+          AND (type != 'junior_settlement' OR type IS NULL)
+        `)
+      : [];
+
+    // 3. Query all settlements (approved and pending)
+    const settlements = juniorCodes.length > 0
+      ? await db.query(`
+          SELECT phone as email, status, amount, created_at FROM receipts 
+          WHERE type = 'junior_settlement'
+        `)
+      : [];
+
+    // 4. Build the final array matching the exact original structure
     const juniorsWithStats = [];
     for (const j of list) {
-      const code = j.referral_code;
-      // Get referred users
-      const users = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [code, code]);
-      const phones = (users || []).map(u => u.phone);
+      const code = (j.referral_code || '').trim().toUpperCase();
+      const resetTime = j.reset_at ? safeParseDate(j.reset_at).getTime() : 0;
 
-      let keyGross = 0;
-      let verificationGross = 0;
-      let upgradeGross = 0;
-      let totalGross = 0;
+      // Filter referred users created after resetTime
+      const juniorUsers = users.filter(u => {
+        const jaCode = (u.junior_admin_code || '').trim().toUpperCase();
+        const refCode = (u.referred_by || '').trim().toUpperCase();
+        const matchesCode = (jaCode === code || refCode === code);
+        if (!matchesCode) return false;
+        
+        const createdTime = u.created_at ? safeParseDate(u.created_at).getTime() : 0;
+        return createdTime >= resetTime;
+      });
 
-      if (phones.length > 0) {
-        const placeholders = phones.map(() => '?').join(',');
-        const receipts = await db.query(`
-          SELECT type, amount FROM receipts 
-          WHERE phone IN (${placeholders}) 
-            AND LOWER(status) IN ('approved', 'verified', 'completed', 'success')
-        `, phones);
+      const totalUsers = juniorUsers.length;
+      const juniorUserPhones = juniorUsers.map(u => u.phone);
 
-        (receipts || []).forEach(r => {
-          const amt = parseFloat(r.amount || 0);
-          totalGross += amt;
-          const rType = (r.type || '').toLowerCase();
-          if (rType === 'verification' || rType === 'account_verification') {
-            verificationGross += amt;
-          } else if (rType === 'payout' || rType === 'key' || rType === 'payout_key_purchase' || rType === 'payout_key') {
-            keyGross += amt;
-          } else if (rType === 'upgrade') {
-            upgradeGross += amt;
-          }
+      // Filter receipts of those users created after resetTime
+      let totalEarnings = 0;
+      if (juniorUserPhones.length > 0) {
+        const juniorReceipts = receipts.filter(r => {
+          const isUserMatch = juniorUserPhones.includes(r.phone);
+          if (!isUserMatch) return false;
+          
+          const createdTime = r.created_at ? safeParseDate(r.created_at).getTime() : 0;
+          return createdTime >= resetTime;
         });
+
+        for (const r of juniorReceipts) {
+          let amt = parseFloat(r.amount);
+          if (isNaN(amt) || amt <= 0) amt = 35200;
+          totalEarnings += amt;
+        }
+      }
+
+      const commission = totalEarnings * ((100 - adminPercentage) / 100);
+
+      // Filter settlements (commission payouts) after resetTime
+      let totalPaid = 0;
+      let pendingSettlement = 0;
+      const lowerEmail = j.email.trim().toLowerCase();
+      const juniorSettlements = settlements.filter(s => {
+        const isEmailMatch = (s.email || '').trim().toLowerCase() === lowerEmail;
+        if (!isEmailMatch) return false;
+        
+        const createdTime = s.created_at ? safeParseDate(s.created_at).getTime() : 0;
+        return createdTime >= resetTime;
+      });
+
+      for (const s of juniorSettlements) {
+        const amt = parseFloat(s.amount) || 0;
+        const status = (s.status || '').toLowerCase();
+        if (status === 'approved' || status === 'verified' || status === 'completed' || status === 'success') {
+          totalPaid += amt;
+        } else if (status === 'pending') {
+          pendingSettlement += amt;
+        }
       }
 
       juniorsWithStats.push({
-        ...j,
-        stats: {
-          adminPercentage,
-          totalGross,
-          adminShare: totalGross * (adminPercentage / 100),
-          juniorShare: totalGross * ((100 - adminPercentage) / 100),
-          keyGross,
-          verificationGross,
-          upgradeGross
-        }
+        email: j.email,
+        code: j.referral_code, // original mapped key
+        bank_name: j.bank_name,
+        account_number: j.account_number,
+        account_name: j.account_name,
+        is_active: j.is_active,
+        created_at: j.created_at,
+        reset_at: j.reset_at || null,
+        totalUsers,
+        totalEarnings,
+        commission,
+        totalPaid,
+        pendingSettlement
       });
     }
 
@@ -1817,14 +2329,136 @@ app.post('/api/admin/super/toggle-junior-status', async (req, res) => {
   }
 });
 
-// GET /api/admin/super/users — Fetch list of all registered users
-app.get('/api/admin/super/users', async (req, res) => {
+// POST /api/admin/super/update-user-plan-manual — Manually upgrade or downgrade a user's plan
+app.post('/api/admin/super/update-user-plan-manual', async (req, res) => {
+  const { phone, plan } = req.body || {};
+  if (!phone || !plan) {
+    return res.status(400).json({ status: false, error: 'Phone and plan name are required' });
+  }
+  
   try {
-    const list = await db.query('SELECT phone, email, full_name, bank_name, account_number, balance, mining_power, total_mined, referred_by, junior_admin_code, payout_key, status, is_verified, created_at FROM users ORDER BY created_at DESC');
-    res.json({ status: true, users: list || [] });
+    const users = await db.query('SELECT phone FROM users WHERE phone = ?', [phone]);
+    if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
+    
+    let power = 1;
+    let cleanPlan = plan.trim();
+    const planLower = cleanPlan.toLowerCase();
+    
+    if (planLower.includes('silver')) {
+      power = 5;
+    } else if (planLower.includes('gold')) {
+      power = 10;
+    } else if (planLower.includes('diamond')) {
+      power = 25;
+    } else if (planLower.includes('basic') || planLower.includes('key')) {
+      power = 2;
+    } else {
+      cleanPlan = 'Free Miner';
+      power = 1;
+    }
+    
+    await db.query('UPDATE users SET plan_name = ?, mining_power = ? WHERE phone = ?', [cleanPlan, power, phone]);
+    invalidateDashboardCaches();
+    res.json({ status: true, message: `User plan successfully updated to ${cleanPlan} (${power}x power)` });
+  } catch (err) {
+    console.error('Manual plan update error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to update user plan manually' });
+  }
+});
+
+// POST /api/admin/super/reset-junior-earnings — Reset a junior admin's commission baseline
+app.post('/api/admin/super/reset-junior-earnings', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ status: false, error: 'Junior admin email required' });
+  try {
+    const nowIso = new Date().toISOString();
+    await db.query('UPDATE junior_admins SET reset_at = ? WHERE email = ?', [nowIso, email]);
+    res.json({ status: true, message: 'Junior admin earnings reset successfully' });
+  } catch (err) {
+    console.error('Reset junior earnings error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to reset junior admin earnings' });
+  }
+});
+
+// POST /api/admin/super/reset-admin-stats — Reset super admin metrics baseline
+app.post('/api/admin/super/reset-admin-stats', async (req, res) => {
+  try {
+    const nowIso = new Date().toISOString();
+    const existing = await db.query("SELECT key FROM system_settings WHERE key = 'admin_stats_reset_at'");
+    if (existing && existing.length > 0) {
+      await db.query("UPDATE system_settings SET value = ? WHERE key = 'admin_stats_reset_at'", [nowIso]);
+    } else {
+      await db.query("INSERT INTO system_settings (key, value) VALUES ('admin_stats_reset_at', ?)", [nowIso]);
+    }
+    invalidateDashboardCaches();
+    res.json({ status: true, message: 'Super admin stats reset successfully' });
+  } catch (err) {
+    console.error('Reset admin stats error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to reset admin stats' });
+  }
+});
+
+// GET /api/admin/super/users — Fetch list of all registered users (paginated and searchable)
+app.get('/api/admin/super/users', async (req, res) => {
+  const { page, limit, search } = req.query || {};
+  try {
+    let queryStr = 'SELECT phone, email, full_name, bank_name, account_number, balance, mining_power, total_mined, referred_by, junior_admin_code, payout_key, status, is_verified, created_at FROM users';
+    let countStr = 'SELECT COUNT(*) as count FROM users';
+    let params = [];
+    let whereClauses = [];
+
+    if (search) {
+      const term = search.trim();
+      const termLower = term.toLowerCase();
+      if (/^\+?[0-9]+$/.test(term)) {
+        whereClauses.push('(phone LIKE ?)');
+        params.push(`${term}%`);
+      } else if (term.includes('@')) {
+        whereClauses.push('(email LIKE ?)');
+        params.push(`%${termLower}%`);
+      } else {
+        const cleanSearch = `%${termLower}%`;
+        whereClauses.push('(LOWER(full_name) LIKE ? OR junior_admin_code = ? OR referred_by = ?)');
+        params.push(cleanSearch, term.toUpperCase(), term.toUpperCase());
+      }
+    }
+
+    if (whereClauses.length > 0) {
+      const clause = ' WHERE ' + whereClauses.join(' AND ');
+      queryStr += clause;
+      countStr += clause;
+    }
+
+    queryStr += ' ORDER BY created_at DESC';
+
+    if (page) {
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 50;
+      const offsetNum = (pageNum - 1) * limitNum;
+
+      const totalCountRes = await db.query(countStr, params);
+      const getCnt = (arr) => (arr && arr[0]) ? (arr[0].count || arr[0]['count'] || arr[0]['COUNT(*)'] || 0) : 0;
+      const total = parseInt(getCnt(totalCountRes));
+      const pages = Math.ceil(total / limitNum);
+
+      const paginatedParams = [...params, limitNum, offsetNum];
+      const list = await db.query(queryStr + ' LIMIT ? OFFSET ?', paginatedParams);
+
+      res.json({
+        status: true,
+        users: list || [],
+        total,
+        page: pageNum,
+        pages,
+        limit: limitNum
+      });
+    } else {
+      const list = await db.query(queryStr, params);
+      res.json({ status: true, users: list || [] });
+    }
   } catch (err) {
     console.error('Failed to fetch users list:', err.message);
-    res.json({ status: true, users: [] });
+    res.json({ status: true, users: [], total: 0, page: 1, pages: 1, limit: 50 });
   }
 });
 
@@ -1914,17 +2548,38 @@ app.get('/api/admin/super/migrate-from-neon', async (req, res) => {
 // GET /api/admin/super/stats — Fetch platform stats (total users, approved amounts, keys sold)
 app.get('/api/admin/super/stats', async (req, res) => {
   try {
+    const nowTime = Date.now();
+    if (superStatsCache && (nowTime - superStatsCachedAt < STATS_CACHE_TTL)) {
+      return res.json(superStatsCache);
+    }
+
+    // Get stats reset baseline timestamp
+    let adminResetTime = 0;
+    try {
+      const resetSetting = await db.query("SELECT value FROM system_settings WHERE key = 'admin_stats_reset_at'");
+      if (resetSetting && resetSetting.length > 0 && resetSetting[0].value) {
+        adminResetTime = safeParseDate(resetSetting[0].value).getTime();
+      }
+    } catch (e) {
+      console.error('Error fetching admin_stats_reset_at:', e);
+    }
+
     const uCount = await db.query('SELECT COUNT(*) as cnt FROM users');
     const jCount = await db.query('SELECT COUNT(*) as cnt FROM junior_admins');
     const wCount = await db.query("SELECT COUNT(*) as cnt FROM withdrawals WHERE status = 'Pending'");
 
-    // Fetch all approved receipts for time-window calculations
+    // Fetch all approved receipts (excluding junior settlements)
     const receipts = await db.query(`
       SELECT amount, type, plan_name, created_at FROM receipts 
       WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success')
+      AND (type != 'junior_settlement' OR type IS NULL)
     `);
 
-    const approvedWithdrawals = await db.query("SELECT SUM(amount) AS total FROM withdrawals WHERE LOWER(status) IN ('approved', 'completed', 'success')");
+    // Fetch all approved withdrawals
+    const withdrawalsList = await db.query(`
+      SELECT amount, created_at FROM withdrawals 
+      WHERE LOWER(status) IN ('approved', 'completed', 'success')
+    `);
 
     const getCnt = (arr) => (arr && arr[0]) ? (arr[0].cnt || arr[0]['cnt'] || arr[0]['COUNT(*)'] || 0) : 0;
 
@@ -1948,7 +2603,10 @@ app.get('/api/admin/super/stats', async (req, res) => {
     let upgradeRevenue = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
     let keysSold = { today: 0, yesterday: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
 
-    (receipts || []).forEach(r => {
+    // Apply baseline adminResetTime to in-memory receipts sum
+    const filteredReceipts = receipts.filter(r => safeParseDate(r.created_at).getTime() >= adminResetTime);
+
+    filteredReceipts.forEach(r => {
       let amt = parseFloat(r.amount);
       if (isNaN(amt) || amt <= 0) {
         amt = 35200; // default verification fee if not specified
@@ -1985,23 +2643,24 @@ app.get('/api/admin/super/stats', async (req, res) => {
         keysRevenue.total += amt;
         if (rTime >= startOfToday) {
           keysRevenue.today += amt;
+          keysSold.today++;
         } else if (rTime >= startOfYesterday && rTime < endOfYesterday) {
           keysRevenue.yesterday += amt;
+          keysSold.yesterday++;
         }
-        if (rTime >= startOfSevenDays) keysRevenue.sevenDays += amt;
-        if (rTime >= startOf30Days) keysRevenue.month += amt;
-        if (rTime >= startOf1Year) keysRevenue.year += amt;
-
-        // Keys sold counters
-        keysSold.total += 1;
-        if (rTime >= startOfToday) {
-          keysSold.today += 1;
-        } else if (rTime >= startOfYesterday && rTime < endOfYesterday) {
-          keysSold.yesterday += 1;
+        if (rTime >= startOfSevenDays) {
+          keysRevenue.sevenDays += amt;
+          keysSold.sevenDays++;
         }
-        if (rTime >= startOfSevenDays) keysSold.sevenDays += 1;
-        if (rTime >= startOf30Days) keysSold.month += 1;
-        if (rTime >= startOf1Year) keysSold.year += 1;
+        if (rTime >= startOf30Days) {
+          keysRevenue.month += amt;
+          keysSold.month++;
+        }
+        if (rTime >= startOf1Year) {
+          keysRevenue.year += amt;
+          keysSold.year++;
+        }
+        keysSold.total++;
       } else if (isUpgrade) {
         upgradeRevenue.total += amt;
         if (rTime >= startOfToday) {
@@ -2027,7 +2686,33 @@ app.get('/api/admin/super/stats', async (req, res) => {
 
     keysSold.total += keysSoldOffset;
 
-    res.json({
+    // Apply baseline adminResetTime to in-memory withdrawals sum
+    const filteredWithdrawals = withdrawalsList.filter(w => safeParseDate(w.created_at).getTime() >= adminResetTime);
+    const approvedWithdrawalsAmount = filteredWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0);
+
+    // Dynamic stats: total approved count, declined count, verified count, and plan breakdowns
+    const approvedReceiptsList = await db.query("SELECT created_at FROM receipts WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success') AND (type != 'junior_settlement' OR type IS NULL)");
+    const totalApprovedCount = approvedReceiptsList.filter(r => safeParseDate(r.created_at).getTime() >= adminResetTime).length;
+
+    const declinedReceiptsList = await db.query("SELECT created_at FROM receipts WHERE LOWER(status) IN ('declined', 'rejected', 'failed', 'decline') AND (type != 'junior_settlement' OR type IS NULL)");
+    const totalDeclinedCount = declinedReceiptsList.filter(r => safeParseDate(r.created_at).getTime() >= adminResetTime).length;
+
+    const verifiedUsersRes = await db.query("SELECT COUNT(*) as cnt FROM users WHERE is_verified = 1 OR is_verified = '1'");
+    const totalVerifiedUsersCount = parseInt(verifiedUsersRes[0].cnt || 0);
+
+    const planCounts = { gold: 0, silver: 0, diamond: 0 };
+    const plansList = await db.query("SELECT plan_name FROM users WHERE plan_name IS NOT NULL");
+    for (const row of plansList) {
+      const pName = (row.plan_name || '').toLowerCase();
+      if (pName.includes('gold')) planCounts.gold++;
+      else if (pName.includes('silver')) planCounts.silver++;
+      else if (pName.includes('diamond')) planCounts.diamond++;
+    }
+
+    const joinedTodayRes = await db.query("SELECT COUNT(*) as cnt FROM users WHERE created_at >= ?", [new Date(startOfToday).toISOString()]);
+    const totalUsersToday = parseInt(joinedTodayRes[0].cnt || 0);
+
+    const statsResponse = {
       status: true,
       totalUsers: parseInt(getCnt(uCount)),
       totalJuniors: parseInt(getCnt(jCount)),
@@ -2041,9 +2726,17 @@ app.get('/api/admin/super/stats', async (req, res) => {
       keysRevenue,
       verificationRevenue,
       upgradeRevenue,
-      approvedWithdrawalsAmount: (approvedWithdrawals && approvedWithdrawals[0] && parseFloat(approvedWithdrawals[0].total || 0)) || 0,
-      keysSold: keysSold
-    });
+      approvedWithdrawalsAmount,
+      keysSold: keysSold,
+      totalApprovedCount,
+      totalDeclinedCount,
+      totalVerifiedUsers: totalVerifiedUsersCount,
+      planCounts,
+      joinedToday: totalUsersToday
+    };
+    superStatsCache = statsResponse;
+    superStatsCachedAt = nowTime;
+    res.json(statsResponse);
   } catch (err) {
     console.error('Failed to fetch stats:', err.message);
     res.json({
@@ -2120,7 +2813,7 @@ app.post('/api/admin/super/clear-balance', async (req, res) => {
 
 // POST /api/admin/super/credit-user — Credit a user's balance from the Super Admin console
 app.post('/api/admin/super/credit-user', async (req, res) => {
-  const { phone, amount } = req.body || {};
+  const { phone, amount, sendNotification } = req.body || {};
   if (!phone || amount === undefined || isNaN(parseFloat(amount))) {
     return res.status(400).json({ status: false, error: 'Phone and valid amount are required' });
   }
@@ -2136,12 +2829,15 @@ app.post('/api/admin/super/credit-user', async (req, res) => {
     const newBalance = (parseFloat(users[0].balance) || 0) + amtVal;
     await db.query('UPDATE users SET balance = ? WHERE phone = ?', [newBalance, phone]);
 
-    // Add a notification alert for the user
-    const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
-    await db.query(`
-      INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
-      VALUES (?, ?, 'alert', 'Account Credited 🎉', ?, ?, ?)
-    `, [notifId, phone, `Your account has been credited with ₦${amtVal.toLocaleString()} by the administration.`, amtVal.toString(), new Date().toISOString()]);
+    const sendNotif = sendNotification !== false;
+    if (sendNotif) {
+      // Add a notification alert for the user
+      const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+      await db.query(`
+        INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+        VALUES (?, ?, 'alert', 'Account Credited 🎉', ?, ?, ?)
+      `, [notifId, phone, `Your account has been credited with ₦${amtVal.toLocaleString()} by the administration.`, amtVal.toString(), new Date().toISOString()]);
+    }
 
     res.json({ status: true, message: 'User credited successfully', newBalance });
   } catch (err) {
@@ -2712,8 +3408,10 @@ app.get('/api/cloudinary-signature', (req, res) => {
     const timestamp = Math.round(new Date().getTime() / 1000);
     const crypto = require('crypto');
 
+    const folder = req.query.folder || 'video_challenges';
+
     // Sign parameters: folder and timestamp sorted alphabetically
-    const stringToSign = `folder=video_challenges&timestamp=${timestamp}${apiSecret}`;
+    const stringToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
     const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
 
     res.json({
@@ -2721,7 +3419,8 @@ app.get('/api/cloudinary-signature', (req, res) => {
       signature,
       timestamp,
       apiKey,
-      cloudName
+      cloudName,
+      folder
     });
   } catch (err) {
     res.status(500).json({ status: false, error: err.message });
@@ -2883,18 +3582,29 @@ app.post('/api/admin/super/trigger-reminders', async (req, res) => {
     const fallbackUrl = process.env.APP_URL || 'https://9jacash.com';
     const ctaUrl = req ? `${getBaseUrl(req)}/dashboard.html` : `${fallbackUrl}/dashboard.html`;
 
-    for (const u of list) {
-      const reminderHtml = compileEmailTemplate(
-        "Time to Mine! ⛏️",
-        `<p>Hi ${u.full_name || 'User'},</p>
-         <p>This is your daily reminder that your mining rig is ready. Don't let your mining power sit idle and miss out on today's earnings!</p>
-         <p>Log in to your dashboard now, tap <strong>"Mine"</strong>, and claim your daily check-in rewards.</p>`,
-        "Start Mining Now",
-        ctaUrl,
-        "#6366f1"
+    const CHUNK_SIZE = 5;
+    for (let i = 0; i < list.length; i += CHUNK_SIZE) {
+      const chunk = list.slice(i, i + CHUNK_SIZE);
+      await Promise.all(
+        chunk.map(async (u) => {
+          try {
+            const reminderHtml = compileEmailTemplate(
+              "Time to Mine! ⛏️",
+              `<p>Hi ${u.full_name || 'User'},</p>
+               <p>This is your daily reminder that your mining rig is ready. Don't let your mining power sit idle and miss out on today's earnings!</p>
+               <p>Log in to your dashboard now, tap <strong>"Mine"</strong>, and claim your daily check-in rewards.</p>`,
+              "Start Mining Now",
+              ctaUrl,
+              "#6366f1"
+            );
+            await sendResendEmail(u.email, "Friendly Reminder: Time to Mine on 9jaCash! ⛏️", reminderHtml);
+            sentCount++;
+          } catch (e) {
+            console.error(`Failed to send daily reminder to ${u.email}:`, e.message);
+          }
+        })
       );
-      await sendResendEmail(u.email, "Friendly Reminder: Time to Mine on 9jaCash! ⛏️", reminderHtml);
-      sentCount++;
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
     res.json({ status: true, message: `Successfully sent daily reminder emails to ${sentCount} users.` });
   } catch (err) {
@@ -2909,17 +3619,28 @@ setInterval(async () => {
     const fallbackUrl = process.env.APP_URL || 'https://9jacash.com';
     const ctaUrl = `${fallbackUrl}/dashboard.html`;
 
-    for (const u of list) {
-      const reminderHtml = compileEmailTemplate(
-        "Time to Mine! ⛏️",
-        `<p>Hi ${u.full_name || 'User'},</p>
-         <p>This is your daily reminder that your mining rig is ready. Don't let your mining power sit idle and miss out on today's earnings!</p>
-         <p>Log in to your dashboard now, tap <strong>"Mine"</strong>, and claim your daily check-in rewards.</p>`,
-        "Start Mining Now",
-        ctaUrl,
-        "#6366f1"
+    const CHUNK_SIZE = 5;
+    for (let i = 0; i < list.length; i += CHUNK_SIZE) {
+      const chunk = list.slice(i, i + CHUNK_SIZE);
+      await Promise.all(
+        chunk.map(async (u) => {
+          try {
+            const reminderHtml = compileEmailTemplate(
+              "Time to Mine! ⛏️",
+              `<p>Hi ${u.full_name || 'User'},</p>
+               <p>This is your daily reminder that your mining rig is ready. Don't let your mining power sit idle and miss out on today's earnings!</p>
+               <p>Log in to your dashboard now, tap <strong>"Mine"</strong>, and claim your daily check-in rewards.</p>`,
+              "Start Mining Now",
+              ctaUrl,
+              "#6366f1"
+            );
+            await sendResendEmail(u.email, "Friendly Reminder: Time to Mine on 9jaCash! ⛏️", reminderHtml);
+          } catch (e) {
+            console.error(`Failed to send daily scheduler reminder to ${u.email}:`, e.message);
+          }
+        })
       );
-      await sendResendEmail(u.email, "Friendly Reminder: Time to Mine on 9jaCash! ⛏️", reminderHtml);
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
     console.log("Daily mining reminders sent successfully via scheduler.");
   } catch (err) {
@@ -2941,7 +3662,8 @@ app.get('/api/settings/:key', async (req, res) => {
     payoutKeys: { price: 25000 },
     redirects: { payoutSuccess: 'success.html', payoutFailed: 'payment-failed.html' },
     admin_percentage: { percentage: 20 },
-    referral_bonus: { amount: 10000 }
+    referral_bonus: { amount: 10000 },
+    verificationVideo: { videoUrl: '', active: false }
   };
   try {
     let value = defaults[key] || {};
@@ -3106,7 +3828,7 @@ app.get('/api/debug/junior-links', async (req, res) => {
   try {
     const users = await db.query('SELECT * FROM users WHERE phone = ? OR phone LIKE ?', [phone, '%' + phone.slice(-8)]);
     const juniorAdmins = await db.query('SELECT referral_code, email, telegram_link, whatsapp_link, community_link, whatsapp_community_link, is_active FROM junior_admins');
-    
+
     if (!users || users.length === 0) {
       return res.json({ found: false, message: 'User not found', phone, allJuniorAdmins: juniorAdmins });
     }
@@ -3320,6 +4042,7 @@ app.delete('/api/admin/receipts/:id', async (req, res) => {
   const { id } = req.params;
   try {
     await db.query('DELETE FROM receipts WHERE id = ?', [id]);
+    invalidateDashboardCaches();
     res.json({ status: true, message: 'Receipt deleted successfully' });
   } catch (err) {
     console.error('Error deleting receipt:', err.message);
@@ -3336,6 +4059,7 @@ app.post('/api/admin/receipts/bulk-delete', async (req, res) => {
   try {
     const placeholders = ids.map(() => '?').join(', ');
     await db.query(`DELETE FROM receipts WHERE id IN (${placeholders})`, ids);
+    invalidateDashboardCaches();
     res.json({ status: true, message: `${ids.length} receipts deleted successfully` });
   } catch (err) {
     console.error('Error bulk deleting receipts:', err.message);
@@ -3490,6 +4214,7 @@ app.post('/api/admin/receipts/bulk-approve', async (req, res) => {
         }
       }
     }
+    invalidateDashboardCaches();
     res.json({ status: true, message: `${ids.length} receipts approved successfully` });
   } catch (err) {
     console.error('Error bulk approving receipts:', err.message);
@@ -3502,6 +4227,7 @@ app.post('/api/admin/receipts/bulk-approve', async (req, res) => {
 app.delete('/api/receipts/purge', async (req, res) => {
   try {
     await db.query('DELETE FROM receipts');
+    invalidateDashboardCaches();
     res.json({ status: true, message: 'All old receipts purged successfully' });
   } catch (err) {
     res.status(500).json({ status: false, error: err.message });
@@ -3651,6 +4377,7 @@ app.post('/api/admin/receipts/approve', async (req, res) => {
       }
     }
 
+    invalidateDashboardCaches();
     return res.json({ status: true, message: 'Receipt approved & user benefits provisioned successfully' });
   } catch (err) {
     console.error('Error approving receipt:', err);
@@ -3698,6 +4425,7 @@ app.post('/api/admin/receipts/decline', async (req, res) => {
       VALUES (?, ?, 'alert', ?, ?, ?, ?)
     `, [notifId, rc.phone, title, content, (rc.amount || 0).toString(), new Date().toISOString()]);
 
+    invalidateDashboardCaches();
     return res.json({ status: true, message: 'Receipt declined successfully and user notified' });
   } catch (err) {
     console.error('Error declining receipt:', err);
@@ -3709,16 +4437,24 @@ app.post('/api/admin/receipts/decline', async (req, res) => {
 app.get('/api/admin/junior/analytics', async (req, res) => {
   const { phone, code } = req.query;
   try {
-    const juniorCode = code || phone;
+    const juniorCode = (code || phone || '').trim().toUpperCase();
     if (!juniorCode) {
       return res.json({ status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0 } });
     }
 
-    const users = await db.query('SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?', [juniorCode, juniorCode]);
+    const nowTime = Date.now();
+    const cached = juniorAnalyticsCache[juniorCode];
+    if (cached && (nowTime - cached.cachedAt < STATS_CACHE_TTL)) {
+      return res.json(cached.data);
+    }
+
+    const users = await db.query('SELECT phone FROM users WHERE UPPER(junior_admin_code) = ? OR UPPER(referred_by) = ?', [juniorCode, juniorCode]);
     const phones = (users || []).map(u => u.phone);
 
     if (phones.length === 0) {
-      return res.json({ status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0, adminPercentage: 20, adminShare: 0, juniorShare: 0, keyGross: 0, verificationGross: 0, upgradeGross: 0 } });
+      const emptyResponse = { status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0, adminPercentage: 20, adminShare: 0, juniorShare: 0, keyGross: 0, verificationGross: 0, upgradeGross: 0 } };
+      juniorAnalyticsCache[juniorCode] = { data: emptyResponse, cachedAt: nowTime };
+      return res.json(emptyResponse);
     }
 
     let placeholders = phones.map(() => '?').join(',');
@@ -3734,7 +4470,6 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
     `, phones);
     const keysSold = parseInt(keysCount[0].cnt || keysCount[0]['COUNT(*)'] || 0);
 
-    // Align timezone with WAT (UTC+1, Nigeria Time)
     const now = new Date();
     const watTime = new Date(now.getTime() + 1 * 60 * 60 * 1000);
     const y = watTime.getUTCFullYear();
@@ -3779,7 +4514,7 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
       console.error('Error fetching admin_percentage:', e);
     }
 
-    return res.json({
+    const responseData = {
       status: true,
       stats: {
         today,
@@ -3795,7 +4530,9 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
         verificationGross,
         upgradeGross
       }
-    });
+    };
+    juniorAnalyticsCache[juniorCode] = { data: responseData, cachedAt: nowTime };
+    return res.json(responseData);
   } catch (err) {
     console.error('Error fetching junior analytics:', err);
     return res.json({ status: true, stats: { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, keysSold: 0, adminPercentage: 20, adminShare: 0, juniorShare: 0, keyGross: 0, verificationGross: 0, upgradeGross: 0 } });
