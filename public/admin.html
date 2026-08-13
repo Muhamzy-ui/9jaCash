@@ -3674,26 +3674,46 @@ function loadPromoVideos() {
         if (!grid) return;
         grid.innerHTML = '';
         data.videos.forEach(v => {
+          const hasVideo = !!(v.video_url);
+          const statusDot = hasVideo
+            ? `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:20px;padding:3px 8px;font-size:10px;font-weight:800;color:#10b981;"><span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;box-shadow:0 0 6px #10b981;"></span>Online</span>`
+            : `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.3);border-radius:20px;padding:3px 8px;font-size:10px;font-weight:800;color:#64748b;"><span style="width:6px;height:6px;border-radius:50%;background:#64748b;display:inline-block;"></span>Offline</span>`;
+
           const card = document.createElement('div');
           card.style.background = 'rgba(255,255,255,0.02)';
-          card.style.border = '1px solid rgba(255,255,255,0.05)';
+          card.style.border = hasVideo ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,255,255,0.05)';
           card.style.padding = '16px';
           card.style.borderRadius = '12px';
           card.style.margin = '0';
+          card.style.transition = 'border-color 0.3s';
           card.innerHTML = `
-            <div style="font-weight: 800; font-size: 13px; color: var(--accent); margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-weight: 800; font-size: 13px; color: var(--accent); margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
               <span>Slide Video #${v.id}</span>
-              <span style="font-size: 10px; color: var(--text-muted);">Max 10 mins</span>
-            </div>
-            
-            <div class="form-group" style="margin-bottom: 10px;">
-              <label class="form-label" style="font-size: 11px;">Direct Video URL</label>
-              <input type="text" id="promoVideoUrl_${v.id}" class="form-input" value="${v.video_url || ''}" style="padding: 8px 12px; font-size: 12px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                ${statusDot}
+                <span style="font-size: 10px; color: var(--text-muted);">Max 10 mins</span>
+              </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 10px;">
+              <label class="form-label" style="font-size: 11px;">Direct Video URL</label>
+              <input type="text" id="promoVideoUrl_${v.id}" class="form-input" value="${v.video_url || ''}" style="padding: 8px 12px; font-size: 12px;" oninput="updatePromoStatusDot(${v.id}, this.value)">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 6px;">
               <label class="form-label" style="font-size: 11px;">Or Upload Video File</label>
-              <input type="file" id="promoVideoFile_${v.id}" accept="video/*" class="form-input" style="padding: 8px 12px; font-size: 12px;">
+              <input type="file" id="promoVideoFile_${v.id}" accept="video/*" class="form-input" style="padding: 8px 12px; font-size: 12px;" onchange="previewPromoFileName(${v.id}, this)">
+            </div>
+
+            <!-- Progress Bar -->
+            <div id="promoUploadProgress_${v.id}" style="display:none; margin-bottom:10px; padding:10px 12px; background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.2); border-radius:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-size:11px;font-weight:700;color:#8b5cf6;" id="promoProgressText_${v.id}">Uploading... 0%</span>
+                <span style="font-size:10px;color:#94a3b8;" id="promoProgressStatus_${v.id}">Please wait</span>
+              </div>
+              <div style="width:100%;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;">
+                <div id="promoProgressBar_${v.id}" style="height:100%;width:0%;background:linear-gradient(90deg,#8b5cf6,#10b981);border-radius:3px;transition:width 0.3s ease;"></div>
+              </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 10px;">
@@ -3716,7 +3736,7 @@ function loadPromoVideos() {
               </div>
             </div>
 
-            <button onclick="savePromoVideo(${v.id}, this)" class="save-btn" style="width: 100%; padding: 10px; font-size: 12px; background: var(--accent); color: #000; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <button onclick="savePromoVideo(${v.id}, this)" class="save-btn" id="savePromoBtn_${v.id}" style="width: 100%; padding: 10px; font-size: 12px; background: var(--accent); color: #000; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
               <i class="fa-solid fa-floppy-disk"></i> Save Slide #${v.id}
             </button>
             <button onclick="clearPromoVideo(${v.id}, this)" class="save-btn" style="width: 100%; padding: 10px; font-size: 12px; background: #e11d48; color: #fff; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px;">
@@ -3780,58 +3800,114 @@ function savePromoVideo(id, btn) {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
   const videoUrlInput = document.getElementById(`promoVideoUrl_${id}`);
-  const likesInput = document.getElementById(`promoVideoLikes_${id}`);
-  const favsInput = document.getElementById(`promoVideoFavs_${id}`);
-  const sharesInput = document.getElementById(`promoVideoShares_${id}`);
-  const fileInput = document.getElementById(`promoVideoFile_${id}`);
-  const captionInput = document.getElementById(`promoVideoCaption_${id}`);
+  const likesInput    = document.getElementById(`promoVideoLikes_${id}`);
+  const favsInput     = document.getElementById(`promoVideoFavs_${id}`);
+  const sharesInput   = document.getElementById(`promoVideoShares_${id}`);
+  const fileInput     = document.getElementById(`promoVideoFile_${id}`);
+  const captionInput  = document.getElementById(`promoVideoCaption_${id}`);
 
   const payload = {
-    id: id,
+    id,
     videoUrl: videoUrlInput.value.trim(),
-    likes: parseInt(likesInput.value) || 0,
-    favorites: parseInt(favsInput.value) || 0,
-    shares: parseInt(sharesInput.value) || 0,
-    caption: captionInput ? captionInput.value.trim() : ""
+    likes:     parseInt(likesInput.value)  || 0,
+    favorites: parseInt(favsInput.value)   || 0,
+    shares:    parseInt(sharesInput.value) || 0,
+    caption:   captionInput ? captionInput.value.trim() : ''
   };
 
-  const file = fileInput.files[0];
+  // Progress bar helpers
+  const progressWrap   = document.getElementById(`promoUploadProgress_${id}`);
+  const progressText   = document.getElementById(`promoProgressText_${id}`);
+  const progressStatus = document.getElementById(`promoProgressStatus_${id}`);
+  const progressBar    = document.getElementById(`promoProgressBar_${id}`);
+
+  function showProgress(pct, label, status) {
+    if (progressWrap)   progressWrap.style.display = 'block';
+    if (progressText)   { progressText.textContent = label; progressText.style.color = '#8b5cf6'; }
+    if (progressBar)    progressBar.style.width = pct + '%';
+    if (progressStatus) progressStatus.textContent = status || '';
+  }
+  function hideProgress() { if (progressWrap) progressWrap.style.display = 'none'; }
+  function doneProgress(label) {
+    if (progressText) { progressText.textContent = label; progressText.style.color = '#10b981'; }
+    if (progressBar)  progressBar.style.width = '100%';
+    if (progressStatus) progressStatus.textContent = 'Done!';
+    setTimeout(hideProgress, 4000);
+  }
+  function errorProgress(msg) {
+    if (progressText) { progressText.textContent = '❌ ' + msg; progressText.style.color = '#ef4444'; }
+    if (progressStatus) progressStatus.textContent = 'Failed';
+    setTimeout(hideProgress, 5000);
+  }
+
+  function handleUploadError(msg) {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+    errorProgress(msg);
+    alert(msg);
+  }
+
+  function sendUpdateReq(body) {
+    const _API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+    fetch(_API + '/api/admin/login-video/update', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      if (data.status) {
+        doneProgress(`✅ Slide #${id} saved — 🟢 Online`);
+        loadPromoVideos();
+      } else {
+        errorProgress(data.error || 'Save failed');
+        alert(`Error: ${data.error}`);
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      errorProgress('Network error saving slide');
+      alert('Network error saving video slide.');
+    });
+  }
+
+  const file = fileInput ? fileInput.files[0] : null;
+
   if (file) {
     if (file.size > 100 * 1024 * 1024) {
-      alert("Video file is too large! Max limit is 100MB.");
+      alert('Video file is too large! Max limit is 100MB.');
       btn.disabled = false;
       btn.innerHTML = origHtml;
       return;
     }
 
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Initializing upload...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Initializing...';
+    showProgress(0, 'Preparing upload...', 'Connecting to Cloudinary');
 
-    // 1. Fetch Cloudinary signature for the 'promo_videos' folder
-    const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
-    fetch(API_URL + '/api/cloudinary-signature?folder=promo_videos')
-      .then(res => res.json())
-      .then(sigData => {
-        if (!sigData.status) {
-          throw new Error(sigData.error || "Failed to sign upload.");
-        }
-
-        const { signature, timestamp, apiKey, cloudName, folder } = sigData;
-
-        // 2. Upload directly to Cloudinary
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('folder', folder);
-        formData.append('timestamp', timestamp);
-        formData.append('api_key', apiKey);
-        formData.append('signature', signature);
+    const _API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+    fetch(_API + '/api/cloudinary-signature?folder=promo_videos')
+      .then(r => r.json())
+      .then(sig => {
+        if (!sig.status) throw new Error(sig.error || 'Failed to sign upload.');
+        const { signature, timestamp, apiKey, cloudName, folder } = sig;
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('folder', folder);
+        fd.append('timestamp', timestamp);
+        fd.append('api_key', apiKey);
+        fd.append('signature', signature);
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, true);
 
         xhr.upload.onprogress = function(evt) {
           if (evt.lengthComputable) {
-            const progress = Math.round((evt.loaded / evt.total) * 100);
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading (${progress}%)...`;
+            const pct = Math.round((evt.loaded / evt.total) * 100);
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading ${pct}%`;
+            showProgress(pct, `Uploading... ${pct}%`, pct < 100 ? 'Please wait...' : 'Processing...');
           }
         };
 
@@ -3840,90 +3916,42 @@ function savePromoVideo(id, btn) {
             try {
               const resp = JSON.parse(xhr.responseText);
               payload.videoUrl = resp.secure_url || resp.url;
+              showProgress(100, '✅ Upload complete! Saving to database...', 'Finalizing');
+              if (videoUrlInput) videoUrlInput.value = payload.videoUrl;
               sendUpdateReq(payload);
-            } catch(e) {
-              handleUploadError("Failed to parse Cloudinary response.");
-            }
+            } catch(e) { handleUploadError('Failed to parse Cloudinary response.'); }
           } else {
-            console.error("Cloudinary error:", xhr.responseText);
-            // Fallback to local Base64 upload if Cloudinary fails, but warn about file size
             if (file.size <= 5 * 1024 * 1024) {
-              btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cloudinary failed. Trying local upload...';
+              showProgress(80, 'Cloudinary failed. Trying local upload...', '');
               const reader = new FileReader();
-              reader.onload = function(e) {
-                payload.videoData = e.target.result;
-                sendUpdateReq(payload);
-              };
+              reader.onload = e => { payload.videoData = e.target.result; sendUpdateReq(payload); };
               reader.readAsDataURL(file);
-            } else {
-              handleUploadError("Cloudinary upload failed. Video is too large for local fallback (max 5MB).");
-            }
+            } else { handleUploadError('Cloudinary upload failed. Video too large for local fallback (max 5MB).'); }
           }
         };
 
         xhr.onerror = function() {
-          // Fallback to local Base64 upload
           if (file.size <= 5 * 1024 * 1024) {
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connection failed. Trying local upload...';
+            showProgress(50, 'Connection failed. Trying local...', '');
             const reader = new FileReader();
-            reader.onload = function(e) {
-              payload.videoData = e.target.result;
-              sendUpdateReq(payload);
-            };
+            reader.onload = e => { payload.videoData = e.target.result; sendUpdateReq(payload); };
             reader.readAsDataURL(file);
-          } else {
-            handleUploadError("Network error uploading to Cloudinary. Video is too large for local fallback (max 5MB).");
-          }
+          } else { handleUploadError('Network error. Video too large for local fallback.'); }
         };
 
-        xhr.send(formData);
+        xhr.send(fd);
       })
       .catch(err => {
-        // Fallback to local Base64 upload
         if (file.size <= 5 * 1024 * 1024) {
-          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signature failed. Trying local upload...';
+          showProgress(30, 'Signature failed. Trying local...', '');
           const reader = new FileReader();
-          reader.onload = function(e) {
-            payload.videoData = e.target.result;
-            sendUpdateReq(payload);
-          };
+          reader.onload = e => { payload.videoData = e.target.result; sendUpdateReq(payload); };
           reader.readAsDataURL(file);
-        } else {
-          handleUploadError("Failed to initialize Cloudinary upload: " + err.message + ". Video is too large for local fallback (max 5MB).");
-        }
+        } else { handleUploadError('Cloudinary init failed: ' + err.message); }
       });
   } else {
     sendUpdateReq(payload);
   }
-
-  function handleUploadError(msg) {
-    btn.disabled = false;
-    btn.innerHTML = origHtml;
-    alert(msg);
-  }
-
-  function sendUpdateReq(body) {
-    const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
-    fetch(API_URL + '/api/admin/login-video/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    })
-      .then(res => res.json())
-      .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = origHtml;
-        if (data.status) {
-          alert(`Slide #${id} updated successfully!`);
-          loadPromoVideos();
-        } else {
-          alert(`Error: ${data.error}`);
-        }
-      })
-      .catch(err => {
-        btn.disabled = false;
-        btn.innerHTML = origHtml;
-        alert("Network error saving video slide.");
       });
   }
 }

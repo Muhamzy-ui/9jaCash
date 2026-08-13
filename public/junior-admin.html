@@ -361,6 +361,15 @@ tr:hover td{background:rgba(255,255,255,0.02);}
             </tr>
           </tbody>
         </table>
+        <!-- Withdrawals Pagination -->
+        <div id="withdrawalsPagination" style="display:none; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; border-top:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:11px; color:#64748b;" id="withdrawalsPaginationInfo">Showing 1-15</span>
+          <div style="display:flex; gap:6px;">
+            <button onclick="changePage('withdrawals',-1)" id="withdrawalsPrevBtn" style="padding:5px 12px; font-size:11px; font-weight:700; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#94a3b8; cursor:pointer;">← Prev</button>
+            <span style="padding:5px 12px; font-size:11px; font-weight:800; color:#fff; background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.3); border-radius:6px;" id="withdrawalsPageNum">Page 1</span>
+            <button onclick="changePage('withdrawals',1)" id="withdrawalsNextBtn" style="padding:5px 12px; font-size:11px; font-weight:700; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#94a3b8; cursor:pointer;">Next →</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -400,6 +409,15 @@ tr:hover td{background:rgba(255,255,255,0.02);}
             </tr>
           </tbody>
         </table>
+        <!-- Users Pagination -->
+        <div id="usersPagination" style="display:none; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; border-top:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:11px; color:#64748b;" id="usersPaginationInfo">Showing 1-15</span>
+          <div style="display:flex; gap:6px;">
+            <button onclick="changePage('users',-1)" id="usersPrevBtn" style="padding:5px 12px; font-size:11px; font-weight:700; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#94a3b8; cursor:pointer;">← Prev</button>
+            <span style="padding:5px 12px; font-size:11px; font-weight:800; color:#fff; background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.3); border-radius:6px;" id="usersPageNum">Page 1</span>
+            <button onclick="changePage('users',1)" id="usersNextBtn" style="padding:5px 12px; font-size:11px; font-weight:700; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#94a3b8; cursor:pointer;">Next →</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -441,6 +459,15 @@ tr:hover td{background:rgba(255,255,255,0.02);}
             </tr>
           </tbody>
         </table>
+        <!-- Receipts Pagination -->
+        <div id="receiptsPagination" style="display:none; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; border-top:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:11px; color:#64748b;" id="receiptsPaginationInfo">Showing 1-15</span>
+          <div style="display:flex; gap:6px;">
+            <button onclick="changePage('receipts',-1)" id="receiptsPrevBtn" style="padding:5px 12px; font-size:11px; font-weight:700; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#94a3b8; cursor:pointer;">← Prev</button>
+            <span style="padding:5px 12px; font-size:11px; font-weight:800; color:#fff; background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.3); border-radius:6px;" id="receiptsPageNum">Page 1</span>
+            <button onclick="changePage('receipts',1)" id="receiptsNextBtn" style="padding:5px 12px; font-size:11px; font-weight:700; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#94a3b8; cursor:pointer;">Next →</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -475,6 +502,15 @@ tr:hover td{background:rgba(255,255,255,0.02);}
             </tr>
           </tbody>
         </table>
+        <!-- Video Submissions Pagination -->
+        <div id="videoSubmissionsPagination" style="display:none; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; border-top:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:11px; color:#64748b;" id="videoSubmissionsPaginationInfo">Showing 1-15</span>
+          <div style="display:flex; gap:6px;">
+            <button onclick="changePage('videoSubmissions',-1)" id="videoSubmissionsPrevBtn" style="padding:5px 12px; font-size:11px; font-weight:700; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#94a3b8; cursor:pointer;">← Prev</button>
+            <span style="padding:5px 12px; font-size:11px; font-weight:800; color:#fff; background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.3); border-radius:6px;" id="videoSubmissionsPageNum">Page 1</span>
+            <button onclick="changePage('videoSubmissions',1)" id="videoSubmissionsNextBtn" style="padding:5px 12px; font-size:11px; font-weight:700; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#94a3b8; cursor:pointer;">Next →</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -847,6 +883,38 @@ function submitSettlement(e) {
   reader.readAsDataURL(file);
 }
 
+// ========== PAGINATION ENGINE ==========
+const PAGE_SIZE = 15;
+const _pages = { users: 1, withdrawals: 1, receipts: 1, videoSubmissions: 1 };
+const _cache  = { users: [], withdrawals: [], receipts: [], videoSubmissions: [] };
+
+function updatePaginationUI(key, total) {
+  const page     = _pages[key];
+  const pages    = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const from     = (page - 1) * PAGE_SIZE + 1;
+  const to       = Math.min(page * PAGE_SIZE, total);
+  const wrap     = document.getElementById(`${key}Pagination`);
+  const info     = document.getElementById(`${key}PaginationInfo`);
+  const pageNum  = document.getElementById(`${key}PageNum`);
+  const prevBtn  = document.getElementById(`${key}PrevBtn`);
+  const nextBtn  = document.getElementById(`${key}NextBtn`);
+  if (wrap)    wrap.style.display = total > PAGE_SIZE ? 'flex' : 'none';
+  if (info)    info.textContent = total === 0 ? 'No records' : `Showing ${from}–${to} of ${total}`;
+  if (pageNum) pageNum.textContent = `Page ${page} / ${pages}`;
+  if (prevBtn) { prevBtn.disabled = page <= 1; prevBtn.style.opacity = page <= 1 ? '0.35' : '1'; }
+  if (nextBtn) { nextBtn.disabled = page >= pages; nextBtn.style.opacity = page >= pages ? '0.35' : '1'; }
+}
+
+function changePage(key, dir) {
+  const total = _cache[key].length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  _pages[key] = Math.max(1, Math.min(_pages[key] + dir, pages));
+  if (key === 'users')            _renderUsersPage();
+  if (key === 'withdrawals')      _renderWithdrawalsPage();
+  if (key === 'receipts')         _renderReceiptsPage();
+  if (key === 'videoSubmissions') _renderVideoSubmissionsPage();
+}
+
 // ========== RENDER DATA ==========
 function renderUsers(users, isFiltering = false) {
   if (!isFiltering) {
@@ -857,26 +925,35 @@ function renderUsers(users, isFiltering = false) {
     users.forEach(u => totalBal += parseFloat(u.balance || 0));
     document.getElementById('statBalances').textContent = '₦' + totalBal.toLocaleString();
   }
-  
-  const tbody = document.getElementById('userTable');
+  _pages.users = 1;
+  _cache.users = users;
+  _renderUsersPage();
+}
+
+function _renderUsersPage() {
+  const users  = _cache.users;
+  const page   = _pages.users;
+  const slice  = users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const tbody  = document.getElementById('userTable');
+
   if (users.length === 0) {
     tbody.innerHTML = '<tr><td colspan="10" class="text-center text-slate-400 py-6">No referred users found</td></tr>';
+    updatePaginationUI('users', 0);
     return;
   }
-  
+
   tbody.innerHTML = '';
-  users.forEach(u => {
+  slice.forEach(u => {
     const tr = document.createElement('tr');
-    
     const isSuspended = u.status === 'suspended';
     const statusClass = isSuspended ? 'badge-rejected' : 'badge-approved';
-    const statusText = isSuspended ? 'Suspended' : 'Active';
-    const toggleBtnText = isSuspended ? 'Activate' : 'Suspend';
+    const statusText  = isSuspended ? 'Suspended' : 'Active';
+    const toggleBtnText  = isSuspended ? 'Activate' : 'Suspend';
     const toggleBtnClass = isSuspended ? 'text-emerald-400 hover:text-emerald-300' : 'text-rose-400 hover:text-rose-300';
     const nextStatus = isSuspended ? 'active' : 'suspended';
     const isVerified = u.is_verified === 1 || u.is_verified === true || u.is_verified === '1';
-    const verBadge = isVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0;" title="Verified Account"></i>' : '';
-    
+    const verBadge   = isVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0;" title="Verified Account"></i>' : '';
+
     tr.innerHTML = `
       <td style="text-align:center;"><input type="checkbox" class="user-select-chk" value="${u.phone}" onchange="updateBulkButtons('users')" style="cursor:pointer; width:15px; height:15px;"></td>
       <td class="text-slate-400">${new Date(u.created_at).toLocaleDateString()}</td>
@@ -912,51 +989,62 @@ function renderUsers(users, isFiltering = false) {
     `;
     tbody.appendChild(tr);
   });
+  updatePaginationUI('users', users.length);
 }
 
 function filterUsers() {
   const query = document.getElementById('userSearchInput').value.toLowerCase().trim();
   if (!query) {
-    renderUsers(referredUsersCache, true);
+    _pages.users = 1;
+    _cache.users = referredUsersCache;
+    _renderUsersPage();
     return;
   }
   const filtered = referredUsersCache.filter(u => {
-    const name = (u.full_name || '').toLowerCase();
-    const phone = (u.phone || '').toLowerCase();
-    const email = (u.email || '').toLowerCase();
+    const name  = (u.full_name || '').toLowerCase();
+    const phone = (u.phone    || '').toLowerCase();
+    const email = (u.email    || '').toLowerCase();
     return name.includes(query) || phone.includes(query) || email.includes(query);
   });
-  renderUsers(filtered, true);
+  _pages.users = 1;
+  _cache.users = filtered;
+  _renderUsersPage();
 }
 
 function renderWithdrawals(withdrawals) {
   const pending = withdrawals.filter(w => w.status === 'Pending').length;
   document.getElementById('statPending').textContent = pending;
   document.getElementById('pendingLabel').textContent = pending + ' Pending';
-  
   let totalPaidAmount = 0;
-  withdrawals.filter(w => w.status === 'Approved').forEach(w => {
-    totalPaidAmount += parseFloat(w.amount || 0);
-  });
+  withdrawals.filter(w => w.status === 'Approved').forEach(w => { totalPaidAmount += parseFloat(w.amount || 0); });
   document.getElementById('statPaid').textContent = '₦' + totalPaidAmount.toLocaleString();
-  
+
+  _pages.withdrawals = 1;
+  _cache.withdrawals = withdrawals;
+  _renderWithdrawalsPage();
+}
+
+function _renderWithdrawalsPage() {
+  const withdrawals = _cache.withdrawals;
+  const page  = _pages.withdrawals;
+  const slice = withdrawals.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const tbody = document.getElementById('withdrawalTable');
+
   if (withdrawals.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">No withdrawal requests found</td></tr>';
+    updatePaginationUI('withdrawals', 0);
     return;
   }
-  
+
   tbody.innerHTML = '';
-  withdrawals.forEach(w => {
+  slice.forEach(w => {
     const tr = document.createElement('tr');
-    
     let statusClass = 'badge-pending';
     if (w.status === 'Approved') statusClass = 'badge-approved';
     if (w.status === 'Rejected') statusClass = 'badge-rejected';
-    
-    const isPending = w.status === 'Pending';
+    const isPending      = w.status === 'Pending';
     const isUserVerified = w.is_verified === 1 || w.is_verified === true || w.is_verified === '1';
-    const actionButtons = (isPending && isUserVerified) ? `
+    const actionButtons  = (isPending && isUserVerified) ? `
       <div class="flex items-center gap-2">
         <button onclick="approvePayout('${w.id}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all">
           <i class="fa-solid fa-check"></i> Approve
@@ -966,7 +1054,6 @@ function renderWithdrawals(withdrawals) {
         </button>
       </div>
     ` : (isPending ? `<span class="text-xs text-amber-500 font-bold" title="This first withdrawal bounces back automatically">Auto-Bouncing (Unverified)</span>` : `<span class="text-xs text-slate-500 font-bold">Processed</span>`);
-    
     const chkHtml = isPending ? `<input type="checkbox" class="withdrawal-select-chk" value="${w.id}" onchange="updateBulkButtons('withdrawals')" style="cursor:pointer; width:15px; height:15px;">` : '';
 
     tr.innerHTML = `
@@ -986,6 +1073,52 @@ function renderWithdrawals(withdrawals) {
     `;
     tbody.appendChild(tr);
   });
+  updatePaginationUI('withdrawals', withdrawals.length);
+}
+
+// Receipts pagination helper — called from loadDashboardReceipts render path
+function paginateReceipts(allRows) {
+  _pages.receipts = 1;
+  _cache.receipts = allRows;
+  _renderReceiptsPage();
+}
+
+function _renderReceiptsPage() {
+  const allRows = _cache.receipts;
+  const page    = _pages.receipts;
+  const slice   = allRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const tbody   = document.getElementById('receiptListTable');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (allRows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">No receipts found.</td></tr>';
+    updatePaginationUI('receipts', 0);
+    return;
+  }
+  slice.forEach(row => tbody.appendChild(row));
+  updatePaginationUI('receipts', allRows.length);
+}
+
+function paginateVideoSubmissions(allRows) {
+  _pages.videoSubmissions = 1;
+  _cache.videoSubmissions = allRows;
+  _renderVideoSubmissionsPage();
+}
+
+function _renderVideoSubmissionsPage() {
+  const allRows = _cache.videoSubmissions;
+  const page    = _pages.videoSubmissions;
+  const slice   = allRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const tbody   = document.getElementById('videoSubmissionListTable');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (allRows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No video submissions found in your network.</td></tr>';
+    updatePaginationUI('videoSubmissions', 0);
+    return;
+  }
+  slice.forEach(row => tbody.appendChild(row));
+  updatePaginationUI('videoSubmissions', allRows.length);
 }
 
 // ========== CONTROL ACTIONS ==========
@@ -1352,10 +1485,11 @@ function renderReceiptsTable(receipts) {
   const table = document.getElementById('receiptListTable');
   if (receipts.length === 0) {
     table.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">No payment receipts found in your network</td></tr>';
+    updatePaginationUI('receipts', 0);
     return;
   }
   
-  table.innerHTML = '';
+  const allRows = [];
   receipts.forEach(function(r) {
     const isPending = r.status === 'pending_verification' || r.status === 'pending';
     let statusClass = 'badge-pending';
@@ -1399,8 +1533,9 @@ function renderReceiptsTable(receipts) {
         ${deleteBtnHtml}
       </td>
     `;
-    table.appendChild(tr);
+    allRows.push(tr);
   });
+  paginateReceipts(allRows);
 }
 
 function viewReceiptImage(id) {
@@ -1544,10 +1679,11 @@ function renderVideoSubmissionsTable(subs) {
   if (!table) return;
   if (subs.length === 0) {
     table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No video submissions found in your network.</td></tr>';
+    updatePaginationUI('videoSubmissions', 0);
     return;
   }
   
-  table.innerHTML = '';
+  const allRows = [];
   subs.forEach(function(s) {
     const isPending = s.status === 'Pending';
     let statusClass = 'badge-pending';
@@ -1587,8 +1723,9 @@ function renderVideoSubmissionsTable(subs) {
         ` : 'Processed'}
       </td>
     `;
-    table.appendChild(tr);
+    allRows.push(tr);
   });
+  paginateVideoSubmissions(allRows);
 }
 
 function approveVideo(id) {
