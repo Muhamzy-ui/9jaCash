@@ -1803,14 +1803,15 @@ function uploadVerificationVideoFile() {
     showToast('Please select a video file first', 'error');
     return;
   }
-  if (file.size > 200 * 1024 * 1024) {
-    showToast('Video file is too large! Max 200MB.', 'error');
+  if (file.size > 500 * 1024 * 1024) {
+    showToast('Video file is too large! Max 500MB.', 'error');
     return;
   }
 
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
   progressEl.style.display = 'block';
+  progressEl.style.color = 'var(--accent)';
   progressEl.textContent = 'Initializing upload...';
 
   fetch(API_URL + '/api/cloudinary-signature?folder=verification_videos')
@@ -1830,7 +1831,7 @@ function uploadVerificationVideoFile() {
       xhr.upload.onprogress = function(evt) {
         if (evt.lengthComputable) {
           const pct = Math.round((evt.loaded / evt.total) * 100);
-          progressEl.textContent = `Uploading... ${pct}%`;
+          progressEl.textContent = `Uploading to cloud... ${pct}%`;
         }
       };
       xhr.onload = function() {
@@ -1839,10 +1840,33 @@ function uploadVerificationVideoFile() {
         if (xhr.status === 200) {
           const result = JSON.parse(xhr.responseText);
           const url = result.secure_url;
+          // Set URL in field
           document.getElementById('verificationVideoUrl').value = url;
-          progressEl.textContent = 'Upload complete! URL filled above. Click Save All Settings.';
+          progressEl.textContent = 'Upload complete! Saving to settings...';
           progressEl.style.color = '#10b981';
-          showToast('Verification video uploaded successfully!');
+
+          // Auto-save immediately to backend
+          const isActive = document.getElementById('verificationVideoActive').value === 'true';
+          fetch(API_URL + '/api/settings/verificationVideo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value: { active: isActive, videoUrl: url } })
+          })
+          .then(r => r.json())
+          .then(saveData => {
+            if (saveData.status !== false) {
+              progressEl.textContent = '✅ Upload complete & saved! Users with payout keys will see this video.';
+              updateVerificationVideoIndicator();
+              showToast('Verification video uploaded & saved!', 'success');
+            } else {
+              progressEl.textContent = '⚠️ Uploaded but save failed. Click Save All Settings to apply.';
+              showToast('Uploaded but not saved. Click Save All Settings.', 'error');
+            }
+          })
+          .catch(() => {
+            progressEl.textContent = '⚠️ Uploaded. Click Save All Settings to apply.';
+            showToast('Uploaded! Click Save All Settings to apply.', 'success');
+          });
         } else {
           progressEl.textContent = 'Upload failed. Please try again.';
           progressEl.style.color = '#ef4444';
