@@ -767,6 +767,8 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       </div>
     </div>
     <div class="flex items-center gap-3">
+      <button id="btnSuperBulkApproveWithdrawals" onclick="bulkApproveSuperWithdrawals()" style="display:none; background:#10b981; border:none; padding: 8px 16px; border-radius:10px; color:white; font-weight:700; cursor:pointer; align-items:center; gap:6px;"><i class="fa-solid fa-check-double"></i> Mass Approve (<span id="txtSuperBulkApproveCount">0</span>)</button>
+      <button id="btnSuperBulkDeclineWithdrawals" onclick="bulkDeclineSuperWithdrawals()" style="display:none; background:#ef4444; border:none; padding: 8px 16px; border-radius:10px; color:white; font-weight:700; cursor:pointer; align-items:center; gap:6px;"><i class="fa-solid fa-ban"></i> Mass Decline (<span id="txtSuperBulkDeclineCount">0</span>)</button>
       <button onclick="loadSuperWithdrawals()" class="btn btn-secondary" style="border:1px solid var(--border); padding: 8px 16px; border-radius:10px; background:var(--surface); color:var(--text); cursor:pointer;"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
     </div>
   </div>
@@ -780,17 +782,18 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <table class="w-full text-left" style="width:100%; border-collapse:collapse; min-width:800px;">
         <thead>
           <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding:12px; width:40px; text-align:center;"><input type="checkbox" id="selectAllSuperWithdrawals" onclick="toggleSelectAllSuperWithdrawals(this.checked)" style="cursor:pointer; width:15px; height:15px; accent-color:#10b981;"></th>
             <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:15%;">Date</th>
-            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:25%;">User Name / Phone</th>
-            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:25%;">Bank Details</th>
-            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:15%;">Amount</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:23%;">User Name / Phone</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:23%;">Bank Details</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:14%;">Amount</th>
             <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:10%;">Status</th>
-            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:10%; text-align:right;">Actions</th>
+            <th style="padding:12px; font-size:11px; text-transform:uppercase; color:var(--text-muted); width:15%; text-align:right;">Actions</th>
           </tr>
         </thead>
         <tbody id="superWithdrawalsTable">
           <tr>
-            <td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">Loading withdrawals...</td>
+            <td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">Loading withdrawals...</td>
           </tr>
         </tbody>
       </table>
@@ -3295,8 +3298,12 @@ function changeWithdrawalsPage(delta) {
 
 function renderSuperWithdrawals(withdrawals) {
   const table = document.getElementById('superWithdrawalsTable');
+  const selectAll = document.getElementById('selectAllSuperWithdrawals');
+  if (selectAll) selectAll.checked = false;
+  updateSuperWithdrawalBulkButtons();
+
   if (withdrawals.length === 0) {
-    table.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text3);">No withdrawal requests found</td></tr>';
+    table.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:var(--text3);">No withdrawal requests found</td></tr>';
     return;
   }
 
@@ -3338,9 +3345,12 @@ function renderSuperWithdrawals(withdrawals) {
       }
     }
 
+    const chkHtml = isPending ? `<input type="checkbox" class="super-withdrawal-chk" value="${w.id}" onchange="updateSuperWithdrawalBulkButtons()" style="cursor:pointer; width:15px; height:15px; accent-color:#10b981;">` : '—';
+
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid var(--border)';
     tr.innerHTML = `
+      <td style="padding:12px; text-align:center;">${chkHtml}</td>
       <td style="padding:12px; font-size:12px; color:var(--text3);">${new Date(w.created_at).toLocaleString()}</td>
       <td style="padding:12px;">
         <div style="color:white; font-weight:700;">${w.full_name || '—'}</div>
@@ -3355,6 +3365,118 @@ function renderSuperWithdrawals(withdrawals) {
       <td style="padding:12px; text-align:right;">${actionsHtml}</td>
     `;
     table.appendChild(tr);
+  });
+}
+
+function updateSuperWithdrawalBulkButtons() {
+  const chks = document.querySelectorAll('.super-withdrawal-chk:checked');
+  const count = chks.length;
+  const btnApprove = document.getElementById('btnSuperBulkApproveWithdrawals');
+  const btnDecline = document.getElementById('btnSuperBulkDeclineWithdrawals');
+  const txtApproveCount = document.getElementById('txtSuperBulkApproveCount');
+  const txtDeclineCount = document.getElementById('txtSuperBulkDeclineCount');
+
+  if (btnApprove && btnDecline) {
+    if (count > 0) {
+      btnApprove.style.display = 'inline-flex';
+      btnDecline.style.display = 'inline-flex';
+      if (txtApproveCount) txtApproveCount.textContent = count;
+      if (txtDeclineCount) txtDeclineCount.textContent = count;
+    } else {
+      btnApprove.style.display = 'none';
+      btnDecline.style.display = 'none';
+    }
+  }
+}
+
+function toggleSelectAllSuperWithdrawals(checked) {
+  const chks = document.querySelectorAll('.super-withdrawal-chk');
+  chks.forEach(chk => chk.checked = checked);
+  updateSuperWithdrawalBulkButtons();
+}
+
+function bulkApproveSuperWithdrawals() {
+  const chks = document.querySelectorAll('.super-withdrawal-chk:checked');
+  const ids = Array.from(chks).map(c => c.value);
+  if (ids.length === 0) return;
+
+  Swal.fire({
+    title: `Approve ${ids.length} Withdrawals?`,
+    text: `Are you sure you want to MASS APPROVE these ${ids.length} selected payouts?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: `Yes, Approve (${ids.length})`,
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Approving Payouts...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/super/bulk-approve-withdrawals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Approved!', text: data.message || 'Withdrawals approved successfully.', confirmButtonColor: '#10b981', background: '#0f1623', color: '#c8d6e5' });
+          const selectAll = document.getElementById('selectAllSuperWithdrawals');
+          if (selectAll) selectAll.checked = false;
+          loadSuperWithdrawals(withdrawalsCurrentPage);
+          loadSuperStats();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Bulk approval failed', confirmButtonColor: '#10b981', background: '#0f1623', color: '#c8d6e5' });
+        }
+      })
+      .catch(err => {
+        Swal.fire({ icon: 'error', title: 'Network Error', text: err.message, confirmButtonColor: '#10b981', background: '#0f1623', color: '#c8d6e5' });
+      });
+    }
+  });
+}
+
+function bulkDeclineSuperWithdrawals() {
+  const chks = document.querySelectorAll('.super-withdrawal-chk:checked');
+  const ids = Array.from(chks).map(c => c.value);
+  if (ids.length === 0) return;
+
+  Swal.fire({
+    title: `Decline ${ids.length} Withdrawals?`,
+    text: `Enter reason for rejecting these ${ids.length} withdrawals (user balances will be refunded):`,
+    input: 'text',
+    inputValue: 'Bank account details mismatch or invalid credentials.',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: `Yes, Reject & Refund (${ids.length})`,
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(res => {
+    if (res.isConfirmed && res.value) {
+      Swal.fire({ title: 'Rejecting & Refund...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/super/bulk-reject-withdrawals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, reason: res.value })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Declined & Refunded!', text: data.message || 'Withdrawals rejected successfully.', confirmButtonColor: '#10b981', background: '#0f1623', color: '#c8d6e5' });
+          const selectAll = document.getElementById('selectAllSuperWithdrawals');
+          if (selectAll) selectAll.checked = false;
+          loadSuperWithdrawals(withdrawalsCurrentPage);
+          loadSuperStats();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Bulk rejection failed', confirmButtonColor: '#10b981', background: '#0f1623', color: '#c8d6e5' });
+        }
+      })
+      .catch(err => {
+        Swal.fire({ icon: 'error', title: 'Network Error', text: err.message, confirmButtonColor: '#10b981', background: '#0f1623', color: '#c8d6e5' });
+      });
+    }
   });
 }
 
