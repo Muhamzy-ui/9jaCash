@@ -1397,9 +1397,12 @@ app.get('/api/admin/junior/stats', async (req, res) => {
   if (!referralCode) return res.status(400).json({ status: false, error: 'Referral code required' });
 
   try {
-    // Get reset_at timestamp for this junior admin
+    // Auto-reset commission every 1 week (7 days), or manual reset_at, whichever is more recent
+    const nowTime = Date.now();
+    const sevenDaysAgo = nowTime - (7 * 24 * 60 * 60 * 1000);
     const jaList = await db.query('SELECT reset_at FROM junior_admins WHERE referral_code = ?', [referralCode]);
-    const resetTime = (jaList.length > 0 && jaList[0].reset_at) ? safeParseDate(jaList[0].reset_at).getTime() : 0;
+    const manualResetTime = (jaList.length > 0 && jaList[0].reset_at) ? safeParseDate(jaList[0].reset_at).getTime() : 0;
+    const resetTime = Math.max(sevenDaysAgo, manualResetTime);
 
     // 1. Get referred users created after resetTime
     const referredUsers = await db.query('SELECT phone, created_at FROM users WHERE junior_admin_code = ? OR referred_by = ?', [referralCode, referralCode]);
@@ -2274,11 +2277,16 @@ app.get('/api/admin/super/juniors', async (req, res) => {
         `)
       : [];
 
+    const nowTime = Date.now();
+    const sevenDaysAgo = nowTime - (7 * 24 * 60 * 60 * 1000);
+
     // 4. Build the final array matching the exact original structure
     const juniorsWithStats = [];
     for (const j of list) {
       const code = (j.referral_code || '').trim().toUpperCase();
-      const resetTime = j.reset_at ? safeParseDate(j.reset_at).getTime() : 0;
+      const manualResetTime = j.reset_at ? safeParseDate(j.reset_at).getTime() : 0;
+      // Auto-reset commission every 1 week (7 days), or manual reset_at, whichever is more recent
+      const resetTime = Math.max(sevenDaysAgo, manualResetTime);
 
       // Filter referred users created after resetTime
       const juniorUsers = users.filter(u => {
