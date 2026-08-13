@@ -2352,18 +2352,8 @@
     // ONLY check 9jaCashBouncedWithdrawal — set AFTER executeBounce() returns money
     // Removed pendingBounce check because that means bounce hasn't happened yet
 
-    function checkAndShowVerifyButton() {
-      const hasBouncedBefore = localStorage.getItem("9jaCashBouncedWithdrawal") === "true";
-      const wrap = document.getElementById("verifyBankWrap");
 
-      if (hasBouncedBefore) {
-        wrap.classList.add("show");
-        console.log("Verify button SHOWN - bounce was previously reversed");
-      } else {
-        wrap.classList.remove("show");
-        console.log("Verify button HIDDEN - no bounce yet");
-      }
-    }
+    // checkAndShowVerifyButton is defined lower in the file with full video+payout_key logic
 
     // ========== executeBounce — runs when timer expires, returns money, shows popup + button ==========
     function executeBounce() {
@@ -3059,6 +3049,8 @@
       setTimeout(function () { banner.classList.add("hidden"); }, 600);
     }
 
+    let _verifyVideoFetched = false;
+
     function checkAndShowVerifyButton() {
       const wrap = document.getElementById("verifyBankWrap");
       const btn = document.getElementById("verifyBankBtn");
@@ -3068,30 +3060,30 @@
       const hasBounced = (localStorage.getItem("9jaCashBouncedWithdrawal") === "true") || (userData && userData.hasBouncedBefore);
       const isPending = localStorage.getItem("9jaCashVerificationPending") !== null;
       const hasWithdrawn = userData && (userData.withdrawalCount >= 1 || userData.withdrawal_count >= 1);
-      const hasPayoutKey = userData && (userData.payout_key || userData.payoutKey);
+      const hasPayoutKey = userData && !!(userData.payout_key || userData.payoutKey);
 
       // Verification video elements
       const videoContainer = document.getElementById("verificationVideoContainer");
       const videoPlayer = document.getElementById("verificationVideoPlayer");
 
       if (isVerified) {
-        wrap.style.display = "block";
+        wrap.classList.add("show");
         btn.style.background = "linear-gradient(135deg, #10b981, #059669)";
         btn.style.boxShadow = "0 4px 20px rgba(16, 185, 129, 0.4)";
         btn.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#ffffff;"></i><span>Account Verified ✅</span>';
-        btn.onclick = function () {
-          showToast("Your account is verified!");
-        };
+        btn.onclick = function () { showToast("Your account is verified!"); };
         if (videoContainer) videoContainer.style.display = "none";
+
       } else if (hasBounced || isPending || hasWithdrawn || hasPayoutKey) {
-        wrap.style.display = "block";
+        wrap.classList.add("show");
         btn.style.background = "linear-gradient(135deg, #ef4444, #dc2626)";
         btn.style.boxShadow = "0 4px 20px rgba(239, 68, 68, 0.4)";
         btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i><span>Verify Linked Account</span>';
         btn.onclick = verifyBankLink;
 
-        // Toggle verification video challenge online status
-        if (videoContainer && videoPlayer) {
+        // Load verification tutorial video ONCE (don't re-fetch on every sync)
+        if (videoContainer && videoPlayer && !_verifyVideoFetched) {
+          _verifyVideoFetched = true;
           fetch(API_URL + '/api/settings/verificationVideo')
             .then(function(res) { return res.json(); })
             .then(function(data) {
@@ -3106,9 +3098,10 @@
               videoContainer.style.display = "none";
             });
         }
+
       } else {
-        // HIDDEN BY DEFAULT FOR NEW SIGNUPS AND UNBOUNCED ACCOUNTS
-        wrap.style.display = "none";
+        // Hidden for new signups with no payout key yet
+        wrap.classList.remove("show");
         if (videoContainer) videoContainer.style.display = "none";
       }
     }
