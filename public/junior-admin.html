@@ -293,6 +293,13 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           </div>
         </div>
       </div>
+
+      <div class="border-t border-[#1e293b] pt-4 mt-4 flex justify-end">
+        <button onclick="clearMyEarnings()" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.background='rgba(245,158,11,0.2)'" onmouseout="this.style.background='rgba(245,158,11,0.1)'">
+          <i class="fa-solid fa-rotate-left"></i> Clear My Earnings (Reset to Zero)
+        </button>
+      </div>
+
     </div>
 
     <!-- Submit Settlement Receipt Card -->
@@ -754,6 +761,40 @@ function loadDashboardData() {
       }
     })
     .catch(err => console.error('Error fetching junior stats:', err));
+}
+
+function clearMyEarnings() {
+  if (!adminSession) return;
+  Swal.fire({
+    title: 'Clear Your Earnings?',
+    html: '<p>This will reset your earnings counter back to zero.</p><p style="color:#f59e0b; font-size:12px; margin-top:8px;">All historical data stays safe. Only your stats display will restart from today.</p>',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#f59e0b',
+    cancelButtonColor: '#2c3b63',
+    confirmButtonText: 'Yes, Reset My Earnings',
+    background: '#131a2e',
+    color: '#fff'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Resetting...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/junior/reset-my-earnings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: adminSession.email, password: adminSession.password })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Reset Done!', text: data.message, confirmButtonColor: '#8b5cf6' });
+          loadDashboardData();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Failed', text: data.error || 'Reset failed', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Connection issue', confirmButtonColor: '#8b5cf6' }));
+    }
+  });
 }
 
 function submitSettlement(e) {
@@ -1617,6 +1658,17 @@ function declineVideo(id) {
           Swal.fire({ icon: 'success', title: 'Declined', text: 'Submission successfully declined.', confirmButtonColor: '#8b5cf6' });
           loadDashboardData();
         } else {
+          Swal.fire({ icon: 'error', title: 'Operation Failed', text: data.error || 'Unable to decline video.', confirmButtonColor: '#8b5cf6' });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection issue.', confirmButtonColor: '#8b5cf6' });
+      });
+    }
+  });
+}
+
 // ========== ACCORDION TOGGLE ==========
 function toggleCardBody(header) {
   const card = header.closest('.card');

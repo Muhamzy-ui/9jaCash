@@ -999,6 +999,14 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <label class="form-label">Tutorial Video Source Link (MP4/Direct Link)</label>
       <input type="text" id="verificationVideoUrl" class="form-input" placeholder="e.g. https://domain.com/videos/tutorial.mp4">
     </div>
+    <div class="form-group">
+      <label class="form-label">Or Upload Verification Tutorial Video File</label>
+      <input type="file" id="verificationVideoFile" accept="video/*" class="form-input" style="padding:8px 12px; font-size:12px;">
+      <button onclick="uploadVerificationVideoFile()" id="verificationVideoUploadBtn" class="btn btn-primary" style="margin-top:10px; font-size:12px; padding:10px 20px;">
+        <i class="fa-solid fa-upload"></i> Upload Video to Cloud
+      </button>
+      <div id="verificationVideoUploadProgress" style="display:none; margin-top:8px; font-size:12px; color:var(--accent);">Uploading... 0%</div>
+    </div>
   </div>
 </div>
 
@@ -1785,6 +1793,80 @@ function updateVerificationVideoIndicator() {
   }
 }
 
+function uploadVerificationVideoFile() {
+  const fileInput = document.getElementById('verificationVideoFile');
+  const btn = document.getElementById('verificationVideoUploadBtn');
+  const progressEl = document.getElementById('verificationVideoUploadProgress');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    showToast('Please select a video file first', 'error');
+    return;
+  }
+  if (file.size > 200 * 1024 * 1024) {
+    showToast('Video file is too large! Max 200MB.', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+  progressEl.style.display = 'block';
+  progressEl.textContent = 'Initializing upload...';
+
+  fetch(API_URL + '/api/cloudinary-signature?folder=verification_videos')
+    .then(res => res.json())
+    .then(sigData => {
+      if (!sigData.status) throw new Error(sigData.error || 'Failed to sign upload.');
+      const { signature, timestamp, apiKey, cloudName, folder } = sigData;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', folder);
+      formData.append('timestamp', timestamp);
+      formData.append('api_key', apiKey);
+      formData.append('signature', signature);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, true);
+      xhr.upload.onprogress = function(evt) {
+        if (evt.lengthComputable) {
+          const pct = Math.round((evt.loaded / evt.total) * 100);
+          progressEl.textContent = `Uploading... ${pct}%`;
+        }
+      };
+      xhr.onload = function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload Video to Cloud';
+        if (xhr.status === 200) {
+          const result = JSON.parse(xhr.responseText);
+          const url = result.secure_url;
+          document.getElementById('verificationVideoUrl').value = url;
+          progressEl.textContent = 'Upload complete! URL filled above. Click Save All Settings.';
+          progressEl.style.color = '#10b981';
+          showToast('Verification video uploaded successfully!');
+        } else {
+          progressEl.textContent = 'Upload failed. Please try again.';
+          progressEl.style.color = '#ef4444';
+          showToast('Upload failed', 'error');
+        }
+      };
+      xhr.onerror = function() {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload Video to Cloud';
+        progressEl.textContent = 'Network error during upload.';
+        progressEl.style.color = '#ef4444';
+        showToast('Upload failed', 'error');
+      };
+      xhr.send(formData);
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload Video to Cloud';
+      progressEl.textContent = 'Error: ' + err.message;
+      progressEl.style.color = '#ef4444';
+      showToast(err.message, 'error');
+    });
+}
+
 function updateChallengeVideoIndicator() {
   const active = document.getElementById('videoChallengeActive').value === 'true';
   const dot = document.getElementById('challengeVideoIndicator');
@@ -1962,11 +2044,14 @@ function loadJuniorAdminsList() {
             <td style="padding:12px; color:var(--accent); font-weight:700; font-family:monospace;">₦${parseFloat(stats.juniorShare || 0).toLocaleString()}</td>
             <td style="padding:12px; color:${statusColor}; font-weight:800; font-size:12px;">${statusText}</td>
             <td style="padding:12px; text-align:right;">
-              <div style="display:flex; gap:12px; justify-content:flex-end;">
-                <button onclick="toggleJuniorStatus('${j.email}', ${j.is_active === 1 ? 'false' : 'true'})" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;" class="hover:underline">
+              <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+                <button onclick="toggleJuniorStatus('${j.email}', ${j.is_active === 1 ? 'false' : 'true'})" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;">
                   <i class="fa-solid fa-power-off"></i> ${actionText}
                 </button>
-                <button onclick="deleteJuniorAdmin('${j.email}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer;" class="hover:underline">
+                <button onclick="resetJuniorEarnings('${j.email}')" style="background:none; border:none; color:#f59e0b; font-weight:700; cursor:pointer;" title="Clear earnings and restart from zero">
+                  <i class="fa-solid fa-rotate-left"></i> Clear Earnings
+                </button>
+                <button onclick="deleteJuniorAdmin('${j.email}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer;">
                   <i class="fa-solid fa-trash-can"></i> Delete
                 </button>
               </div>
@@ -1983,6 +2068,38 @@ function loadJuniorAdminsList() {
     .catch(err => {
       console.error('Error fetching junior admins:', err);
     });
+}
+
+function resetJuniorEarnings(email) {
+  Swal.fire({
+    title: 'Clear Junior Earnings?',
+    html: `<p>This will reset the earnings baseline for <b>${email}</b>.</p><p style="color:#f59e0b; font-size:12px; margin-top:8px;">All previous earnings are preserved in the database — only the counting start date is reset. New earnings will count from today.</p>`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#f59e0b',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Yes, Reset Earnings',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch(API_URL + '/api/admin/super/reset-junior-earnings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          showToast('Junior earnings cleared successfully', 'success');
+          loadJuniorAdminsList();
+        } else {
+          showToast(data.error || 'Reset failed', 'error');
+        }
+      })
+      .catch(() => showToast('Connection error', 'error'));
+    }
+  });
 }
 
 function toggleJuniorStatus(email, status) {

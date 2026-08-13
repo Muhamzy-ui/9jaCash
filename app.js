@@ -2293,12 +2293,21 @@ app.get('/api/admin/super/juniors', async (req, res) => {
       juniorsWithStats.push({
         email: j.email,
         code: j.referral_code, // original mapped key
+        referral_code: j.referral_code,
         bank_name: j.bank_name,
         account_number: j.account_number,
         account_name: j.account_name,
         is_active: j.is_active,
         created_at: j.created_at,
         reset_at: j.reset_at || null,
+        stats: {
+          totalGross: totalEarnings,
+          adminShare: totalEarnings * (adminPercentage / 100),
+          juniorShare: commission,
+          totalUsers,
+          totalPaid,
+          pendingSettlement
+        },
         totalUsers,
         totalEarnings,
         commission,
@@ -2377,6 +2386,23 @@ app.post('/api/admin/super/reset-junior-earnings', async (req, res) => {
   } catch (err) {
     console.error('Reset junior earnings error:', err.message);
     res.status(500).json({ status: false, error: 'Failed to reset junior admin earnings' });
+  }
+});
+
+// POST /api/admin/junior/reset-my-earnings — Junior admin resets their OWN earnings baseline
+app.post('/api/admin/junior/reset-my-earnings', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ status: false, error: 'Email and password required' });
+  try {
+    const list = await db.query('SELECT id FROM junior_admins WHERE email = ? AND password = ? AND is_active = 1', [email, password]);
+    if (!list || list.length === 0) return res.status(401).json({ status: false, error: 'Invalid credentials' });
+    const nowIso = new Date().toISOString();
+    await db.query('UPDATE junior_admins SET reset_at = ? WHERE email = ?', [nowIso, email]);
+    invalidateDashboardCaches();
+    res.json({ status: true, message: 'Your earnings have been reset. Stats now count from today.' });
+  } catch (err) {
+    console.error('Junior self-reset earnings error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to reset earnings' });
   }
 });
 
