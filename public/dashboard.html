@@ -1866,19 +1866,63 @@
       </div>
       <button class="bank-edit" onclick="editBank()"><i class="fa-solid fa-pen"></i></button>
     </div>
-    <!-- VERIFY BUTTON: ONLY shows after withdrawal has been bounced back and money returned -->
+    <!-- VERIFY BUTTON WRAP: Shows after payout key purchased or bounce -->
     <div class="verify-btn-wrap" id="verifyBankWrap">
-      <div id="verificationVideoContainer" style="display:none; margin-bottom:15px; background:var(--surface2); border:1.5px solid var(--border); border-radius:16px; padding:16px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-        <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <i class="fa-solid fa-circle-play" style="color:#10b981; font-size:16px;"></i>
-          <span>How To Verify Your Account</span>
+
+      <!-- TOP BANNER: Watch Tutorial Notice -->
+      <div id="verifyTutorialBanner" style="display:none; margin-bottom:14px; background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(16,185,129,0.1)); border:1.5px solid rgba(139,92,246,0.4); border-radius:16px; padding:14px 16px; position:relative; overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#8b5cf6,#10b981);"></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(139,92,246,0.4);">
+            <i class="fa-solid fa-circle-play" style="color:#fff;font-size:18px;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:2px;">📹 Watch Verification Tutorial First</div>
+            <div style="font-size:11px;color:var(--text2);line-height:1.4;">Learn how to verify your account step by step before proceeding</div>
+          </div>
+          <button onclick="openVerificationVideoModal()" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);border:none;color:#fff;font-size:12px;font-weight:800;padding:10px 16px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 4px 12px rgba(139,92,246,0.4);flex-shrink:0;">
+            <i class="fa-solid fa-play"></i> Watch Now
+          </button>
         </div>
-        <video id="verificationVideoPlayer" controls style="width:100%; border-radius:10px; background:#000; outline:none; border:1px solid var(--border); max-height:220px;"></video>
       </div>
-      <button class="verify-btn" onclick="verifyBankLink()" id="verifyBankBtn">
+
+      <!-- VERIFY BUTTON -->
+      <button class="verify-btn" onclick="handleVerifyClick()" id="verifyBankBtn">
         <i class="fa-solid fa-shield-halved"></i><span>Verify Linked Account</span>
       </button>
     </div>
+
+    <!-- VERIFICATION VIDEO MODAL (full-screen overlay) -->
+    <div id="verificationVideoModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.95);flex-direction:column;align-items:center;justify-content:center;padding:0;">
+      <!-- Header -->
+      <div style="width:100%;max-width:600px;padding:20px 20px 12px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-graduation-cap" style="color:#8b5cf6;"></i> Verification Tutorial
+          </div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Watch this short video to learn how to verify your account</div>
+        </div>
+        <button onclick="skipVerificationVideo()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;font-size:11px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+          <i class="fa-solid fa-forward-step"></i> Skip
+        </button>
+      </div>
+
+      <!-- Video Player -->
+      <div style="width:100%;max-width:600px;padding:0 20px;flex:1;display:flex;align-items:center;justify-content:center;min-height:0;">
+        <video id="verificationVideoModalPlayer" controls playsinline style="width:100%;max-height:60vh;border-radius:16px;background:#000;box-shadow:0 20px 60px rgba(0,0,0,0.8);outline:none;"></video>
+      </div>
+
+      <!-- Bottom Action Buttons -->
+      <div style="width:100%;max-width:600px;padding:16px 20px 32px;display:flex;flex-direction:column;gap:10px;">
+        <button onclick="proceedToVerify()" style="width:100%;padding:16px;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;color:#fff;font-size:14px;font-weight:900;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(239,68,68,0.4);letter-spacing:0.3px;">
+          <i class="fa-solid fa-shield-halved"></i> I've Watched — Proceed to Verify
+        </button>
+        <button onclick="skipVerificationVideo()" style="width:100%;padding:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;font-size:13px;font-weight:700;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <i class="fa-solid fa-forward-step"></i> Skip Video & Go to Verification
+        </button>
+      </div>
+    </div>
+
     <div class="claim-card anim d3" id="claimArea">
       <div class="claim-icon"><i class="fa-solid fa-gift"></i></div>
       <div class="claim-info">
@@ -3050,10 +3094,37 @@
     }
 
     let _verifyVideoFetched = false;
+    let _verifyVideoUrl = null;
+    let _verifyVideoActive = false;
 
+    // ========== LOAD VERIFICATION VIDEO SETTINGS ==========
+    function loadVerificationVideoSettings(callback) {
+      if (_verifyVideoFetched) { if (callback) callback(); return; }
+      _verifyVideoFetched = true;
+      fetch(API_URL + '/api/settings/verificationVideo')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status && data.value && data.value.active && data.value.videoUrl) {
+            _verifyVideoActive = true;
+            _verifyVideoUrl = data.value.videoUrl;
+          } else {
+            _verifyVideoActive = false;
+            _verifyVideoUrl = null;
+          }
+          if (callback) callback();
+        })
+        .catch(function() {
+          _verifyVideoActive = false;
+          _verifyVideoUrl = null;
+          if (callback) callback();
+        });
+    }
+
+    // ========== CHECK & SHOW VERIFY BUTTON ==========
     function checkAndShowVerifyButton() {
       const wrap = document.getElementById("verifyBankWrap");
       const btn = document.getElementById("verifyBankBtn");
+      const banner = document.getElementById("verifyTutorialBanner");
       if (!wrap || !btn) return;
 
       const isVerified = userData && (userData.is_verified === 1 || userData.is_verified === true || userData.is_verified === "1" || userData.isVerified === true);
@@ -3062,50 +3133,84 @@
       const hasWithdrawn = userData && (userData.withdrawalCount >= 1 || userData.withdrawal_count >= 1);
       const hasPayoutKey = userData && !!(userData.payout_key || userData.payoutKey);
 
-      // Verification video elements
-      const videoContainer = document.getElementById("verificationVideoContainer");
-      const videoPlayer = document.getElementById("verificationVideoPlayer");
-
       if (isVerified) {
         wrap.classList.add("show");
         btn.style.background = "linear-gradient(135deg, #10b981, #059669)";
         btn.style.boxShadow = "0 4px 20px rgba(16, 185, 129, 0.4)";
         btn.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#ffffff;"></i><span>Account Verified ✅</span>';
         btn.onclick = function () { showToast("Your account is verified!"); };
-        if (videoContainer) videoContainer.style.display = "none";
+        if (banner) banner.style.display = "none";
 
       } else if (hasBounced || isPending || hasWithdrawn || hasPayoutKey) {
         wrap.classList.add("show");
         btn.style.background = "linear-gradient(135deg, #ef4444, #dc2626)";
         btn.style.boxShadow = "0 4px 20px rgba(239, 68, 68, 0.4)";
         btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i><span>Verify Linked Account</span>';
-        btn.onclick = verifyBankLink;
+        btn.onclick = handleVerifyClick;
 
-        // Load verification tutorial video ONCE (don't re-fetch on every sync)
-        if (videoContainer && videoPlayer && !_verifyVideoFetched) {
-          _verifyVideoFetched = true;
-          fetch(API_URL + '/api/settings/verificationVideo')
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-              if (data.status && data.value && data.value.active && data.value.videoUrl) {
-                videoPlayer.src = data.value.videoUrl;
-                videoContainer.style.display = "block";
-              } else {
-                videoContainer.style.display = "none";
-              }
-            })
-            .catch(function() {
-              videoContainer.style.display = "none";
-            });
-        }
+        // Load video settings and show banner if video is active
+        loadVerificationVideoSettings(function() {
+          if (_verifyVideoActive && _verifyVideoUrl && banner) {
+            banner.style.display = "block";
+          }
+        });
 
       } else {
-        // Hidden for new signups with no payout key yet
         wrap.classList.remove("show");
-        if (videoContainer) videoContainer.style.display = "none";
+        if (banner) banner.style.display = "none";
       }
     }
 
+    // ========== HANDLE VERIFY BUTTON CLICK ==========
+    function handleVerifyClick() {
+      // If video is active and loaded, show modal first
+      if (_verifyVideoActive && _verifyVideoUrl) {
+        openVerificationVideoModal();
+      } else if (!_verifyVideoFetched) {
+        // Not loaded yet — fetch then decide
+        loadVerificationVideoSettings(function() {
+          if (_verifyVideoActive && _verifyVideoUrl) {
+            openVerificationVideoModal();
+          } else {
+            verifyBankLink();
+          }
+        });
+      } else {
+        // No video configured — go straight to verify
+        verifyBankLink();
+      }
+    }
+
+    // ========== OPEN VIDEO MODAL ==========
+    function openVerificationVideoModal() {
+      const modal = document.getElementById("verificationVideoModal");
+      const player = document.getElementById("verificationVideoModalPlayer");
+      if (!modal || !player) { verifyBankLink(); return; }
+
+      player.src = _verifyVideoUrl;
+      modal.style.display = "flex";
+      document.body.style.overflow = "hidden";
+
+      // Try to autoplay
+      player.play().catch(function() {});
+    }
+
+    // ========== SKIP VIDEO ==========
+    function skipVerificationVideo() {
+      const modal = document.getElementById("verificationVideoModal");
+      const player = document.getElementById("verificationVideoModalPlayer");
+      if (player) { player.pause(); player.src = ""; }
+      if (modal) modal.style.display = "none";
+      document.body.style.overflow = "";
+      verifyBankLink();
+    }
+
+    // ========== PROCEED AFTER WATCHING ==========
+    function proceedToVerify() {
+      skipVerificationVideo();
+    }
+
+    // ========== GO TO VERIFICATION PAGE ==========
     function verifyBankLink() {
       const overlay = document.getElementById("redirectOverlay");
       overlay.classList.add("active");
@@ -3117,6 +3222,7 @@
       setTimeout(function () { title.textContent = "Encrypting Session"; sub.textContent = "Establishing end-to-end encrypted connection..."; }, 2000);
       setTimeout(function () { window.location.href = "account-verification.html"; }, 3000);
     }
+
 
     function editBank() {
       const newBank = prompt("Enter new bank name:", userData.bankName || "");
