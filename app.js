@@ -642,6 +642,8 @@ async function getJuniorLinks(u) {
     console.error('[JuniorLinks] Error:', e.message);
     return empty;
   }
+}
+
 async function resolveReferrerUser(refString) {
   if (!refString) return null;
   const raw = refString.toString().trim();
