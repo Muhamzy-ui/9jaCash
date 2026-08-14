@@ -642,6 +642,72 @@ async function getJuniorLinks(u) {
     console.error('[JuniorLinks] Error:', e.message);
     return empty;
   }
+async function resolveReferrerUser(refString) {
+  if (!refString) return null;
+  const raw = refString.toString().trim();
+  if (!raw) return null;
+
+  const cleanPhone = normalizePhone(raw);
+  const rawUpper = raw.toUpperCase();
+
+  let users = await db.query(`
+    SELECT phone, email, full_name, balance 
+    FROM users 
+    WHERE phone = ? 
+       OR phone = ? 
+       OR LOWER(email) = ? 
+       OR UPPER(junior_admin_code) = ?
+  `, [cleanPhone, raw, raw.toLowerCase(), rawUpper]);
+
+  if (users && users.length > 0) return users[0];
+  return null;
+}
+
+async function creditReferralBonus(newUserPhone, newUserName, referrerPhone) {
+  if (!referrerPhone || !newUserPhone) return;
+  const refClean = normalizePhone(referrerPhone);
+  if (!refClean || refClean === normalizePhone(newUserPhone)) return;
+
+  try {
+    // 1. Prevent duplicate referral bonus crediting
+    const checkCredited = await db.query(`
+      SELECT id FROM user_notifications 
+      WHERE phone = ? AND (content LIKE ? OR content LIKE ?)
+    `, [refClean, `%${newUserPhone}%`, `%${newUserName || ''}%`]);
+
+    if (checkCredited && checkCredited.length > 0) {
+      return;
+    }
+
+    // 2. Fetch referral bonus amount setting (default 10,000)
+    let referralBonus = 10000;
+    try {
+      const refSet = await db.query("SELECT value FROM system_settings WHERE key = 'referral_bonus'");
+      if (refSet && refSet.length > 0 && refSet[0].value) {
+        const parsed = typeof refSet[0].value === 'string' ? JSON.parse(refSet[0].value) : refSet[0].value;
+        if (parsed && parsed.amount !== undefined) referralBonus = parseFloat(parsed.amount || 10000);
+      }
+    } catch (e) {}
+
+    // 3. Add ₦10,000 to Referrer's account balance
+    await db.query('UPDATE users SET balance = balance + ? WHERE phone = ?', [referralBonus, refClean]);
+
+    // 4. Insert notification alert for referrer
+    const refNotifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+    await db.query(`
+      INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+      VALUES (?, ?, 'alert', 'Referral Bonus Credited! 🎁', ?, ?, ?)
+    `, [
+      refNotifId, 
+      refClean, 
+      `Congratulations! You earned ₦${referralBonus.toLocaleString()} referral bonus for inviting ${newUserName || 'a new user'} (${newUserPhone}).`, 
+      referralBonus.toString(), 
+      new Date().toISOString()
+    ]);
+    console.log(`[ReferralBonus] Credited ₦${referralBonus} to referrer ${refClean} for inviting ${newUserPhone}`);
+  } catch (err) {
+    console.error('[ReferralBonus] Error crediting referral bonus:', err.message);
+  }
 }
 
 // POST /api/register — User signup
@@ -667,7 +733,9 @@ app.post('/api/register', async (req, res) => {
 
   try {
     const createdAt = new Date().toISOString();
-    const juniorAdminCode = await findJuniorAdminCode(referredBy);
+    const referrerUser = await resolveReferrerUser(referredBy);
+    const referrerPhone = referrerUser ? referrerUser.phone : (referredBy ? (normalizePhone(referredBy) || referredBy) : null);
+    const juniorAdminCode = await findJuniorAdminCode(referredBy || referrerPhone);
 
     // Check if user already exists
     const existing = await db.query('SELECT phone FROM users WHERE phone = ? OR LOWER(email) = ?', [cleanPhone, cleanEmail]);
@@ -682,7 +750,7 @@ app.post('/api/register', async (req, res) => {
             referred_by = COALESCE(referred_by, ?),
             junior_admin_code = COALESCE(junior_admin_code, ?)
         WHERE phone = ? OR LOWER(email) = ?
-      `, [cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, cleanEmail, referredBy || null, jCode || null, cleanPhone, cleanEmail]);
+      `, [cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, cleanEmail, referrerPhone || referredBy || null, jCode || null, cleanPhone, cleanEmail]);
     } else {
       // Insert new user record
       await db.query(`
@@ -690,7 +758,12 @@ app.post('/api/register', async (req, res) => {
           phone, email, password, full_name, bank_name, account_number, 
           balance, mining_power, total_mined, referred_by, junior_admin_code, status, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, 10000, 1, 0, ?, ?, 'active', ?)
-      `, [cleanPhone, cleanEmail, cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, referredBy || null, juniorAdminCode, createdAt]);
+      `, [cleanPhone, cleanEmail, cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, referrerPhone || referredBy || null, juniorAdminCode, createdAt]);
+
+      // Credit ₦10,000 Referral Bonus to Referrer immediately
+      if (referrerPhone) {
+        await creditReferralBonus(cleanPhone, cleanFullName, referrerPhone);
+      }
     }
 
     // Fetch user record
@@ -833,9 +906,14 @@ app.post('/api/user/sync', async (req, res) => {
 
       // Dynamic referral linking: if they landed via a referral code, sync it to database
       if (!dbReferredBy && referredBy) {
-        dbReferredBy = referredBy.trim().toUpperCase();
+        const refUser = await resolveReferrerUser(referredBy);
+        dbReferredBy = refUser ? refUser.phone : (normalizePhone(referredBy) || referredBy.trim().toUpperCase());
         dbJuniorAdminCode = await findJuniorAdminCode(dbReferredBy);
         needsUpdate = true;
+
+        if (dbReferredBy) {
+          await creditReferralBonus(cleanPhone, dbUser.full_name || '9jaCash User', dbReferredBy);
+        }
       }
 
       if (needsUpdate) {
@@ -880,11 +958,37 @@ app.post('/api/user/sync', async (req, res) => {
     );
     const verified = parseInt(getCnt(verificationResult)) > 0;
 
-    // Fetch referrals statistics
-    const refCountRes = await db.query('SELECT COUNT(*) as count FROM users WHERE referred_by = ?', [cleanPhone]);
+    // Fetch referrals statistics with flexible phone/code matching
+    const rawPhone = cleanPhone;
+    const phoneNoZero = rawPhone.startsWith('0') ? rawPhone.substring(1) : rawPhone;
+    const phone234 = '234' + phoneNoZero;
+
+    // Auto-credit any uncredited referrals under this user
+    try {
+      const refList = await db.query(`
+        SELECT phone, full_name FROM users 
+        WHERE referred_by = ? OR referred_by = ? OR referred_by = ? OR referred_by = ?
+      `, [cleanPhone, rawPhone, phoneNoZero, phone234]);
+      for (const rItem of (refList || [])) {
+        if (rItem.phone !== cleanPhone) {
+          await creditReferralBonus(rItem.phone, rItem.full_name, cleanPhone);
+        }
+      }
+    } catch (e) {}
+
+    const refCountRes = await db.query(`
+      SELECT COUNT(*) as count FROM users 
+      WHERE (referred_by = ? OR referred_by = ? OR referred_by = ? OR referred_by = ?)
+        AND phone != ?
+    `, [cleanPhone, rawPhone, phoneNoZero, phone234, cleanPhone]);
     const referralsCount = parseInt(getCnt(refCountRes));
 
-    const activeRefCountRes = await db.query('SELECT COUNT(*) as count FROM users WHERE referred_by = ? AND is_verified = 1', [cleanPhone]);
+    const activeRefCountRes = await db.query(`
+      SELECT COUNT(*) as count FROM users 
+      WHERE (referred_by = ? OR referred_by = ? OR referred_by = ? OR referred_by = ?)
+        AND (is_verified = 1 OR CAST(is_verified AS text) = '1')
+        AND phone != ?
+    `, [cleanPhone, rawPhone, phoneNoZero, phone234, cleanPhone]);
     const activeReferralsCount = parseInt(getCnt(activeRefCountRes));
 
     let referralBonus = 10000;
@@ -897,7 +1001,7 @@ app.post('/api/user/sync', async (req, res) => {
     } catch (e) {
       console.error("Error fetching referral bonus in sync:", e);
     }
-    const referralEarnings = activeReferralsCount * referralBonus;
+    const referralEarnings = referralsCount * referralBonus;
 
     const mapped = mapUserKeys(dbUser) || {
       phone: cleanPhone,
