@@ -190,6 +190,13 @@ async function initDb() {
           shares_count INTEGER DEFAULT 8500,
           caption TEXT,
           created_at TEXT
+        )`,
+        `CREATE TABLE IF NOT EXISTS referral_credits (
+          id TEXT PRIMARY KEY,
+          referrer_phone TEXT,
+          referred_phone TEXT UNIQUE,
+          amount NUMERIC,
+          created_at TEXT
         )`
       ];
       for (const tSql of sqliteTables) {
@@ -311,6 +318,17 @@ async function initDb() {
         likes_count INTEGER DEFAULT 255700,
         favorites_count INTEGER DEFAULT 12000,
         shares_count INTEGER DEFAULT 8500,
+        created_at TEXT
+      )
+    `);
+
+    // 9. Referral Credits Table (Enforcing unique referral credit per user)
+    await query(`
+      CREATE TABLE IF NOT EXISTS referral_credits (
+        id TEXT PRIMARY KEY,
+        referrer_phone TEXT,
+        referred_phone TEXT UNIQUE,
+        amount NUMERIC,
         created_at TEXT
       )
     `);

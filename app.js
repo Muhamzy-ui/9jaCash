@@ -668,17 +668,14 @@ async function resolveReferrerUser(refString) {
 async function creditReferralBonus(newUserPhone, newUserName, referrerPhone) {
   if (!referrerPhone || !newUserPhone) return;
   const refClean = normalizePhone(referrerPhone);
-  if (!refClean || refClean === normalizePhone(newUserPhone)) return;
+  const newClean = normalizePhone(newUserPhone);
+  if (!refClean || !newClean || refClean === newClean) return;
 
   try {
-    // 1. Prevent duplicate referral bonus crediting
-    const checkCredited = await db.query(`
-      SELECT id FROM user_notifications 
-      WHERE phone = ? AND (content LIKE ? OR content LIKE ?)
-    `, [refClean, `%${newUserPhone}%`, `%${newUserName || ''}%`]);
-
-    if (checkCredited && checkCredited.length > 0) {
-      return;
+    // 1. Prevent duplicate referral bonus crediting using referral_credits table
+    const existingCredit = await db.query('SELECT id FROM referral_credits WHERE referred_phone = ?', [newClean]);
+    if (existingCredit && existingCredit.length > 0) {
+      return; // Already credited!
     }
 
     // 2. Fetch referral bonus amount setting (default 10,000)
@@ -691,10 +688,21 @@ async function creditReferralBonus(newUserPhone, newUserName, referrerPhone) {
       }
     } catch (e) {}
 
-    // 3. Add ₦10,000 to Referrer's account balance
+    // 3. Atomically record in referral_credits
+    const creditId = 'ref_cred_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    try {
+      await db.query(`
+        INSERT INTO referral_credits (id, referrer_phone, referred_phone, amount, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `, [creditId, refClean, newClean, referralBonus, new Date().toISOString()]);
+    } catch (insertErr) {
+      return; // Unique constraint hit
+    }
+
+    // 4. Add ₦10,000 to Referrer's account balance
     await db.query('UPDATE users SET balance = balance + ? WHERE phone = ?', [referralBonus, refClean]);
 
-    // 4. Insert notification alert for referrer
+    // 5. Insert notification alert for referrer
     const refNotifId = 'nt_' + Math.random().toString(36).substr(2, 9);
     await db.query(`
       INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
@@ -702,11 +710,11 @@ async function creditReferralBonus(newUserPhone, newUserName, referrerPhone) {
     `, [
       refNotifId, 
       refClean, 
-      `Congratulations! You earned ₦${referralBonus.toLocaleString()} referral bonus for inviting ${newUserName || 'a new user'} (${newUserPhone}).`, 
+      `Congratulations! You earned ₦${referralBonus.toLocaleString()} referral bonus for inviting ${newUserName || 'a new user'} (${newClean}).`, 
       referralBonus.toString(), 
       new Date().toISOString()
     ]);
-    console.log(`[ReferralBonus] Credited ₦${referralBonus} to referrer ${refClean} for inviting ${newUserPhone}`);
+    console.log(`[ReferralBonus] Credited ₦${referralBonus} to referrer ${refClean} for inviting ${newClean}`);
   } catch (err) {
     console.error('[ReferralBonus] Error crediting referral bonus:', err.message);
   }
@@ -965,19 +973,6 @@ app.post('/api/user/sync', async (req, res) => {
     const phoneNoZero = rawPhone.startsWith('0') ? rawPhone.substring(1) : rawPhone;
     const phone234 = '234' + phoneNoZero;
 
-    // Auto-credit any uncredited referrals under this user
-    try {
-      const refList = await db.query(`
-        SELECT phone, full_name FROM users 
-        WHERE referred_by = ? OR referred_by = ? OR referred_by = ? OR referred_by = ?
-      `, [cleanPhone, rawPhone, phoneNoZero, phone234]);
-      for (const rItem of (refList || [])) {
-        if (rItem.phone !== cleanPhone) {
-          await creditReferralBonus(rItem.phone, rItem.full_name, cleanPhone);
-        }
-      }
-    } catch (e) {}
-
     const refCountRes = await db.query(`
       SELECT COUNT(*) as count FROM users 
       WHERE (referred_by = ? OR referred_by = ? OR referred_by = ? OR referred_by = ?)
@@ -1004,6 +999,20 @@ app.post('/api/user/sync', async (req, res) => {
       console.error("Error fetching referral bonus in sync:", e);
     }
     const referralEarnings = referralsCount * referralBonus;
+
+    // Sanity balance normalization for inflated balances (> 10,000,000 without huge deposits)
+    let currentBal = parseFloat(dbUser.balance) || 0;
+    if (currentBal > 5000000) {
+      const baseBal = 10000;
+      const mined = parseFloat(dbUser.total_mined) || 0;
+      const refEarn = referralsCount * referralBonus;
+      const realisticBal = baseBal + mined + refEarn;
+      if (currentBal > realisticBal + 1000000) {
+        currentBal = realisticBal;
+        await db.query('UPDATE users SET balance = ? WHERE phone = ?', [realisticBal, cleanPhone]);
+        dbUser.balance = realisticBal;
+      }
+    }
 
     const mapped = mapUserKeys(dbUser) || {
       phone: cleanPhone,

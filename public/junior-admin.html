@@ -570,16 +570,28 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
 <script>
 let adminSession = null;
-let revenueCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0 };
+let revenueCache = { today: 0, sevenDays: 0, month: 0, year: 0, total: 0, adminPercentage: 20 };
 
 function updateRevenueTimeframeDisplay() {
   const select = document.getElementById('revenueTimeframeSelect');
-  if (!select) return;
-  const val = select.value;
+  const val = select ? select.value : 'total';
+  const gross = parseFloat(revenueCache[val] || 0);
   const display = document.getElementById('statRevenueDisplay');
   if (display) {
-    display.textContent = '₦' + (revenueCache[val] || 0).toLocaleString();
+    display.textContent = '₦' + gross.toLocaleString();
   }
+
+  const adminPct = parseFloat(revenueCache.adminPercentage || 20);
+  const adminCut = gross * (adminPct / 100);
+  const juniorShare = gross * ((100 - adminPct) / 100);
+
+  const grossEl = document.getElementById('statGrossRevenue');
+  const adminCutEl = document.getElementById('statAdminCut');
+  const juniorShareEl = document.getElementById('statJuniorShare');
+
+  if (grossEl) grossEl.textContent = '₦' + gross.toLocaleString();
+  if (adminCutEl) adminCutEl.textContent = '₦' + adminCut.toLocaleString();
+  if (juniorShareEl) juniorShareEl.textContent = '₦' + juniorShare.toLocaleString();
 }
 
 const getApiUrl = () => {
@@ -697,9 +709,9 @@ function showDashboard() {
   })
   .catch(err => console.error('Failed to load payment settings:', err));
 
-  loadDashboardData();
-  // Poll data every 10 seconds for real-time dashboard updates
-  setInterval(loadDashboardData, 10000);
+  loadDashboardData(false);
+  // Poll data every 15 seconds silently without UI glitching or page resets
+  setInterval(() => loadDashboardData(true), 15000);
 }
 
 // ========== SAVE PAYMENT SETTINGS ==========
@@ -753,7 +765,7 @@ function savePaymentSettings() {
 // ========== LOAD DASHBOARD DATA ==========
 let referredUsersCache = [];
 
-function loadDashboardData() {
+function loadDashboardData(isSilent = false) {
   if (!adminSession) return;
   const refCode = adminSession.referral_code;
   
@@ -763,7 +775,7 @@ function loadDashboardData() {
     .then(data => {
       if (data && data.status && Array.isArray(data.users)) {
         referredUsersCache = data.users;
-        renderUsers(data.users, false);
+        renderUsers(data.users, isSilent);
       }
     })
     .catch(() => {});
@@ -773,13 +785,13 @@ function loadDashboardData() {
     .then(res => res.ok ? res.json() : null)
     .then(data => {
       if (data && data.status && Array.isArray(data.withdrawals)) {
-        renderWithdrawals(data.withdrawals);
+        renderWithdrawals(data.withdrawals, isSilent);
       }
     })
     .catch(() => {});
     
   // 3. Fetch Video Submissions
-  loadJuniorVideoSubmissions();
+  loadJuniorVideoSubmissions(isSilent);
 
   // 4. Fetch Referral Network Stats & Analytics
   fetch(API_URL + '/api/admin/junior/analytics?code=' + refCode)
@@ -792,16 +804,12 @@ function loadDashboardData() {
         revenueCache.month = s.month || 0;
         revenueCache.year = s.year || 0;
         revenueCache.total = s.total || 0;
+        revenueCache.adminPercentage = s.adminPercentage || 20;
 
         updateRevenueTimeframeDisplay();
 
         document.getElementById('statKeysSold').textContent = s.keysSold || 0;
-        
-        // Detailed commission calculations UI binding
         document.getElementById('statAdminPercentBadge').textContent = `Admin Commission: ${s.adminPercentage || 20}%`;
-        document.getElementById('statGrossRevenue').textContent = '₦' + parseFloat(s.total || 0).toLocaleString();
-        document.getElementById('statAdminCut').textContent = '₦' + parseFloat(s.adminShare || 0).toLocaleString();
-        document.getElementById('statJuniorShare').textContent = '₦' + parseFloat(s.juniorShare || 0).toLocaleString();
         
         document.getElementById('statBreakdownKeys').textContent = '₦' + parseFloat(s.keyGross || 0).toLocaleString();
         document.getElementById('statBreakdownVerification').textContent = '₦' + parseFloat(s.verificationGross || 0).toLocaleString();
@@ -933,32 +941,36 @@ function changePage(key, dir) {
 }
 
 // ========== RENDER DATA ==========
-function renderUsers(users, isFiltering = false) {
-  if (!isFiltering) {
-    referredUserPhones = users.map(u => u.phone);
-    loadDashboardReceipts();
-    document.getElementById('statUsers').textContent = users.length;
-    let totalBal = 0;
-    users.forEach(u => totalBal += parseFloat(u.balance || 0));
-    document.getElementById('statBalances').textContent = '₦' + totalBal.toLocaleString();
+function renderUsers(users, isSilent = false) {
+  referredUserPhones = users.map(u => u.phone);
+  loadDashboardReceipts(isSilent);
+  document.getElementById('statUsers').textContent = users.length;
+  let totalBal = 0;
+  users.forEach(u => totalBal += parseFloat(u.balance || 0));
+  document.getElementById('statBalances').textContent = '₦' + totalBal.toLocaleString();
 
-    // Calculate Today Users registered today in this Junior Admin network
-    let todayCount = 0;
-    const now = new Date();
-    const watTime = new Date(now.getTime() + 1 * 60 * 60 * 1000);
-    const startOfToday = Date.UTC(watTime.getUTCFullYear(), watTime.getUTCMonth(), watTime.getUTCDate(), 0, 0, 0) - 1 * 60 * 60 * 1000;
+  // Calculate Today Users registered today in this Junior Admin network
+  let todayCount = 0;
+  const now = new Date();
+  const watTime = new Date(now.getTime() + 1 * 60 * 60 * 1000);
+  const startOfToday = Date.UTC(watTime.getUTCFullYear(), watTime.getUTCMonth(), watTime.getUTCDate(), 0, 0, 0) - 1 * 60 * 60 * 1000;
 
-    (users || []).forEach(u => {
-      const d = u.created_at || u.createdAt;
-      if (d) {
-        const t = new Date(d).getTime();
-        if (!isNaN(t) && t >= startOfToday) todayCount++;
-      }
-    });
-    const todayEl = document.getElementById('statJoinedToday');
-    if (todayEl) todayEl.textContent = '+' + todayCount + ' today';
+  (users || []).forEach(u => {
+    const d = u.created_at || u.createdAt;
+    if (d) {
+      const t = new Date(d).getTime();
+      if (!isNaN(t) && t >= startOfToday) todayCount++;
+    }
+  });
+  const todayEl = document.getElementById('statJoinedToday');
+  if (todayEl) todayEl.textContent = '+' + todayCount + ' today';
+
+  if (!isSilent) {
+    _pages.users = 1;
+  } else {
+    const maxPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
+    if (_pages.users > maxPages) _pages.users = maxPages;
   }
-  _pages.users = 1;
   _cache.users = users;
   _renderUsersPage();
 }
@@ -1044,7 +1056,7 @@ function filterUsers() {
   _renderUsersPage();
 }
 
-function renderWithdrawals(withdrawals) {
+function renderWithdrawals(withdrawals, isSilent = false) {
   const pending = withdrawals.filter(w => w.status === 'Pending').length;
   document.getElementById('statPending').textContent = pending;
   document.getElementById('pendingLabel').textContent = pending + ' Pending';
@@ -1052,7 +1064,12 @@ function renderWithdrawals(withdrawals) {
   withdrawals.filter(w => w.status === 'Approved').forEach(w => { totalPaidAmount += parseFloat(w.amount || 0); });
   document.getElementById('statPaid').textContent = '₦' + totalPaidAmount.toLocaleString();
 
-  _pages.withdrawals = 1;
+  if (!isSilent) {
+    _pages.withdrawals = 1;
+  } else {
+    const maxPages = Math.max(1, Math.ceil(withdrawals.length / PAGE_SIZE));
+    if (_pages.withdrawals > maxPages) _pages.withdrawals = maxPages;
+  }
   _cache.withdrawals = withdrawals;
   _renderWithdrawalsPage();
 }
@@ -1110,8 +1127,13 @@ function _renderWithdrawalsPage() {
 }
 
 // Receipts pagination helper — called from loadDashboardReceipts render path
-function paginateReceipts(allRows) {
-  _pages.receipts = 1;
+function paginateReceipts(allRows, isSilent = false) {
+  if (!isSilent) {
+    _pages.receipts = 1;
+  } else {
+    const maxPages = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE));
+    if (_pages.receipts > maxPages) _pages.receipts = maxPages;
+  }
   _cache.receipts = allRows;
   _renderReceiptsPage();
 }
@@ -1132,8 +1154,13 @@ function _renderReceiptsPage() {
   updatePaginationUI('receipts', allRows.length);
 }
 
-function paginateVideoSubmissions(allRows) {
-  _pages.videoSubmissions = 1;
+function paginateVideoSubmissions(allRows, isSilent = false) {
+  if (!isSilent) {
+    _pages.videoSubmissions = 1;
+  } else {
+    const maxPages = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE));
+    if (_pages.videoSubmissions > maxPages) _pages.videoSubmissions = maxPages;
+  }
   _cache.videoSubmissions = allRows;
   _renderVideoSubmissionsPage();
 }
@@ -1460,22 +1487,22 @@ function purgeNetworkReceipts() {
   });
 }
 
-function loadDashboardReceipts() {
+function loadDashboardReceipts(isSilent = false) {
   const table = document.getElementById('receiptListTable');
   const badgeEl = document.getElementById('receiptsBadge');
   
-  if (table) {
+  if (table && !isSilent && (!allReceipts || allReceipts.length === 0)) {
     table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading receipts...</td></tr>';
   }
   
   if (!window._9jaCash || !window._9jaCash.db) {
-    table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">Firebase not initialized</td></tr>';
+    if (table && !isSilent) table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">Firebase not initialized</td></tr>';
     return;
   }
   
   if (referredUserPhones.length === 0) {
-    table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No payment receipts found in your network</td></tr>';
-    badgeEl.style.display = 'none';
+    if (table) table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No payment receipts found in your network</td></tr>';
+    if (badgeEl) badgeEl.style.display = 'none';
     return;
   }
   
@@ -1506,16 +1533,17 @@ function loadDashboardReceipts() {
       badgeEl.style.display = pendingCount > 0 ? 'inline-block' : 'none';
     }
     
-    renderReceiptsTable(filtered);
+    renderReceiptsTable(filtered, isSilent);
   })
   .catch(function(err) {
     console.error('Error fetching receipts:', err);
-    table.innerHTML = '<tr><td colspan="6" class="text-center text-red-400 py-6">Failed to load network receipts</td></tr>';
+    if (table && !isSilent) table.innerHTML = '<tr><td colspan="6" class="text-center text-red-400 py-6">Failed to load network receipts</td></tr>';
   });
 }
 
-function renderReceiptsTable(receipts) {
+function renderReceiptsTable(receipts, isSilent = false) {
   const table = document.getElementById('receiptListTable');
+  if (!table) return;
   if (receipts.length === 0) {
     table.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">No payment receipts found in your network</td></tr>';
     updatePaginationUI('receipts', 0);
@@ -1568,7 +1596,7 @@ function renderReceiptsTable(receipts) {
     `;
     allRows.push(tr);
   });
-  paginateReceipts(allRows);
+  paginateReceipts(allRows, isSilent);
 }
 
 function viewReceiptImage(id) {
@@ -1678,7 +1706,7 @@ function declineReceipt(id, collectionName) {
 // ========== JUNIOR ADMIN VIDEO SUBMISSIONS ==========
 let juniorVideoSubmissions = [];
 
-function loadJuniorVideoSubmissions() {
+function loadJuniorVideoSubmissions(isSilent = false) {
   if (!adminSession) return;
   const refCode = adminSession.referral_code;
   const table = document.getElementById('videoSubmissionListTable');
@@ -1696,13 +1724,13 @@ function loadJuniorVideoSubmissions() {
           badgeEl.textContent = pendingCount + ' Pending';
           badgeEl.className = pendingCount > 0 ? 'badge badge-pending font-bold' : 'badge badge-approved';
         }
-        renderVideoSubmissionsTable(juniorVideoSubmissions);
+        renderVideoSubmissionsTable(juniorVideoSubmissions, isSilent);
       }
     })
     .catch(() => {});
 }
 
-function renderVideoSubmissionsTable(subs) {
+function renderVideoSubmissionsTable(subs, isSilent = false) {
   const table = document.getElementById('videoSubmissionListTable');
   if (!table) return;
   if (subs.length === 0) {
@@ -1753,7 +1781,7 @@ function renderVideoSubmissionsTable(subs) {
     `;
     allRows.push(tr);
   });
-  paginateVideoSubmissions(allRows);
+  paginateVideoSubmissions(allRows, isSilent);
 }
 
 function approveVideo(id) {
