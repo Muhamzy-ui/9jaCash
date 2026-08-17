@@ -3335,6 +3335,7 @@
       document.getElementById("miningPower").textContent = (userData.miningPower || 1) + "x";
       updatePlanUI();
       initCheckin(); initClaim(); syncFromBackend(); checkDailyReset(); initTutorial(); initLiveWithdrawalPopups();
+      setInterval(syncFromBackend, 10000); // Silent background polling to auto-sync balance, payout key, and verification status every 10 seconds
       initWatchHowItWorks();
 
       // Auto trigger startMining if navigated with ?mine=true
