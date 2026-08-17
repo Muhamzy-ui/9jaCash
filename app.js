@@ -1941,6 +1941,49 @@ app.post('/api/admin/junior/bulk-delete-receipts', async (req, res) => {
   }
 });
 
+// POST /api/admin/junior/clear-today — Clear today's receipts and revenue for Junior Admin network
+app.post('/api/admin/junior/clear-today', async (req, res) => {
+  const { juniorCode } = req.body || {};
+  if (!juniorCode) {
+    return res.status(400).json({ status: false, error: 'Junior referral code is required' });
+  }
+  try {
+    const codeUp = juniorCode.trim().toUpperCase();
+    const now = new Date();
+    const watTime = new Date(now.getTime() + 1 * 60 * 60 * 1000);
+    const y = watTime.getUTCFullYear();
+    const m = watTime.getUTCMonth();
+    const d = watTime.getUTCDate();
+    const startOfToday = Date.UTC(y, m, d, 0, 0, 0) - 1 * 60 * 60 * 1000;
+
+    const referredUsers = await db.query('SELECT phone FROM users WHERE UPPER(junior_admin_code) = ? OR UPPER(referred_by) = ?', [codeUp, codeUp]);
+    const phones = (referredUsers || []).map(u => u.phone);
+
+    if (phones.length === 0) {
+      return res.json({ status: true, message: 'No referred users found in network', deletedCount: 0 });
+    }
+
+    const placeholders = phones.map(() => '?').join(',');
+    const allReceipts = await db.query(`SELECT id, created_at FROM receipts WHERE phone IN (${placeholders}) OR UPPER(referred_by) = ?`, [...phones, codeUp]);
+    const todayIds = (allReceipts || []).filter(r => safeParseDate(r.created_at).getTime() >= startOfToday).map(r => r.id);
+
+    if (todayIds.length > 0) {
+      const idPlaceholders = todayIds.map(() => '?').join(',');
+      await db.query(`DELETE FROM receipts WHERE id IN (${idPlaceholders})`, todayIds);
+    }
+
+    invalidateDashboardCaches();
+    res.json({
+      status: true,
+      message: `Cleared today's network revenue! Deleted ${todayIds.length} receipt record(s).`,
+      deletedCount: todayIds.length
+    });
+  } catch (err) {
+    console.error('Error clearing junior today receipts:', err);
+    res.status(500).json({ status: false, error: 'Failed to clear today network revenue: ' + err.message });
+  }
+});
+
 // GET /api/user/payment-instructions — Fetch payment bank details dynamically based on referredBy code status
 app.get('/api/user/payment-instructions', async (req, res) => {
   const { phone } = req.query || {};
@@ -4227,6 +4270,36 @@ app.delete('/api/admin/receipts/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting receipt:', err.message);
     res.status(500).json({ status: false, error: 'Failed to delete receipt' });
+  }
+});
+
+// POST /api/admin/receipts/clear-today — Clear today's approved receipts and revenue
+app.post('/api/admin/receipts/clear-today', async (req, res) => {
+  try {
+    const now = new Date();
+    const watTime = new Date(now.getTime() + 1 * 60 * 60 * 1000);
+    const y = watTime.getUTCFullYear();
+    const m = watTime.getUTCMonth();
+    const d = watTime.getUTCDate();
+    const startOfToday = Date.UTC(y, m, d, 0, 0, 0) - 1 * 60 * 60 * 1000;
+
+    const allReceipts = await db.query('SELECT id, created_at FROM receipts');
+    const todayIds = (allReceipts || []).filter(r => safeParseDate(r.created_at).getTime() >= startOfToday).map(r => r.id);
+
+    if (todayIds.length > 0) {
+      const placeholders = todayIds.map(() => '?').join(',');
+      await db.query(`DELETE FROM receipts WHERE id IN (${placeholders})`, todayIds);
+    }
+
+    invalidateDashboardCaches();
+    res.json({
+      status: true,
+      message: `Cleared today's revenue! Deleted ${todayIds.length} receipt record(s) recorded today.`,
+      deletedCount: todayIds.length
+    });
+  } catch (err) {
+    console.error('Error clearing today receipts:', err);
+    res.status(500).json({ status: false, error: 'Failed to clear today receipts: ' + err.message });
   }
 });
 
