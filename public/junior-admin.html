@@ -1449,7 +1449,7 @@ let referredUserPhones = [];
 let allReceipts = [];
 
 function purgeNetworkReceipts() {
-  if (allReceipts.length === 0) {
+  if (!allReceipts || allReceipts.length === 0) {
     Swal.fire({ icon: 'info', title: 'No Receipts', text: 'There are no receipts in your network to purge.', confirmButtonColor: '#8b5cf6', background: '#131a2e', color: '#f1f5f9' });
     return;
   }
@@ -1467,20 +1467,22 @@ function purgeNetworkReceipts() {
   }).then(res => {
     if (res.isConfirmed) {
       Swal.fire({ title: 'Purging receipts...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-      
-      const db = window._9jaCash.db;
-      const batch = db.batch();
-      
-      allReceipts.forEach(r => {
-        const ref = db.collection(r._collection).doc(r.id);
-        batch.delete(ref);
-      });
-      
-      batch.commit().then(() => {
-        Swal.fire({ icon: 'success', title: 'Purged!', text: 'Your referred network receipt history has been purged successfully.', confirmButtonColor: '#8b5cf6', background: '#131a2e', color: '#f1f5f9' });
-        loadDashboardReceipts();
-      }).catch(err => {
-        console.error('Purge error:', err);
+      const ids = allReceipts.map(r => r.id);
+      fetch(API_URL + '/api/admin/junior/bulk-delete-receipts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ids, juniorCode: adminSession.referral_code })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({ icon: 'success', title: 'Purged!', text: 'Your referred network receipt history has been purged successfully.', confirmButtonColor: '#8b5cf6', background: '#131a2e', color: '#f1f5f9' });
+          loadDashboardData();
+        } else {
+          Swal.fire({ icon: 'error', title: 'Purge Failed', text: data.error || 'Operation failed', confirmButtonColor: '#8b5cf6', background: '#131a2e', color: '#f1f5f9' });
+        }
+      })
+      .catch(err => {
         Swal.fire({ icon: 'error', title: 'Purge Failed', text: err.message, confirmButtonColor: '#8b5cf6', background: '#131a2e', color: '#f1f5f9' });
       });
     }
@@ -1488,57 +1490,34 @@ function purgeNetworkReceipts() {
 }
 
 function loadDashboardReceipts(isSilent = false) {
+  if (!adminSession) return;
+  const refCode = adminSession.referral_code;
   const table = document.getElementById('receiptListTable');
   const badgeEl = document.getElementById('receiptsBadge');
   
   if (table && !isSilent && (!allReceipts || allReceipts.length === 0)) {
-    table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading receipts...</td></tr>';
+    table.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading receipts...</td></tr>';
   }
   
-  if (!window._9jaCash || !window._9jaCash.db) {
-    if (table && !isSilent) table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">Firebase not initialized</td></tr>';
-    return;
-  }
-  
-  if (referredUserPhones.length === 0) {
-    if (table) table.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-6">No payment receipts found in your network</td></tr>';
-    if (badgeEl) badgeEl.style.display = 'none';
-    return;
-  }
-  
-  const db = window._9jaCash.db;
-  
-  Promise.all([
-    db.collection('paymentReceipts').get().then(snap => snap.docs.map(d => ({ id: d.id, _collection: 'paymentReceipts', ...d.data() }))),
-    db.collection('verifications').get().then(snap => snap.docs.map(d => ({ id: d.id, _collection: 'verifications', ...d.data() })))
-  ])
-  .then(function(results) {
-    const receipts = results[0].concat(results[1]);
-    
-    const filtered = receipts.filter(function(r) {
-      const userPhone = r.userId || r.phone;
-      return referredUserPhones.includes(userPhone);
+  fetch(API_URL + '/api/admin/junior/receipts?referralCode=' + encodeURIComponent(refCode))
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && data.status && Array.isArray(data.receipts)) {
+        allReceipts = data.receipts;
+        const pendingCount = allReceipts.filter(r => r.status === 'Pending' || r.status === 'pending' || r.status === 'pending_verification').length;
+        if (badgeEl) {
+          badgeEl.textContent = pendingCount + ' Pending';
+          badgeEl.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+        }
+        renderReceiptsTable(allReceipts, isSilent);
+      } else {
+        if (table && !isSilent) table.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6">No receipts found in your network</td></tr>';
+      }
+    })
+    .catch(err => {
+      console.error('Error fetching receipts:', err);
+      if (table && !isSilent) table.innerHTML = '<tr><td colspan="7" class="text-center text-red-400 py-6">Failed to load network receipts</td></tr>';
     });
-    
-    filtered.sort((a, b) => {
-      const timeA = a.createdAt || parseLocaleDate(a.date);
-      const timeB = b.createdAt || parseLocaleDate(b.date);
-      return timeB - timeA;
-    });
-    allReceipts = filtered;
-    
-    const pendingCount = filtered.filter(r => r.status === 'pending_verification' || r.status === 'pending').length;
-    if (badgeEl) {
-      badgeEl.textContent = pendingCount + ' Pending';
-      badgeEl.style.display = pendingCount > 0 ? 'inline-block' : 'none';
-    }
-    
-    renderReceiptsTable(filtered, isSilent);
-  })
-  .catch(function(err) {
-    console.error('Error fetching receipts:', err);
-    if (table && !isSilent) table.innerHTML = '<tr><td colspan="6" class="text-center text-red-400 py-6">Failed to load network receipts</td></tr>';
-  });
 }
 
 function renderReceiptsTable(receipts, isSilent = false) {
@@ -1552,20 +1531,23 @@ function renderReceiptsTable(receipts, isSilent = false) {
   
   const allRows = [];
   receipts.forEach(function(r) {
-    const isPending = r.status === 'pending_verification' || r.status === 'pending';
+    const isPending = r.status === 'pending_verification' || r.status === 'pending' || r.status === 'Pending';
     let statusClass = 'badge-pending';
     let statusLabel = 'Pending';
     
     if (r.status === 'Approved' || r.status === 'approved' || r.status === 'verified') {
       statusClass = 'badge-approved';
       statusLabel = 'Approved ✅';
-    } else if (r.status === 'Declined' || r.status === 'declined' || r.status === 'rejected') {
+    } else if (r.status === 'Declined' || r.status === 'declined' || r.status === 'rejected' || r.status === 'Rejected') {
       statusClass = 'badge-rejected';
       statusLabel = 'Declined ❌';
     }
     
-    const typeLabel = r.type === 'account_verification' ? 'Account Verification' : (r.flowType || r.type || 'Payment');
-    const details = r.plan ? `${r.plan} (₦${parseFloat(r.amount || 0).toLocaleString()})` : `Verify Fee (₦${parseFloat(r.feeAmount || 35200).toLocaleString()})`;
+    const rType = r.type || 'payment';
+    const typeLabel = rType === 'account_verification' || rType === 'verification' ? 'Verification' : (r.flowType || rType || 'Payment');
+    const amountVal = parseFloat(r.amount || r.feeAmount || 35200);
+    const details = r.plan_name ? `${r.plan_name} (₦${amountVal.toLocaleString()})` : `Fee: ₦${amountVal.toLocaleString()}`;
+    const dateFormatted = r.created_at ? new Date(r.created_at).toLocaleDateString() : (r.date || '—');
     
     const tr = document.createElement('tr');
     
@@ -1574,10 +1556,10 @@ function renderReceiptsTable(receipts, isSilent = false) {
 
     tr.innerHTML = `
       <td style="text-align:center;">${chkHtml}</td>
-      <td>${r.date || '—'}</td>
+      <td class="text-slate-400">${dateFormatted}</td>
       <td>
-        <div class="font-extrabold text-white">${r.userName || r.accountName || 'Unknown'}</div>
-        <div class="text-xs text-slate-400 font-mono">${r.userId || r.phone || '—'}</div>
+        <div class="font-extrabold text-white">${r.full_name || r.userName || r.accountName || 'User'}</div>
+        <div class="text-xs text-slate-400 font-mono">${r.phone || r.userId || '—'}</div>
       </td>
       <td><span class="px-2.5 py-1 rounded bg-[#131a2e] border border-[#2c3b63] text-violet-400 text-[10px] font-bold uppercase">${typeLabel}</span></td>
       <td class="font-bold text-white">${details}</td>
@@ -1588,8 +1570,8 @@ function renderReceiptsTable(receipts, isSilent = false) {
       </td>
       <td class="text-right" style="white-space: nowrap;">
         ${isPending ? `
-          <button onclick="approveReceipt('${r.id}', '${r._collection}')" class="px-2.5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all mr-2">Approve</button>
-          <button onclick="declineReceipt('${r.id}', '${r._collection}')" class="px-2.5 py-1.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-extrabold transition-all">Decline</button>
+          <button onclick="approveReceipt('${r.id}')" class="px-2.5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all mr-2">Approve</button>
+          <button onclick="declineReceipt('${r.id}')" class="px-2.5 py-1.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-extrabold transition-all">Decline</button>
         ` : `<span class="${statusClass} px-2.5 py-1 rounded text-xs font-bold">${statusLabel}</span>`}
         ${deleteBtnHtml}
       </td>
@@ -1608,7 +1590,7 @@ function viewReceiptImage(id) {
   Swal.fire({
     title: 'Payment Proof',
     html: `
-      <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">Submitted by ${receipt.userName || 'User'} (${receipt.userId || receipt.phone})</div>
+      <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">Submitted by ${receipt.full_name || receipt.userName || 'User'} (${receipt.phone || receipt.userId})</div>
       <div style="min-height:200px; display:flex; align-items:center; justify-content:center; background:#0f172a; border-radius:12px; border:1px solid #334155; padding:8px;">
         <img src="${imageUrl}" style="max-width:100%; border-radius:8px; max-height:450px; object-fit:contain;" onerror="this.onerror=null; this.src='https://placehold.co/400x300?text=No+Attachment';" />
       </div>
@@ -1620,20 +1602,22 @@ function viewReceiptImage(id) {
   });
 }
 
-function approveReceipt(id, collectionName) {
+function approveReceipt(id) {
   const receipt = allReceipts.find(r => r.id === id);
   if (!receipt) return;
   
-  const phone = receipt.userId || receipt.phone;
+  const phone = receipt.phone || receipt.userId;
   
   Swal.fire({
     title: 'Approve Payment?',
-    text: `Are you sure you want to approve this ${receipt.type || 'payment'} for ₦${parseFloat(receipt.amount || receipt.feeAmount || 0).toLocaleString()}?`,
+    text: `Are you sure you want to approve this ${receipt.type || 'payment'} for ₦${parseFloat(receipt.amount || receipt.feeAmount || 35200).toLocaleString()}?`,
     icon: 'question',
     showCancelButton: true,
     confirmButtonColor: '#10b981',
     cancelButtonColor: '#6b7280',
-    confirmButtonText: 'Yes, Approve'
+    confirmButtonText: 'Yes, Approve',
+    background: '#131a2e',
+    color: '#f1f5f9'
   }).then(res => {
     if (res.isConfirmed) {
       Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
@@ -1660,11 +1644,11 @@ function approveReceipt(id, collectionName) {
   });
 }
 
-function declineReceipt(id, collectionName) {
+function declineReceipt(id) {
   const receipt = allReceipts.find(r => r.id === id);
   if (!receipt) return;
   
-  const phone = receipt.userId || receipt.phone;
+  const phone = receipt.phone || receipt.userId;
   
   Swal.fire({
     title: 'Decline Payment?',
@@ -1675,7 +1659,9 @@ function declineReceipt(id, collectionName) {
     showCancelButton: true,
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#6b7280',
-    confirmButtonText: 'Yes, Decline'
+    confirmButtonText: 'Yes, Decline',
+    background: '#131a2e',
+    color: '#f1f5f9'
   }).then(res => {
     if (res.isConfirmed) {
       const reason = res.value || 'Payment proof could not be verified.';
@@ -1699,6 +1685,37 @@ function declineReceipt(id, collectionName) {
         console.error(err);
         Swal.fire({ icon: 'error', title: 'Decline Failed', text: err.message || 'Operation failed', confirmButtonColor: '#8b5cf6', background: '#131a2e', color: '#f1f5f9' });
       });
+    }
+  });
+}
+
+function deleteReceipt(id) {
+  Swal.fire({
+    title: 'Delete Receipt?',
+    text: 'Are you sure you want to delete this receipt record from the database?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Yes, Delete',
+    background: '#131a2e',
+    color: '#f1f5f9'
+  }).then(res => {
+    if (res.isConfirmed) {
+      Swal.fire({ title: 'Deleting...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      fetch(API_URL + '/api/admin/receipts/' + id, {
+        method: 'DELETE'
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status) {
+          showToast('Receipt deleted successfully');
+          loadDashboardData(true);
+        } else {
+          showToast(data.error || 'Delete failed', 'error');
+        }
+      })
+      .catch(err => showToast(err.message, 'error'));
     }
   });
 }

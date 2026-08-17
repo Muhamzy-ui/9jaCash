@@ -889,11 +889,13 @@ app.post('/api/user/sync', async (req, res) => {
 
     let dbUser = null;
     if (!users || users.length === 0) {
-      // Auto-migrate: create user row with frontend's local stats if available
+      // Auto-migrate: create user row with default stats
+      const initialBalance = Math.min(localBalance, 50000);
+      const initialTotalMined = Math.min(localTotalMined, 100000);
       await db.query(`
         INSERT INTO users (phone, email, password, full_name, balance, total_mined, status, created_at)
         VALUES (?, ?, '123456', '9jaCash User', ?, ?, 'active', ?)
-      `, [cleanPhone, `${cleanPhone}@9jacash.com`, localBalance, localTotalMined, new Date().toISOString()]);
+      `, [cleanPhone, `${cleanPhone}@9jacash.com`, initialBalance, initialTotalMined, new Date().toISOString()]);
       const newUsers = await db.query('SELECT * FROM users WHERE phone = ?', [cleanPhone]);
       dbUser = newUsers && newUsers.length > 0 ? newUsers[0] : null;
     } else {
@@ -903,16 +905,6 @@ app.post('/api/user/sync', async (req, res) => {
       let dbReferredBy = dbUser.referred_by || null;
       let dbJuniorAdminCode = dbUser.junior_admin_code || null;
       let needsUpdate = false;
-
-      // Restore/recover balance if local storage is higher than DB balance
-      if (localBalance > dbBalance) {
-        dbBalance = localBalance;
-        needsUpdate = true;
-      }
-      if (localTotalMined > dbTotalMined) {
-        dbTotalMined = localTotalMined;
-        needsUpdate = true;
-      }
 
       // Dynamic referral linking: if they landed via a referral code, sync it to database
       if (!dbReferredBy && referredBy) {
@@ -929,9 +921,9 @@ app.post('/api/user/sync', async (req, res) => {
       if (needsUpdate) {
         await db.query(`
           UPDATE users 
-          SET balance = ?, total_mined = ?, referred_by = ?, junior_admin_code = ? 
+          SET referred_by = ?, junior_admin_code = ? 
           WHERE phone = ?
-        `, [dbBalance, dbTotalMined, dbReferredBy, dbJuniorAdminCode, cleanPhone]);
+        `, [dbReferredBy, dbJuniorAdminCode, cleanPhone]);
         const updatedUsers = await db.query('SELECT * FROM users WHERE phone = ?', [cleanPhone]);
         dbUser = updatedUsers && updatedUsers.length > 0 ? updatedUsers[0] : dbUser;
       }
@@ -1000,30 +992,32 @@ app.post('/api/user/sync', async (req, res) => {
     }
     const referralEarnings = referralsCount * referralBonus;
 
-    // Sanity balance normalization for inflated balances (> 10,000,000 without huge deposits)
+    // Sanity balance normalization for inflated balances (> 1,000,000 without corresponding verified receipts)
     let currentBal = parseFloat(dbUser.balance) || 0;
-    if (currentBal > 5000000) {
+    if (currentBal > 1000000) {
       const baseBal = 10000;
-      const mined = parseFloat(dbUser.total_mined) || 0;
+      const mined = Math.min(parseFloat(dbUser.total_mined) || 0, 500000);
       const refEarn = referralsCount * referralBonus;
       const realisticBal = baseBal + mined + refEarn;
-      if (currentBal > realisticBal + 1000000) {
-        currentBal = realisticBal;
-        await db.query('UPDATE users SET balance = ? WHERE phone = ?', [realisticBal, cleanPhone]);
-        dbUser.balance = realisticBal;
-      }
+      currentBal = realisticBal;
+      await db.query('UPDATE users SET balance = ?, total_mined = ? WHERE phone = ?', [realisticBal, mined, cleanPhone]);
+      dbUser.balance = realisticBal;
+      dbUser.total_mined = mined;
+      console.log(`[BalanceNormalization] Normalized inflated balance for ${cleanPhone} to ₦${realisticBal}`);
     }
 
     const mapped = mapUserKeys(dbUser) || {
       phone: cleanPhone,
       email: `${cleanPhone}@9jacash.com`,
       fullName: '9jaCash User',
-      balance: localBalance,
+      balance: parseFloat(dbUser.balance) || 10000,
       miningPower: 1,
-      totalMined: localTotalMined,
+      totalMined: parseFloat(dbUser.total_mined) || 0,
       planName: 'Free Miner',
       status: 'active'
     };
+    mapped.balance = parseFloat(dbUser.balance) || 0;
+    mapped.totalMined = parseFloat(dbUser.total_mined) || 0;
     mapped.hasBouncedBefore = hasBouncedBefore;
     mapped.withdrawalCount = finalWithdrawalCount;
     mapped.verified = verified;
@@ -1423,18 +1417,19 @@ app.post('/api/admin/junior/login', async (req, res) => {
   }
 });
 
-// GET /api/admin/junior/users — Fetch referred users (with payout keys)
+// GET /api/admin/junior/users — Fetch referred users (with payout keys and verification status)
 app.get('/api/admin/junior/users', async (req, res) => {
   const { referralCode } = req.query || {};
   if (!referralCode) return res.status(400).json({ status: false, error: 'Referral code required' });
 
   try {
+    const codeUp = referralCode.trim().toUpperCase();
     const list = await db.query(`
-      SELECT phone, email, full_name, bank_name, account_number, balance, mining_power, plan_name, payout_key, status, created_at 
+      SELECT phone, email, full_name, bank_name, account_number, balance, mining_power, plan_name, payout_key, status, is_verified, created_at 
       FROM users 
-      WHERE junior_admin_code = ? OR referred_by = ? 
+      WHERE UPPER(junior_admin_code) = ? OR UPPER(referred_by) = ? 
       ORDER BY created_at DESC
-    `, [referralCode, referralCode]);
+    `, [codeUp, codeUp]);
     res.json({ status: true, users: list });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Failed to fetch users' });
@@ -1447,17 +1442,48 @@ app.get('/api/admin/junior/withdrawals', async (req, res) => {
   if (!referralCode) return res.status(400).json({ status: false, error: 'Referral code required' });
 
   try {
+    const codeUp = referralCode.trim().toUpperCase();
     const list = await db.query(`
       SELECT w.*, u.is_verified 
       FROM withdrawals w 
       LEFT JOIN users u ON w.phone = u.phone 
-      WHERE w.referred_by = ? 
-         OR w.phone IN (SELECT phone FROM users WHERE junior_admin_code = ? OR referred_by = ?)
+      WHERE UPPER(w.referred_by) = ? 
+         OR w.phone IN (SELECT phone FROM users WHERE UPPER(junior_admin_code) = ? OR UPPER(referred_by) = ?)
       ORDER BY w.created_at DESC
-    `, [referralCode, referralCode, referralCode]);
+    `, [codeUp, codeUp, codeUp]);
     res.json({ status: true, withdrawals: list });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Failed to fetch withdrawals' });
+  }
+});
+
+// GET /api/admin/junior/receipts — Fetch receipts from referred network
+app.get('/api/admin/junior/receipts', async (req, res) => {
+  const { referralCode } = req.query || {};
+  if (!referralCode) return res.status(400).json({ status: false, error: 'Referral code required' });
+
+  try {
+    const codeUp = referralCode.trim().toUpperCase();
+    const referredUsers = await db.query('SELECT phone FROM users WHERE UPPER(junior_admin_code) = ? OR UPPER(referred_by) = ?', [codeUp, codeUp]);
+    const phones = (referredUsers || []).map(u => u.phone);
+
+    if (phones.length === 0) {
+      return res.json({ status: true, receipts: [] });
+    }
+
+    let placeholders = phones.map(() => '?').join(',');
+    const list = await db.query(`
+      SELECT r.*, u.full_name, u.is_verified 
+      FROM receipts r
+      LEFT JOIN users u ON r.phone = u.phone
+      WHERE r.phone IN (${placeholders})
+         OR UPPER(r.referred_by) = ?
+      ORDER BY r.created_at DESC
+    `, [...phones, codeUp]);
+    res.json({ status: true, receipts: list });
+  } catch (err) {
+    console.error('Failed to fetch junior receipts:', err);
+    res.status(500).json({ status: false, error: 'Failed to fetch receipts' });
   }
 });
 
@@ -1467,22 +1493,19 @@ app.get('/api/admin/junior/stats', async (req, res) => {
   if (!referralCode) return res.status(400).json({ status: false, error: 'Referral code required' });
 
   try {
+    const codeUp = referralCode.trim().toUpperCase();
     // Auto-reset commission every 1 week (7 days), or manual reset_at, whichever is more recent
     const nowTime = Date.now();
     const sevenDaysAgo = nowTime - (7 * 24 * 60 * 60 * 1000);
-    const jaList = await db.query('SELECT reset_at FROM junior_admins WHERE referral_code = ?', [referralCode]);
+    const jaList = await db.query('SELECT reset_at FROM junior_admins WHERE UPPER(referral_code) = ?', [codeUp]);
     const manualResetTime = (jaList.length > 0 && jaList[0].reset_at) ? safeParseDate(jaList[0].reset_at).getTime() : 0;
     const resetTime = Math.max(sevenDaysAgo, manualResetTime);
 
-    // 1. Get referred users created after resetTime
-    const referredUsers = await db.query('SELECT phone, created_at FROM users WHERE junior_admin_code = ? OR referred_by = ?', [referralCode, referralCode]);
-    const filteredUsers = referredUsers.filter(u => {
-      const createdTime = u.created_at ? safeParseDate(u.created_at).getTime() : 0;
-      return createdTime >= resetTime;
-    });
-    const phones = filteredUsers.map(u => u.phone);
+    // 1. Get ALL referred users
+    const referredUsers = await db.query('SELECT phone, created_at FROM users WHERE UPPER(junior_admin_code) = ? OR UPPER(referred_by) = ?', [codeUp, codeUp]);
+    const allPhones = referredUsers.map(u => u.phone);
 
-    if (phones.length === 0) {
+    if (allPhones.length === 0) {
       return res.json({
         status: true,
         totalUsers: 0,
@@ -1493,14 +1516,15 @@ app.get('/api/admin/junior/stats', async (req, res) => {
     }
 
     // Placeholders for IN query
-    let placeholders = phones.map(() => '?').join(',');
+    let placeholders = allPhones.map(() => '?').join(',');
 
-    // 2. Fetch receipts and filter in-memory
+    // 2. Fetch receipts and filter by created_at >= resetTime
     const receiptsList = await db.query(`
-      SELECT amount, type, created_at FROM receipts 
-      WHERE phone IN (${placeholders}) AND LOWER(status) IN ('approved', 'verified', 'completed', 'success')
-      AND (type != 'junior_settlement' OR type IS NULL)
-    `, phones);
+      SELECT amount, type, plan_name, created_at FROM receipts 
+      WHERE (phone IN (${placeholders}) OR UPPER(referred_by) = ?) 
+        AND LOWER(status) IN ('approved', 'verified', 'completed', 'success')
+        AND (type != 'junior_settlement' OR type IS NULL)
+    `, [...allPhones, codeUp]);
     
     const filteredReceipts = receiptsList.filter(r => {
       const createdTime = r.created_at ? safeParseDate(r.created_at).getTime() : 0;
@@ -1514,16 +1538,18 @@ app.get('/api/admin/junior/stats', async (req, res) => {
       if (isNaN(amt) || amt <= 0) amt = 35200;
       approvedReceiptsAmount += amt;
       const rType = (r.type || '').toLowerCase();
-      if (['verification', 'payout_key_purchase', 'account_verification', 'payout', 'key'].includes(rType)) {
+      const plan = (r.plan_name || '').toLowerCase();
+      if (['verification', 'payout_key_purchase', 'account_verification', 'payout', 'key', 'payoutkey', 'payout_key'].includes(rType) || plan.includes('key')) {
         keysSold++;
       }
     }
 
-    // 3. Fetch withdrawals and filter in-memory
+    // 3. Fetch withdrawals and filter by created_at >= resetTime
     const withdrawalsList = await db.query(`
       SELECT amount, created_at FROM withdrawals 
-      WHERE phone IN (${placeholders}) AND LOWER(status) IN ('approved', 'completed', 'success')
-    `, phones);
+      WHERE (phone IN (${placeholders}) OR UPPER(referred_by) = ?) 
+        AND LOWER(status) IN ('approved', 'completed', 'success')
+    `, [...allPhones, codeUp]);
     
     const filteredWithdrawals = withdrawalsList.filter(w => {
       const createdTime = w.created_at ? safeParseDate(w.created_at).getTime() : 0;
@@ -1534,7 +1560,7 @@ app.get('/api/admin/junior/stats', async (req, res) => {
 
     res.json({
       status: true,
-      totalUsers: phones.length,
+      totalUsers: allPhones.length,
       approvedReceiptsAmount,
       approvedWithdrawalsAmount,
       keysSold

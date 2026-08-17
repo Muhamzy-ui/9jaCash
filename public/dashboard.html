@@ -2221,6 +2221,10 @@
     if (!userData) { window.location.href = "login.html"; }
 
     let balance = (userData ? parseFloat(userData.balance) : 0) || parseFloat(localStorage.getItem("walletBalance")) || 0;
+    if (balance > 1000000) {
+      balance = 50000;
+      localStorage.setItem("walletBalance", balance);
+    }
     let balanceHidden = false;
     const CHECKIN_REWARDS = [500, 1000, 1500, 2000, 3000, 5000, 10000];
     let checkinData = JSON.parse(localStorage.getItem("checkinData")) || { streak: 0, lastCheckin: null, claimedDays: [] };
@@ -3591,6 +3595,7 @@
             if (typeof loadCustomerCareLinks === 'function') loadCustomerCareLinks();
             if (typeof initSocialPopup === 'function') initSocialPopup();
             balance = parseFloat(fresh.balance) || 0;
+            localStorage.setItem("walletBalance", balance);
             updateBalance();
             document.getElementById("totalMined").textContent = "₦" + (fresh.totalMined || 0).toLocaleString();
             updatePlanUI();
