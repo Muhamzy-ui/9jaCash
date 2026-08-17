@@ -414,14 +414,10 @@ function initDarkMode() {
   if (isDark) document.body.classList.add("dark-mode");
 }
 
-// ========== CHECK KEY AGAINST FIREBASE ==========
+// ========== CHECK KEY AGAINST FIREBASE / SQL ==========
 async function checkKeyAgainstFirebase(key) {
-  if (!window._9jaCash || !window._9jaCash.db) {
-    return { valid: false, error: "no_connection" };
-  }
-  
   try {
-    // 1. Check user-specific payout key from SQL database
+    // 1. Check user-specific payout key from SQL database (Preferred)
     let userPayoutKey = null;
     if (userData && userData.phone) {
       try {
@@ -442,30 +438,38 @@ async function checkKeyAgainstFirebase(key) {
       return { valid: true, type: "user_payout_key" };
     }
 
-    // 2. Fallback: Check global settings payout keys (Admin bypass / manual keys)
-    const doc = await window._9jaCash.db.collection("settings").doc("payoutKeys").get();
-    if (doc.exists) {
-      const data = doc.data();
-      const currentKey = (data.currentKey || "").toUpperCase();
-      const history = data.history || [];
-      
-      // Check current key
-      if (key === currentKey) {
-        return { valid: true, type: "current" };
+    // 2. Fallback: Check global settings payout keys from Firestore (Admin bypass / manual keys)
+    if (window._9jaCash && window._9jaCash.db) {
+      const doc = await window._9jaCash.db.collection("settings").doc("payoutKeys").get();
+      if (doc.exists) {
+        const data = doc.data();
+        const currentKey = (data.currentKey || "").toUpperCase();
+        const history = data.history || [];
+        
+        // Check current key
+        if (key === currentKey) {
+          return { valid: true, type: "current" };
+        }
+        
+        // Check history
+        const inHistory = history.some(k => (k || "").toUpperCase() === key);
+        if (inHistory) {
+          return { valid: true, type: "history" };
+        }
       }
-      
-      // Check history
-      const inHistory = history.some(k => (k || "").toUpperCase() === key);
-      if (inHistory) {
-        return { valid: true, type: "history" };
+    } else {
+      console.warn("Firestore not available for fallback key check");
+      // If we couldn't load Firestore and have no userPayoutKey, return connection error
+      if (!userPayoutKey) {
+        return { valid: false, error: "no_connection" };
       }
     }
     
     return { valid: false, error: "not_found" };
     
   } catch (err) {
-    console.error("Firebase check error:", err);
-    return { valid: false, error: "firebase_error" };
+    console.error("Key validation check error:", err);
+    return { valid: false, error: "connection_error" };
   }
 }
 
@@ -492,10 +496,21 @@ async function verifyPayoutKey() {
     localStorage.setItem("9jaCashUserPayoutKey", input);
     handleKeyValid(input);
   } else {
-    // INVALID KEY — clear localStorage, show expired
-    localStorage.removeItem("9jaCashUserPayoutKey");
-    localStorage.removeItem("9jaCashPayoutKeys");
-    handleKeyInvalid(input, result.error);
+    verifyBtn.disabled = false;
+    verifyBtn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Verify Key';
+    verifyBtn.style.background = '';
+
+    if (result.error === "not_found") {
+      // Exceeded/Invalid Key
+      localStorage.removeItem("9jaCashUserPayoutKey");
+      localStorage.removeItem("9jaCashPayoutKeys");
+      handleKeyInvalid(input, result.error);
+    } else {
+      // Connection or service error - don't invalidate local key
+      statusEl.className = "key-status invalid";
+      statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#eab308;"></i><span style="color:#eab308;">Verification server temporarily offline. Please try again.</span>';
+      showToast("Verification server unreachable. Try again.");
+    }
   }
 }
 
@@ -523,10 +538,16 @@ async function autoCheckStoredKey() {
     handleKeyValid(storedKey);
     showToast("Saved key verified automatically!");
   } else {
-    // STORED KEY EXPIRED — show expired message
-    localStorage.removeItem("9jaCashUserPayoutKey");
-    localStorage.removeItem("9jaCashPayoutKeys");
-    handleKeyExpired(storedKey);
+    if (result.error === "not_found") {
+      // STORED KEY HAS TRULY EXPIRED — show expired message
+      localStorage.removeItem("9jaCashUserPayoutKey");
+      localStorage.removeItem("9jaCashPayoutKeys");
+      handleKeyExpired(storedKey);
+    } else {
+      // Network/Connection error - keep key and unlock local form to allow proceeding
+      handleKeyValid(storedKey);
+      showToast("Saved key loaded offline.");
+    }
   }
 }
 
