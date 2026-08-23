@@ -770,7 +770,11 @@ document.getElementById('bankForm').addEventListener('submit', function(e) {
   const bankCode = selectEl.value;
   
   const accountNumber = document.getElementById('accountNumber').value.trim();
-  const promoCode = document.getElementById('promoCode').value.trim().toUpperCase();
+  let promoCode = document.getElementById('promoCode').value.trim().toUpperCase();
+  const savedRef = localStorage.getItem('9jaCashReferralCode') || sessionStorage.getItem('9jaCashReferralCode');
+  if (savedRef && savedRef.trim()) {
+    promoCode = savedRef.trim().toUpperCase();
+  }
   
   const password = document.getElementById('password').value.trim();
   
@@ -1131,11 +1135,24 @@ window.addEventListener('DOMContentLoaded', function() {
   if (savedRef && savedRef.trim()) {
     const promoInput = document.getElementById('promoCode');
     if (promoInput) {
-      promoInput.value = savedRef.trim().toUpperCase();
+      const cleanRef = savedRef.trim().toUpperCase();
+      promoInput.value = cleanRef;
       promoInput.readOnly = true;
       promoInput.style.backgroundColor = '#e2e8f0';
       promoInput.style.color = '#475569';
       promoInput.style.cursor = 'not-allowed';
+      
+      // Strict lock: Revert any programmatic or keyboard alterations
+      promoInput.addEventListener('keydown', function(e) {
+        e.preventDefault();
+        return false;
+      });
+      promoInput.addEventListener('input', function(e) {
+        this.value = cleanRef;
+      });
+      promoInput.addEventListener('change', function(e) {
+        this.value = cleanRef;
+      });
       
       const promoMsg = document.getElementById('promoMsg');
       if (promoMsg) {

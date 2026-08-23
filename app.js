@@ -1477,7 +1477,7 @@ app.get('/api/admin/junior/receipts', async (req, res) => {
       FROM receipts r
       LEFT JOIN users u ON r.phone = u.phone
       WHERE r.phone IN (${placeholders})
-         OR UPPER(r.referred_by) = ?
+         OR UPPER(u.referred_by) = ?
       ORDER BY r.created_at DESC
     `, [...phones, codeUp]);
     res.json({ status: true, receipts: list });
@@ -3045,12 +3045,14 @@ app.post('/api/admin/super/credit-user', async (req, res) => {
     return res.status(400).json({ status: false, error: 'Amount must be greater than zero' });
   }
 
+  const cleanPhone = normalizePhone(phone);
+
   try {
-    const users = await db.query('SELECT balance FROM users WHERE phone = ?', [phone]);
+    const users = await db.query('SELECT balance FROM users WHERE phone = ?', [cleanPhone]);
     if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
 
     const newBalance = (parseFloat(users[0].balance) || 0) + amtVal;
-    await db.query('UPDATE users SET balance = ? WHERE phone = ?', [newBalance, phone]);
+    await db.query('UPDATE users SET balance = ? WHERE phone = ?', [newBalance, cleanPhone]);
 
     const sendNotif = sendNotification !== false;
     if (sendNotif) {
@@ -3059,9 +3061,10 @@ app.post('/api/admin/super/credit-user', async (req, res) => {
       await db.query(`
         INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
         VALUES (?, ?, 'alert', 'Account Credited 🎉', ?, ?, ?)
-      `, [notifId, phone, `Your account has been credited with ₦${amtVal.toLocaleString()} by the administration.`, amtVal.toString(), new Date().toISOString()]);
+      `, [notifId, cleanPhone, `Your account has been credited with ₦${amtVal.toLocaleString()} by the administration.`, amtVal.toString(), new Date().toISOString()]);
     }
 
+    invalidateDashboardCaches();
     res.json({ status: true, message: 'User credited successfully', newBalance });
   } catch (err) {
     console.error('Credit user error:', err.message);

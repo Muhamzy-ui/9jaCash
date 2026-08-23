@@ -1125,6 +1125,28 @@
         }
       }
 
+      // Sync balance to SQL Backend
+      const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+      if (userData) {
+        fetch(API_URL + '/api/user/update-balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: userData.phone,
+            password: userData.password || '',
+            balance: balance,
+            totalMined: userData.totalMined || 0
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          console.log("SQL balance updated after task claim:", data);
+        })
+        .catch(err => {
+          console.error("SQL balance update error after task claim:", err);
+        });
+      }
+
       // Save to activity
       let tx = JSON.parse(localStorage.getItem('transactionHistory')) || [];
       tx.unshift({
