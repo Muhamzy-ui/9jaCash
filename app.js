@@ -3745,9 +3745,9 @@ app.get('/api/user/video-submission', async (req, res) => {
 // GET /api/cloudinary-signature — Generate signature for direct Cloudinary uploads
 app.get('/api/cloudinary-signature', (req, res) => {
   try {
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dyinhcicj';
-    const apiKey = process.env.CLOUDINARY_API_KEY || '713329398677614';
-    const apiSecret = process.env.CLOUDINARY_API_SECRET || '6b7mEQNHwSLhXPXxCEwcwwTMllg';
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'hrw0aosb';
+    const apiKey = process.env.CLOUDINARY_API_KEY || '797385265294164';
+    const apiSecret = process.env.CLOUDINARY_API_SECRET || 'oDDxKyFoYOcqIEXbgbKOrraiJrs';
 
     if (!cloudName || !apiKey || !apiSecret) {
       return res.status(500).json({ status: false, error: 'Cloudinary credentials are not configured on the server.' });
