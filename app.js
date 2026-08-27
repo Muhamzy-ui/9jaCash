@@ -3571,10 +3571,27 @@ app.post('/api/user/update-plan-power', async (req, res) => {
 });
 
 // ─── PROMO LOGIN/SIGNUP VIDEOS (TIKTOK STYLE) ──────────────────────────────────
+function optimizeCloudinaryVideoUrl(url) {
+  if (!url || typeof url !== 'string') return url;
+  if (!url.includes('cloudinary.com')) return url;
+  let clean = url.trim();
+  clean = clean.replace(/\.(mov|MOV|avi|AVI|mkv|MKV|webm|WEBM|flv|FLV|wmv|WMV)$/, '.mp4');
+  if (clean.includes('/f_auto') || clean.includes('/f_mp4') || clean.includes('/vc_h264')) {
+    return clean;
+  }
+  clean = clean.replace(/\/video\/upload\/(v\d+\/)/, '/video/upload/f_mp4,vc_h264,q_auto/$1');
+  clean = clean.replace(/\/video\/upload\/(?!f_mp4|f_auto|vc_h264)/, '/video/upload/f_mp4,vc_h264,q_auto/');
+  return clean;
+}
+
 app.get('/api/login-videos', async (req, res) => {
   try {
     const list = await db.query('SELECT * FROM login_videos ORDER BY id ASC');
-    res.json({ status: true, videos: list });
+    const optimizedList = (list || []).map(v => ({
+      ...v,
+      video_url: optimizeCloudinaryVideoUrl(v.video_url)
+    }));
+    res.json({ status: true, videos: optimizedList });
   } catch (err) {
     res.status(500).json({ status: false, error: err.message });
   }
@@ -3597,7 +3614,7 @@ app.post('/api/admin/login-video/update', async (req, res) => {
     return res.status(400).json({ status: false, error: 'Video ID is required' });
   }
   try {
-    let finalUrl = videoUrl || '';
+    let finalUrl = optimizeCloudinaryVideoUrl(videoUrl) || '';
 
     // If base64 video data is provided, upload/save it
     if (videoData && videoData.startsWith('data:video/')) {
@@ -3652,7 +3669,8 @@ app.post('/api/admin/login-video/update', async (req, res) => {
     }
 
     const fresh = await db.query('SELECT * FROM login_videos WHERE id = ?', [id]);
-    res.json({ status: true, message: 'Promo video updated successfully', video: fresh[0] });
+    const returnedVideo = fresh && fresh[0] ? { ...fresh[0], video_url: optimizeCloudinaryVideoUrl(fresh[0].video_url) } : null;
+    res.json({ status: true, message: 'Promo video updated successfully', video: returnedVideo });
   } catch (err) {
     console.error('Update promo video error:', err.message);
     res.status(500).json({ status: false, error: err.message });

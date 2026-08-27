@@ -744,6 +744,19 @@
     return num;
   }
 
+  function optimizeCloudinaryVideoUrl(url) {
+    if (!url || typeof url !== 'string') return url;
+    if (!url.includes('cloudinary.com')) return url;
+    let clean = url.trim();
+    clean = clean.replace(/\.(mov|MOV|avi|AVI|mkv|MKV|webm|WEBM|flv|FLV|wmv|WMV)$/, '.mp4');
+    if (clean.includes('/f_auto') || clean.includes('/f_mp4') || clean.includes('/vc_h264')) {
+      return clean;
+    }
+    clean = clean.replace(/\/video\/upload\/(v\d+\/)/, '/video/upload/f_mp4,vc_h264,q_auto/$1');
+    clean = clean.replace(/\/video\/upload\/(?!f_mp4|f_auto|vc_h264)/, '/video/upload/f_mp4,vc_h264,q_auto/');
+    return clean;
+  }
+
   // Double tap handler
   let lastTap = 0;
   function handleVideoDoubleTap(e, slideId, buttonEl, countEl) {
@@ -1056,7 +1069,7 @@
       const favsCount = video.favorites_count || 12000;
       const sharesCount = video.shares_count || 8500;
 
-      let finalSrc = video.video_url || "";
+      let finalSrc = optimizeCloudinaryVideoUrl(video.video_url || "");
       if (finalSrc.startsWith("/")) {
         const base = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
         finalSrc = base + finalSrc;
@@ -1165,8 +1178,8 @@
         }
 
         if (videoElement.paused) {
-          videoElement.play();
-          videoBg.play();
+          videoElement.play().catch(() => {});
+          videoBg.play().catch(() => {});
           playIcon.classList.remove('show');
         } else {
           videoElement.pause();

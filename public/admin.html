@@ -4232,7 +4232,15 @@ function savePromoVideo(id, btn) {
           if (xhr.status === 200) {
             try {
               const resp = JSON.parse(xhr.responseText);
-              payload.videoUrl = resp.secure_url || resp.url;
+              let rawUrl = resp.secure_url || resp.url;
+              if (rawUrl && rawUrl.includes('cloudinary.com')) {
+                rawUrl = rawUrl.replace(/\.(mov|MOV|avi|AVI|mkv|MKV|webm|WEBM|flv|FLV|wmv|WMV)$/, '.mp4');
+                if (!rawUrl.includes('/f_auto') && !rawUrl.includes('/f_mp4') && !rawUrl.includes('/vc_h264')) {
+                  rawUrl = rawUrl.replace(/\/video\/upload\/(v\d+\/)/, '/video/upload/f_mp4,vc_h264,q_auto/$1');
+                  rawUrl = rawUrl.replace(/\/video\/upload\/(?!f_mp4|f_auto|vc_h264)/, '/video/upload/f_mp4,vc_h264,q_auto/');
+                }
+              }
+              payload.videoUrl = rawUrl;
               showProgress(100, '✅ Upload complete! Saving to database...', 'Finalizing');
               if (videoUrlInput) videoUrlInput.value = payload.videoUrl;
               sendUpdateReq(payload);
