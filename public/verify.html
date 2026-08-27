@@ -675,6 +675,31 @@ function showToast(msg) {
 window.addEventListener("DOMContentLoaded", function() {
   loadVerifyData();
   loadFeeData();
+
+  const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+  let uData = null;
+  try { uData = JSON.parse(localStorage.getItem("9jaCashUser")); } catch(e) {}
+  if (uData && uData.phone) {
+    fetch(API_BASE_URL + '/api/user/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: uData.phone,
+        balance: parseFloat(localStorage.getItem("walletBalance")) || uData.balance || 0,
+        totalMined: uData.totalMined || 0
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status && data.user) {
+        uData = Object.assign({}, uData, data.user);
+        localStorage.setItem("9jaCashUser", JSON.stringify(uData));
+        localStorage.setItem("walletBalance", (data.user.balance || 0).toString());
+        loadVerifyData();
+      }
+    })
+    .catch(() => {});
+  }
 });
 </script>
 

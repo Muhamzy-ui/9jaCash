@@ -626,6 +626,7 @@
             const fresh = data.user;
             userData = fresh;
             localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+            localStorage.setItem("walletBalance", (fresh.balance || 0).toString());
             if (typeof loadCustomerCareLinks === 'function') {
               loadCustomerCareLinks();
             }

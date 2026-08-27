@@ -2221,10 +2221,6 @@
     if (!userData) { window.location.href = "login.html"; }
 
     let balance = (userData ? parseFloat(userData.balance) : 0) || parseFloat(localStorage.getItem("walletBalance")) || 0;
-    if (balance > 1000000) {
-      balance = 50000;
-      localStorage.setItem("walletBalance", balance);
-    }
     let balanceHidden = false;
     const CHECKIN_REWARDS = [500, 1000, 1500, 2000, 3000, 5000, 10000];
     let checkinData = JSON.parse(localStorage.getItem("checkinData")) || { streak: 0, lastCheckin: null, claimedDays: [] };
@@ -2852,6 +2848,22 @@
                   amount: n.amount || "",
                   date: new Date(n.created_at).toLocaleString()
                 });
+
+                // Also include credit, bonus, and debit notifications in the Recent Activity list!
+                const isCredit = n.type === 'credit' || n.type === 'bonus' || (n.title && (n.title.toLowerCase().includes('credit') || n.title.toLowerCase().includes('bonus') || n.title.toLowerCase().includes('reward')));
+                const isDebit = n.type === 'debit' || (n.title && n.title.toLowerCase().includes('debit'));
+                if (isCredit || isDebit) {
+                  const amtVal = parseFloat(n.amount) || 0;
+                  const formattedAmt = amtVal > 0 ? "₦" + amtVal.toLocaleString() : (n.amount || "");
+                  liveTx.push({
+                    type: isDebit ? "Debit" : "Credit",
+                    title: n.title || (isDebit ? "Account Debited" : "Account Credited"),
+                    amount: formattedAmt,
+                    status: "Successful",
+                    date: new Date(n.created_at).toLocaleString(),
+                    liveStatus: true
+                  });
+                }
               });
             }
 
@@ -2862,7 +2874,7 @@
               return item.type !== "Withdrawal" && item.type !== "Withdrawal Reversed";
             });
 
-            // Merge transactions (WITHOUT notifications)
+            // Merge transactions
             let merged = liveTx.concat(otherTx);
 
             // Sort merged transactions by date descending
@@ -2949,6 +2961,10 @@
         let color = "#3b82f6", bg = "#eff6ff", iconName = "fa-bell";
         if (item.notifType === 'payout_key') {
           color = "#8b5cf6"; bg = "#f5f3ff"; iconName = "fa-key";
+        } else if (item.notifType === 'credit') {
+          color = "#10b981"; bg = "#ecfdf5"; iconName = "fa-wallet";
+        } else if (item.notifType === 'debit') {
+          color = "#ef4444"; bg = "#fef2f2"; iconName = "fa-circle-minus";
         }
 
         if (document.body.classList.contains("dark-mode")) {
@@ -2958,6 +2974,12 @@
           } else if (color === "#8b5cf6") {
             bg = "rgba(139, 92, 246, 0.1)";
             color = "#a78bfa";
+          } else if (color === "#10b981") {
+            bg = "rgba(16, 185, 129, 0.1)";
+            color = "#34d399";
+          } else if (color === "#ef4444") {
+            bg = "rgba(239, 68, 68, 0.1)";
+            color = "#f87171";
           }
         }
 
@@ -2992,20 +3014,30 @@
       if (items.length === 0) { list.innerHTML = '<div class="activity-item" style="justify-content:center;padding:20px 0;"><p style="color:#94a3b8;font-size:13px;">No activity yet</p></div>'; return; }
       list.innerHTML = "";
       items.forEach(function (item) {
-        const isOut = item.type === "Withdrawal";
+        const isOut = item.type === "Withdrawal" || item.type === "Debit" || (item.title && item.title.toLowerCase().includes("debit"));
+        const isCredit = item.type === "Credit" || (item.title && (item.title.toLowerCase().includes("credit") || item.title.toLowerCase().includes("bonus") || item.title.toLowerCase().includes("reward")));
         const isReversal = item.type === "Reversal" || item.type === "Withdrawal Reversed";
         const isFailed = item.status === "Failed" || item.status === "Rejected";
         const isPending = item.status === "Pending";
-        let color, bg, sign = "", iconClass = "", iconName, displayStatus = "", displayTitle = item.type, displayAmount = item.amount || "";
+        let color, bg, sign = "", iconClass = "", iconName, displayStatus = "", displayTitle = item.title || item.type, displayAmount = item.amount || "";
 
         if (isReversal) {
           color = "#10b981"; bg = "#ecfdf5"; sign = "+"; iconClass = "bounce"; iconName = "fa-rotate-left";
           displayTitle = "Withdrawal Reversed";
           displayStatus = "";
           displayAmount = item.amount;
+        } else if (isCredit) {
+          color = "#10b981"; bg = "#ecfdf5"; sign = "+"; iconName = "fa-wallet";
+          displayTitle = item.title || "Account Credited";
+          displayStatus = "";
+          displayAmount = item.amount;
         } else if (isOut) {
           sign = "-";
-          if (isFailed) {
+          if (item.type === "Debit" || (item.title && item.title.toLowerCase().includes("debit"))) {
+            color = "#ef4444"; bg = "#fef2f2"; iconName = "fa-circle-minus";
+            displayTitle = item.title || "Account Debited";
+            displayStatus = "";
+          } else if (isFailed) {
             color = "#ef4444"; bg = "#fef2f2"; iconName = "fa-arrow-up";
             displayStatus = " (Failed)";
           } else if (isPending) {
@@ -3015,7 +3047,6 @@
             color = "#ef4444"; bg = "#fef2f2"; iconName = "fa-arrow-up";
             displayStatus = " (Paid)";
           }
-          displayTitle = "Withdrawal";
         } else {
           color = "#10b981"; bg = "#ecfdf5"; sign = "+"; iconName = "fa-arrow-down";
           displayAmount = item.amount;

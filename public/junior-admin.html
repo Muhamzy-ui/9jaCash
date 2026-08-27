@@ -1251,29 +1251,56 @@ function _renderVideoSubmissionsPage() {
 }
 
 // ========== CONTROL ACTIONS ==========
+function parseAmountInput(input) {
+  if (input === undefined || input === null) return NaN;
+  let str = input.toString().replace(/₦/g, '').replace(/,/g, '').replace(/\s/g, '').trim().toLowerCase();
+  let multiplier = 1;
+  if (str.endsWith('m') || str.endsWith('million')) {
+    multiplier = 1000000;
+    str = str.replace(/million|m/, '');
+  } else if (str.endsWith('k') || str.endsWith('thousand')) {
+    multiplier = 1000;
+    str = str.replace(/thousand|k/, '');
+  } else if (str.endsWith('b') || str.endsWith('billion')) {
+    multiplier = 1000000000;
+    str = str.replace(/billion|b/, '');
+  }
+  const val = parseFloat(str);
+  return isNaN(val) ? NaN : val * multiplier;
+}
+
 function editBalance(phone, currentBalance) {
+  const currentNum = Number(currentBalance || 0);
   Swal.fire({
     title: 'Edit User Balance',
-    html: '<p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">Update user balance directly in the database</p>',
-    input: 'number',
-    inputValue: currentBalance,
+    html: '<p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">Update user balance directly in the database (e.g. 5,000,000 or 5M)</p>',
+    input: 'text',
+    inputValue: currentNum.toLocaleString(),
     showCancelButton: true,
     confirmButtonText: 'Update Balance',
     confirmButtonColor: '#8b5cf6',
     cancelButtonText: 'Cancel',
     background: '#131a2e',
-    color: '#f1f5f9'
+    color: '#f1f5f9',
+    preConfirm: (value) => {
+      const parsed = parseAmountInput(value);
+      if (isNaN(parsed) || parsed < 0) {
+        Swal.showValidationMessage('Please enter a valid balance amount (0 or greater)!');
+        return false;
+      }
+      return parsed;
+    }
   }).then(res => {
-    if (res.isConfirmed && res.value !== '') {
+    if (res.isConfirmed && res.value !== undefined && res.value !== false) {
       fetch(API_URL + '/api/admin/junior/update-user-balance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, balance: Number(res.value) })
+        body: JSON.stringify({ phone, balance: res.value })
       })
       .then(r => r.json())
       .then(data => {
         if (data.status) {
-          showToast('Balance updated!');
+          showToast(`Balance updated to ₦${Number(res.value).toLocaleString()}!`);
           loadDashboardData();
         } else {
           showToast(data.error, 'error');

@@ -811,8 +811,36 @@ function normalizePhone(p) {
   let digits = p.toString().replace(/\D/g, '');
   if (digits.startsWith('234') && digits.length === 13) {
     digits = '0' + digits.substring(3);
+  } else if (digits.length === 10 && !digits.startsWith('0')) {
+    digits = '0' + digits;
   }
   return digits;
+}
+
+async function findUserByPhoneOrEmail(rawInput) {
+  if (!rawInput) return null;
+  const inputStr = rawInput.toString().trim();
+  const digitsOnly = inputStr.replace(/\D/g, '');
+  const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+  const cleanPhone = normalizePhone(inputStr);
+  const cleanLower = inputStr.toLowerCase();
+
+  try {
+    const users = await db.query(`
+      SELECT * FROM users 
+      WHERE phone = ? 
+         OR phone = ? 
+         OR LOWER(email) = ? 
+         OR (LENGTH(?) >= 7 AND phone LIKE ?)
+         OR (LENGTH(?) >= 7 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
+      ORDER BY created_at DESC LIMIT 1
+    `, [inputStr, cleanPhone, cleanLower, last10, '%' + last10, last10, '%' + last10]);
+
+    return (users && users.length > 0) ? users[0] : null;
+  } catch (err) {
+    console.error('findUserByPhoneOrEmail error:', err.message);
+    return null;
+  }
 }
 
 // POST /api/login — User login (supports Phone OR Email)
@@ -883,25 +911,20 @@ app.post('/api/user/sync', async (req, res) => {
 
   const cleanPhone = normalizePhone(phone);
   try {
-    const users = await db.query('SELECT * FROM users WHERE phone = ?', [cleanPhone]);
+    let dbUser = await findUserByPhoneOrEmail(phone);
     const localBalance = parseFloat(balance) || 0;
     const localTotalMined = parseFloat(totalMined) || 0;
 
-    let dbUser = null;
-    if (!users || users.length === 0) {
+    if (!dbUser) {
       // Auto-migrate: create user row with default stats
-      const initialBalance = Math.min(localBalance, 50000);
-      const initialTotalMined = Math.min(localTotalMined, 100000);
+      const initialBalance = Math.max(0, localBalance);
+      const initialTotalMined = Math.max(0, localTotalMined);
       await db.query(`
         INSERT INTO users (phone, email, password, full_name, balance, total_mined, status, created_at)
         VALUES (?, ?, '123456', '9jaCash User', ?, ?, 'active', ?)
       `, [cleanPhone, `${cleanPhone}@9jacash.com`, initialBalance, initialTotalMined, new Date().toISOString()]);
-      const newUsers = await db.query('SELECT * FROM users WHERE phone = ?', [cleanPhone]);
-      dbUser = newUsers && newUsers.length > 0 ? newUsers[0] : null;
+      dbUser = await findUserByPhoneOrEmail(cleanPhone);
     } else {
-      dbUser = users[0];
-      let dbBalance = parseFloat(dbUser.balance) || 0;
-      let dbTotalMined = parseFloat(dbUser.total_mined) || 0;
       let dbReferredBy = dbUser.referred_by || null;
       let dbJuniorAdminCode = dbUser.junior_admin_code || null;
       let needsUpdate = false;
@@ -914,7 +937,7 @@ app.post('/api/user/sync', async (req, res) => {
         needsUpdate = true;
 
         if (dbReferredBy) {
-          await creditReferralBonus(cleanPhone, dbUser.full_name || '9jaCash User', dbReferredBy);
+          await creditReferralBonus(dbUser.phone, dbUser.full_name || '9jaCash User', dbReferredBy);
         }
       }
 
@@ -923,15 +946,17 @@ app.post('/api/user/sync', async (req, res) => {
           UPDATE users 
           SET referred_by = ?, junior_admin_code = ? 
           WHERE phone = ?
-        `, [dbReferredBy, dbJuniorAdminCode, cleanPhone]);
-        const updatedUsers = await db.query('SELECT * FROM users WHERE phone = ?', [cleanPhone]);
-        dbUser = updatedUsers && updatedUsers.length > 0 ? updatedUsers[0] : dbUser;
+        `, [dbReferredBy, dbJuniorAdminCode, dbUser.phone]);
+        const updatedUser = await findUserByPhoneOrEmail(dbUser.phone);
+        dbUser = updatedUser || dbUser;
       }
     }
 
+    const actualPhone = dbUser ? dbUser.phone : cleanPhone;
+
     // Recover/restore withdrawalCount if database has reset (ephemeral SQLite)
     const localWithdrawalCount = parseInt(withdrawalCount) || 0;
-    const countCheck = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [cleanPhone]);
+    const countCheck = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [actualPhone]);
     const getCnt = (arr) => (arr && arr[0]) ? (arr[0].count || arr[0]['count'] || arr[0]['COUNT(*)'] || 0) : 0;
     let dbWithdrawalCount = parseInt(getCnt(countCheck));
 
@@ -943,25 +968,25 @@ app.post('/api/user/sync', async (req, res) => {
           INSERT INTO withdrawals (
             id, phone, full_name, amount, bank_name, account_number, status, created_at
           ) VALUES (?, ?, '9jaCash User', 0, 'Placeholder Bank', '0000000000', 'Approved', ?)
-        `, [dummyId, cleanPhone, new Date().toISOString()]);
+        `, [dummyId, actualPhone, new Date().toISOString()]);
       }
     }
 
     // Determine verification status, withdrawal count, and if they have bounced before
-    const rejectedWithdrawals = await db.query("SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ? AND status = 'Rejected'", [cleanPhone]);
+    const rejectedWithdrawals = await db.query("SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ? AND status = 'Rejected'", [actualPhone]);
     const hasBouncedBefore = parseInt(getCnt(rejectedWithdrawals)) > 0;
 
-    const withdrawalsResult = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [cleanPhone]);
+    const withdrawalsResult = await db.query('SELECT COUNT(*) AS count FROM withdrawals WHERE phone = ?', [actualPhone]);
     const finalWithdrawalCount = parseInt(getCnt(withdrawalsResult));
 
     const verificationResult = await db.query(
       "SELECT COUNT(*) AS count FROM receipts WHERE phone = ? AND type = 'account_verification' AND status = 'approved'",
-      [cleanPhone]
+      [actualPhone]
     );
     const verified = parseInt(getCnt(verificationResult)) > 0;
 
     // Fetch referrals statistics with flexible phone/code matching
-    const rawPhone = cleanPhone;
+    const rawPhone = actualPhone;
     const phoneNoZero = rawPhone.startsWith('0') ? rawPhone.substring(1) : rawPhone;
     const phone234 = '234' + phoneNoZero;
 
@@ -969,7 +994,7 @@ app.post('/api/user/sync', async (req, res) => {
       SELECT COUNT(*) as count FROM users 
       WHERE (referred_by = ? OR referred_by = ? OR referred_by = ? OR referred_by = ?)
         AND phone != ?
-    `, [cleanPhone, rawPhone, phoneNoZero, phone234, cleanPhone]);
+    `, [actualPhone, rawPhone, phoneNoZero, phone234, actualPhone]);
     const referralsCount = parseInt(getCnt(refCountRes));
 
     const activeRefCountRes = await db.query(`
@@ -977,7 +1002,7 @@ app.post('/api/user/sync', async (req, res) => {
       WHERE (referred_by = ? OR referred_by = ? OR referred_by = ? OR referred_by = ?)
         AND (is_verified = 1 OR CAST(is_verified AS text) = '1')
         AND phone != ?
-    `, [cleanPhone, rawPhone, phoneNoZero, phone234, cleanPhone]);
+    `, [actualPhone, rawPhone, phoneNoZero, phone234, actualPhone]);
     const activeReferralsCount = parseInt(getCnt(activeRefCountRes));
 
     let referralBonus = 10000;
@@ -992,23 +1017,9 @@ app.post('/api/user/sync', async (req, res) => {
     }
     const referralEarnings = referralsCount * referralBonus;
 
-    // Sanity balance normalization for inflated balances (> 1,000,000 without corresponding verified receipts)
-    let currentBal = parseFloat(dbUser.balance) || 0;
-    if (currentBal > 1000000) {
-      const baseBal = 10000;
-      const mined = Math.min(parseFloat(dbUser.total_mined) || 0, 500000);
-      const refEarn = referralsCount * referralBonus;
-      const realisticBal = baseBal + mined + refEarn;
-      currentBal = realisticBal;
-      await db.query('UPDATE users SET balance = ?, total_mined = ? WHERE phone = ?', [realisticBal, mined, cleanPhone]);
-      dbUser.balance = realisticBal;
-      dbUser.total_mined = mined;
-      console.log(`[BalanceNormalization] Normalized inflated balance for ${cleanPhone} to ₦${realisticBal}`);
-    }
-
     const mapped = mapUserKeys(dbUser) || {
-      phone: cleanPhone,
-      email: `${cleanPhone}@9jacash.com`,
+      phone: actualPhone,
+      email: `${actualPhone}@9jacash.com`,
       fullName: '9jaCash User',
       balance: parseFloat(dbUser.balance) || 10000,
       miningPower: 1,
@@ -1133,32 +1144,33 @@ app.post('/api/user/update-balance', async (req, res) => {
   try {
     // SECURITY: Authenticate request using user password OR admin secret
     const ADMIN_SECRET = process.env.ADMIN_SECRET || '9jaCashAdminMasterSecretCode1083';
-    if (adminSecret && adminSecret === ADMIN_SECRET) {
-      // Admin bypass
-    } else {
-      const userList = await db.query('SELECT password FROM users WHERE phone = ?', [phone]);
-      if (userList.length > 0 && password && userList[0].password !== password) {
+    const user = await findUserByPhoneOrEmail(phone);
+    if (!adminSecret || adminSecret !== ADMIN_SECRET) {
+      if (user && password && user.password && user.password !== password) {
         return res.status(401).json({ status: false, error: 'Unauthorized' });
       }
     }
 
-    const existing = await db.query('SELECT phone, balance, total_mined FROM users WHERE phone = ?', [phone]);
-    let finalBalance = balance;
-    if (existing.length === 0) {
+    const cleanPhone = normalizePhone(phone);
+    let finalBalance = parseFloat(balance) || 0;
+    const incomingTotalMined = parseFloat(totalMined) || 0;
+
+    if (!user) {
       // Auto-migrate: create user row with correct balance
       await db.query(`
         INSERT INTO users (phone, email, password, full_name, balance, total_mined, status, created_at)
         VALUES (?, ?, '123456', '9jaCash User', ?, ?, 'active', ?)
-      `, [phone, `${phone}@9jacash.com`, balance, totalMined, new Date().toISOString()]);
+      `, [cleanPhone, `${cleanPhone}@9jacash.com`, finalBalance, incomingTotalMined, new Date().toISOString()]);
     } else {
-      const dbBalance = parseFloat(existing[0].balance) || 0;
-      if (dbBalance > balance && !(adminSecret && adminSecret === ADMIN_SECRET)) {
-        // Protect higher database balance (e.g. from admin verification approval or bounce)
-        const dbTotalMined = parseFloat(existing[0].total_mined) || 0;
-        const miningIncrement = Math.max(0, totalMined - dbTotalMined);
+      const dbBalance = parseFloat(user.balance) || 0;
+      const dbTotalMined = parseFloat(user.total_mined) || 0;
+      if (dbBalance > finalBalance && !(adminSecret && adminSecret === ADMIN_SECRET)) {
+        // Protect higher database balance (e.g. from admin manual credit, referral bonus, or bounce)
+        const miningIncrement = Math.max(0, incomingTotalMined - dbTotalMined);
         finalBalance = dbBalance + miningIncrement;
       }
-      await db.query('UPDATE users SET balance = ?, total_mined = ? WHERE phone = ?', [finalBalance, totalMined, phone]);
+      const finalTotalMined = Math.max(dbTotalMined, incomingTotalMined);
+      await db.query('UPDATE users SET balance = ?, total_mined = ? WHERE phone = ?', [finalBalance, finalTotalMined, user.phone]);
     }
     res.json({ status: true, message: 'Balance updated successfully', balance: finalBalance });
   } catch (err) {
@@ -1389,8 +1401,18 @@ app.post('/api/withdraw', async (req, res) => {
 app.get('/api/user/withdrawals', async (req, res) => {
   const { phone } = req.query || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone parameter required' });
+  const digitsOnly = phone.toString().replace(/\D/g, '');
+  const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+  const cleanPhone = normalizePhone(phone);
   try {
-    const list = await db.query('SELECT * FROM withdrawals WHERE phone = ? ORDER BY created_at DESC LIMIT 10', [phone]);
+    const list = await db.query(`
+      SELECT * FROM withdrawals 
+      WHERE phone = ? 
+         OR phone = ? 
+         OR (LENGTH(?) >= 7 AND phone LIKE ?)
+         OR (LENGTH(?) >= 7 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
+      ORDER BY created_at DESC LIMIT 20
+    `, [phone, cleanPhone, last10, '%' + last10, last10, '%' + last10]);
     res.json({ status: true, withdrawals: list });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Failed to fetch withdrawals' });
@@ -1670,11 +1692,21 @@ app.post('/api/admin/junior/reject-withdrawal', async (req, res) => {
 // POST /api/admin/junior/update-user-balance — Edit user balance
 app.post('/api/admin/junior/update-user-balance', async (req, res) => {
   const { phone, balance } = req.body || {};
-  if (!phone || balance === undefined) return res.status(400).json({ status: false, error: 'Params required' });
+  if (!phone || balance === undefined) {
+    return res.status(400).json({ status: false, error: 'Phone and valid balance required' });
+  }
+  const parsedBal = parseAmount(balance);
+  if (isNaN(parsedBal) || parsedBal < 0) {
+    return res.status(400).json({ status: false, error: 'Balance must be a valid non-negative number' });
+  }
+  const newBal = Math.max(0, parsedBal);
   try {
-    await db.query('UPDATE users SET balance = ? WHERE phone = ?', [balance, phone]);
+    const user = await findUserByPhoneOrEmail(phone);
+    if (!user) return res.status(404).json({ status: false, error: 'User not found' });
+
+    await db.query('UPDATE users SET balance = ? WHERE phone = ?', [newBal, user.phone]);
     invalidateDashboardCaches();
-    res.json({ status: true, message: 'User balance modified successfully' });
+    res.json({ status: true, message: 'User balance modified successfully', balance: newBal });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Failed to modify balance' });
   }
@@ -3015,18 +3047,19 @@ app.post('/api/admin/super/clear-balance', async (req, res) => {
   if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
 
   try {
-    const users = await db.query('SELECT phone FROM users WHERE phone = ?', [phone]);
-    if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
+    const user = await findUserByPhoneOrEmail(phone);
+    if (!user) return res.status(404).json({ status: false, error: 'User not found' });
 
-    await db.query('UPDATE users SET balance = 0 WHERE phone = ?', [phone]);
+    await db.query('UPDATE users SET balance = 0 WHERE phone = ?', [user.phone]);
 
     // Add a notification alert for the user
     const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
     await db.query(`
       INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
       VALUES (?, ?, 'alert', 'Account Balance Reset ⚠️', 'Your account balance has been reset to ₦0 by the administration.', '0', ?)
-    `, [notifId, phone, new Date().toISOString()]);
+    `, [notifId, user.phone, new Date().toISOString()]);
 
+    invalidateDashboardCaches();
     res.json({ status: true, message: 'User balance cleared successfully' });
   } catch (err) {
     console.error('Clear user balance error:', err.message);
@@ -3034,41 +3067,119 @@ app.post('/api/admin/super/clear-balance', async (req, res) => {
   }
 });
 
+function parseAmount(amt) {
+  if (amt === undefined || amt === null) return NaN;
+  if (typeof amt === 'number') return amt;
+  let str = amt.toString().replace(/₦/g, '').replace(/,/g, '').replace(/\s/g, '').trim().toLowerCase();
+  let multiplier = 1;
+  if (str.endsWith('m') || str.endsWith('million')) {
+    multiplier = 1000000;
+    str = str.replace(/million|m/, '');
+  } else if (str.endsWith('k') || str.endsWith('thousand')) {
+    multiplier = 1000;
+    str = str.replace(/thousand|k/, '');
+  } else if (str.endsWith('b') || str.endsWith('billion')) {
+    multiplier = 1000000000;
+    str = str.replace(/billion|b/, '');
+  }
+  const val = parseFloat(str);
+  return isNaN(val) ? NaN : val * multiplier;
+}
+
 // POST /api/admin/super/credit-user — Credit a user's balance from the Super Admin console
 app.post('/api/admin/super/credit-user', async (req, res) => {
   const { phone, amount, sendNotification } = req.body || {};
-  if (!phone || amount === undefined || isNaN(parseFloat(amount))) {
+  if (!phone || amount === undefined) {
     return res.status(400).json({ status: false, error: 'Phone and valid amount are required' });
   }
-  const amtVal = parseFloat(amount);
-  if (amtVal <= 0) {
-    return res.status(400).json({ status: false, error: 'Amount must be greater than zero' });
+  const amtVal = parseAmount(amount);
+  if (isNaN(amtVal) || amtVal <= 0) {
+    return res.status(400).json({ status: false, error: 'Amount must be a valid number greater than zero' });
   }
 
-  const cleanPhone = normalizePhone(phone);
-
   try {
-    const users = await db.query('SELECT balance FROM users WHERE phone = ?', [cleanPhone]);
-    if (users.length === 0) return res.status(404).json({ status: false, error: 'User not found' });
+    const user = await findUserByPhoneOrEmail(phone);
+    if (!user) return res.status(404).json({ status: false, error: 'User not found' });
 
-    const newBalance = (parseFloat(users[0].balance) || 0) + amtVal;
-    await db.query('UPDATE users SET balance = ? WHERE phone = ?', [newBalance, cleanPhone]);
+    const currentBal = parseFloat(user.balance) || 0;
+    const newBalance = currentBal + amtVal;
+    await db.query('UPDATE users SET balance = ? WHERE phone = ?', [newBalance, user.phone]);
 
     const sendNotif = sendNotification !== false;
     if (sendNotif) {
-      // Add a notification alert for the user
       const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
       await db.query(`
         INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
-        VALUES (?, ?, 'alert', 'Account Credited 🎉', ?, ?, ?)
-      `, [notifId, cleanPhone, `Your account has been credited with ₦${amtVal.toLocaleString()} by the administration.`, amtVal.toString(), new Date().toISOString()]);
+        VALUES (?, ?, 'credit', 'Account Credited 🎉', ?, ?, ?)
+      `, [notifId, user.phone, `Your account has been credited with ₦${amtVal.toLocaleString()} by the administration.`, amtVal.toString(), new Date().toISOString()]);
     }
 
     invalidateDashboardCaches();
-    res.json({ status: true, message: 'User credited successfully', newBalance });
+    res.json({ status: true, message: `Successfully credited ₦${amtVal.toLocaleString()}`, newBalance, userPhone: user.phone });
   } catch (err) {
     console.error('Credit user error:', err.message);
     res.status(500).json({ status: false, error: 'Failed to credit user' });
+  }
+});
+
+// POST /api/admin/super/debit-user — Debit/deduct from a user's balance
+app.post('/api/admin/super/debit-user', async (req, res) => {
+  const { phone, amount, sendNotification } = req.body || {};
+  if (!phone || amount === undefined) {
+    return res.status(400).json({ status: false, error: 'Phone and valid amount are required' });
+  }
+  const amtVal = parseAmount(amount);
+  if (isNaN(amtVal) || amtVal <= 0) {
+    return res.status(400).json({ status: false, error: 'Amount must be a valid number greater than zero' });
+  }
+
+  try {
+    const user = await findUserByPhoneOrEmail(phone);
+    if (!user) return res.status(404).json({ status: false, error: 'User not found' });
+
+    const currentBal = parseFloat(user.balance) || 0;
+    const newBalance = Math.max(0, currentBal - amtVal);
+    await db.query('UPDATE users SET balance = ? WHERE phone = ?', [newBalance, user.phone]);
+
+    const sendNotif = sendNotification !== false;
+    if (sendNotif) {
+      const notifId = 'nt_' + Math.random().toString(36).substr(2, 9);
+      await db.query(`
+        INSERT INTO user_notifications (id, phone, type, title, content, amount, created_at)
+        VALUES (?, ?, 'debit', 'Account Debited ⚠️', ?, ?, ?)
+      `, [notifId, user.phone, `₦${amtVal.toLocaleString()} has been debited from your account by the administration.`, amtVal.toString(), new Date().toISOString()]);
+    }
+
+    invalidateDashboardCaches();
+    res.json({ status: true, message: `Successfully debited ₦${amtVal.toLocaleString()}`, newBalance, userPhone: user.phone });
+  } catch (err) {
+    console.error('Debit user error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to debit user' });
+  }
+});
+
+// POST /api/admin/super/update-user-balance — Directly set a user's balance
+app.post('/api/admin/super/update-user-balance', async (req, res) => {
+  const { phone, balance } = req.body || {};
+  if (!phone || balance === undefined) {
+    return res.status(400).json({ status: false, error: 'Phone and valid balance required' });
+  }
+  const parsedBal = parseAmount(balance);
+  if (isNaN(parsedBal) || parsedBal < 0) {
+    return res.status(400).json({ status: false, error: 'Balance must be a valid non-negative number' });
+  }
+  const newBal = Math.max(0, parsedBal);
+
+  try {
+    const user = await findUserByPhoneOrEmail(phone);
+    if (!user) return res.status(404).json({ status: false, error: 'User not found' });
+
+    await db.query('UPDATE users SET balance = ? WHERE phone = ?', [newBal, user.phone]);
+    invalidateDashboardCaches();
+    res.json({ status: true, message: 'User balance updated successfully', balance: newBal, userPhone: user.phone });
+  } catch (err) {
+    console.error('Update user balance error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to update balance' });
   }
 });
 
@@ -3289,8 +3400,19 @@ app.post('/api/admin/super/send-message', async (req, res) => {
 app.get('/api/user/notifications', async (req, res) => {
   const { phone } = req.query || {};
   if (!phone) return res.status(400).json({ status: false, error: 'Phone required' });
+  const digitsOnly = phone.toString().replace(/\D/g, '');
+  const last10 = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+  const cleanPhone = normalizePhone(phone);
   try {
-    const list = await db.query('SELECT * FROM user_notifications WHERE phone = ? OR phone = \'all\' ORDER BY created_at DESC LIMIT 25', [phone]);
+    const list = await db.query(`
+      SELECT * FROM user_notifications 
+      WHERE phone = ? 
+         OR phone = ? 
+         OR phone = 'all'
+         OR (LENGTH(?) >= 7 AND phone LIKE ?)
+         OR (LENGTH(?) >= 7 AND REPLACE(REPLACE(phone, '+', ''), ' ', '') LIKE ?)
+      ORDER BY created_at DESC LIMIT 50
+    `, [phone, cleanPhone, last10, '%' + last10, last10, '%' + last10]);
     res.json({ status: true, notifications: list });
   } catch (err) {
     console.error('Fetch notifications error:', err.message);

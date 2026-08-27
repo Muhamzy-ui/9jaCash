@@ -1084,6 +1084,30 @@
     // Align both keys immediately
     localStorage.setItem('walletBalance', currentBalance.toString());
 
+    // Sync fresh user data and balance from backend SQL database
+    if (userData && userData.phone) {
+      fetch(API_URL + '/api/user/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: userData.phone,
+          balance: currentBalance,
+          totalMined: userData.totalMined || 0
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status && data.user) {
+          userData = Object.assign({}, userData, data.user);
+          localStorage.setItem('9jaCashUser', JSON.stringify(userData));
+          currentBalance = parseFloat(data.user.balance) || 0;
+          localStorage.setItem('walletBalance', currentBalance.toString());
+          if (headerBalance) headerBalance.textContent = "₦" + currentBalance.toLocaleString();
+        }
+      })
+      .catch(() => {});
+    }
+
     // 18 AAA Styled Casino segments (Gradients, metadata and luxury titles instead of plain emojis)
     const segments = [
       { text: "BOMB", color: "#1a0008", textGrad: ["#ff3b30", "#8e0000"], multiplier: 0, title: "BOOM", icon: "💥", face: "☠️" },

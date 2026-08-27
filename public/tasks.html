@@ -872,6 +872,27 @@
       window.location.href = "start.html";
     }
 
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+    if (userData && userData.phone) {
+      fetch(API_BASE_URL + '/api/user/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: userData.phone,
+          balance: parseFloat(localStorage.getItem("walletBalance")) || userData.balance || 0,
+          totalMined: userData.totalMined || 0
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status && data.user) {
+          userData = Object.assign({}, userData, data.user);
+          localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+          localStorage.setItem("walletBalance", (data.user.balance || 0).toString());
+        }
+      }).catch(() => {});
+    }
+
     // ========== TASK STATE ==========
     let allTasks = [];
     let completedTaskIds = [];
@@ -1140,6 +1161,12 @@
         })
         .then(res => res.json())
         .then(data => {
+          if (data.status && data.balance !== undefined) {
+            const freshBal = parseFloat(data.balance) || balance;
+            userData.balance = freshBal;
+            localStorage.setItem("walletBalance", freshBal.toString());
+            localStorage.setItem("9jaCashUser", JSON.stringify(userData));
+          }
           console.log("SQL balance updated after task claim:", data);
         })
         .catch(err => {
