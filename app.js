@@ -495,10 +495,11 @@ app.post('/api/auto-detect-bank', async (req, res) => {
 
 async function findJuniorAdminCode(referredBy) {
   if (!referredBy) return null;
-  const refClean = referredBy.trim().toUpperCase();
+  const refClean = referredBy.toString().trim().toUpperCase();
+  if (!refClean || refClean === '1' || refClean === 'NULL' || refClean === 'DIRECT' || refClean.length < 2) return null;
   try {
-    // 1. Check if referredBy is a junior admin referral code (case-insensitive)
-    const ja = await db.query('SELECT referral_code FROM junior_admins WHERE UPPER(referral_code) = ?', [refClean]);
+    // 1. Check if referredBy is an active junior admin referral code (case-insensitive)
+    const ja = await db.query('SELECT referral_code FROM junior_admins WHERE UPPER(referral_code) = ? AND is_active = 1', [refClean]);
     if (ja.length > 0) {
       return ja[0].referral_code;
     }
@@ -506,19 +507,23 @@ async function findJuniorAdminCode(referredBy) {
     // 2. Otherwise, check if referredBy is a regular user's phone number
     const u = await db.query('SELECT referred_by, junior_admin_code FROM users WHERE phone = ?', [refClean]);
     if (u.length > 0) {
-      if (u[0].junior_admin_code) {
+      if (u[0].junior_admin_code && u[0].junior_admin_code !== '1') {
         return u[0].junior_admin_code;
       }
-      // Recursively trace up parent chain (limit depth to 10 to avoid infinite loops)
+      // Trace up parent chain (max depth 3)
       let parent = u[0].referred_by;
-      for (let depth = 0; depth < 10; depth++) {
-        if (!parent) break;
-        const jaParent = await db.query('SELECT referral_code FROM junior_admins WHERE referral_code = ?', [parent]);
+      for (let depth = 0; depth < 3; depth++) {
+        if (!parent || parent === '1' || parent === 'DIRECT') break;
+        const parentUp = parent.trim().toUpperCase();
+        const jaParent = await db.query('SELECT referral_code FROM junior_admins WHERE UPPER(referral_code) = ? AND is_active = 1', [parentUp]);
         if (jaParent.length > 0) {
           return jaParent[0].referral_code;
         }
-        const uParent = await db.query('SELECT referred_by FROM users WHERE phone = ?', [parent]);
+        const uParent = await db.query('SELECT referred_by, junior_admin_code FROM users WHERE phone = ?', [parent]);
         if (uParent.length > 0) {
+          if (uParent[0].junior_admin_code && uParent[0].junior_admin_code !== '1') {
+            return uParent[0].junior_admin_code;
+          }
           parent = uParent[0].referred_by;
         } else {
           break;
@@ -572,49 +577,21 @@ async function getJuniorLinks(u) {
     let ja = null;
 
     // Strategy 1: Use junior_admin_code already stored on the user
-    if (u.junior_admin_code) {
+    if (u.junior_admin_code && u.junior_admin_code !== '1') {
       const res = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ?', [u.junior_admin_code.trim().toUpperCase()]);
       if (res && res.length > 0) ja = res[0];
     }
 
-    // Strategy 2: referred_by IS a referral code (e.g. "011" or "SMARTTECHH")
-    if (!ja && u.referred_by) {
+    // Strategy 2: referred_by IS a junior admin referral code
+    if (!ja && u.referred_by && u.referred_by !== '1') {
       const refUp = u.referred_by.trim().toUpperCase();
       const res = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ?', [refUp]);
       if (res && res.length > 0) {
         ja = res[0];
-        // Persist it so next time Strategy 1 works
-        await db.query('UPDATE users SET junior_admin_code = ? WHERE phone = ?', [ja.referral_code, u.phone]);
-        u.junior_admin_code = ja.referral_code;
-      }
-    }
-
-    // Strategy 3: referred_by IS the junior admin's email
-    if (!ja && u.referred_by) {
-      const refUp = u.referred_by.trim().toUpperCase();
-      const res = await db.query('SELECT * FROM junior_admins WHERE UPPER(email) = ?', [refUp]);
-      if (res && res.length > 0) {
-        ja = res[0];
-        await db.query('UPDATE users SET junior_admin_code = ? WHERE phone = ?', [ja.referral_code, u.phone]);
-        u.junior_admin_code = ja.referral_code;
-      }
-    }
-
-    // Strategy 4: find via referral chain (referredBy -> parent user -> junior_admin_code)
-    if (!ja && u.referred_by) {
-      const jaCode = await findJuniorAdminCode(u.referred_by);
-      if (jaCode) {
-        const res = await db.query('SELECT * FROM junior_admins WHERE UPPER(referral_code) = ?', [jaCode.trim().toUpperCase()]);
-        if (res && res.length > 0) {
-          ja = res[0];
-          await db.query('UPDATE users SET junior_admin_code = ? WHERE phone = ?', [ja.referral_code, u.phone]);
-          u.junior_admin_code = ja.referral_code;
-        }
       }
     }
 
     if (!ja) {
-      console.log(`[JuniorLinks] No junior admin found for user ${u.phone} | referred_by=${u.referred_by} | junior_admin_code=${u.junior_admin_code}`);
       return empty;
     }
 
@@ -650,18 +627,20 @@ async function resolveReferrerUser(refString) {
   if (!raw) return null;
 
   const cleanPhone = normalizePhone(raw);
-  const rawUpper = raw.toUpperCase();
 
-  let users = await db.query(`
-    SELECT phone, email, full_name, balance 
-    FROM users 
-    WHERE phone = ? 
-       OR phone = ? 
-       OR LOWER(email) = ? 
-       OR UPPER(junior_admin_code) = ?
-  `, [cleanPhone, raw, raw.toLowerCase(), rawUpper]);
+  try {
+    let users = await db.query(`
+      SELECT phone, email, full_name, balance 
+      FROM users 
+      WHERE phone = ? 
+         OR (phone = ? AND LENGTH(?) >= 10)
+         OR (LOWER(email) = ? AND email NOT LIKE '%@9jacash.com')
+    `, [cleanPhone, raw, raw, raw.toLowerCase()]);
 
-  if (users && users.length > 0) return users[0];
+    if (users && users.length > 0) return users[0];
+  } catch (err) {
+    console.error('Error in resolveReferrerUser:', err.message);
+  }
   return null;
 }
 
@@ -743,24 +722,39 @@ app.post('/api/register', async (req, res) => {
 
   try {
     const createdAt = new Date().toISOString();
-    const referrerUser = await resolveReferrerUser(referredBy);
-    const referrerPhone = referrerUser ? referrerUser.phone : (referredBy ? (normalizePhone(referredBy) || referredBy) : null);
-    const juniorAdminCode = await findJuniorAdminCode(referredBy || referrerPhone);
+    let juniorAdminCode = null;
+    let referrerPhone = null;
+    let cleanReferredBy = null;
+
+    if (referredBy && typeof referredBy === 'string' && referredBy.trim()) {
+      const rawRef = referredBy.trim();
+      const refUp = rawRef.toUpperCase();
+
+      // 1. Check if referredBy is a junior admin code (e.g. PHANTOM, SMARTTECH19)
+      juniorAdminCode = await findJuniorAdminCode(refUp);
+      if (juniorAdminCode) {
+        cleanReferredBy = juniorAdminCode;
+      } else {
+        // 2. Check if referredBy is an existing user phone
+        const referrerUser = await resolveReferrerUser(rawRef);
+        if (referrerUser && referrerUser.phone !== cleanPhone) {
+          referrerPhone = referrerUser.phone;
+          cleanReferredBy = referrerPhone;
+          juniorAdminCode = await findJuniorAdminCode(referrerPhone);
+        }
+      }
+    }
 
     // Check if user already exists
     const existing = await db.query('SELECT phone FROM users WHERE phone = ? OR LOWER(email) = ?', [cleanPhone, cleanEmail]);
 
     if (existing && existing.length > 0) {
-      // Upsert: Update existing user record with latest password and details
-      const existingUser = existing[0];
-      const jCode = existingUser.junior_admin_code || await findJuniorAdminCode(referredBy || existingUser.referred_by);
+      // Upsert: Update existing user record with latest password and details (keep original referral attribution)
       await db.query(`
         UPDATE users 
-        SET password = ?, full_name = ?, bank_name = ?, account_number = ?, email = ?,
-            referred_by = COALESCE(referred_by, ?),
-            junior_admin_code = COALESCE(junior_admin_code, ?)
+        SET password = ?, full_name = ?, bank_name = ?, account_number = ?, email = ?
         WHERE phone = ? OR LOWER(email) = ?
-      `, [cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, cleanEmail, referrerPhone || referredBy || null, jCode || null, cleanPhone, cleanEmail]);
+      `, [cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, cleanEmail, cleanPhone, cleanEmail]);
     } else {
       // Insert new user record
       await db.query(`
@@ -768,9 +762,9 @@ app.post('/api/register', async (req, res) => {
           phone, email, password, full_name, bank_name, account_number, 
           balance, mining_power, total_mined, referred_by, junior_admin_code, status, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, 10000, 1, 0, ?, ?, 'active', ?)
-      `, [cleanPhone, cleanEmail, cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, referrerPhone || referredBy || null, juniorAdminCode, createdAt]);
+      `, [cleanPhone, cleanEmail, cleanPassword, cleanFullName, cleanBank || null, cleanAccount || null, cleanReferredBy, juniorAdminCode, createdAt]);
 
-      // Credit ₦10,000 Referral Bonus to Referrer immediately
+      // Credit ₦10,000 Referral Bonus to Referrer only if it was a real peer user
       if (referrerPhone) {
         await creditReferralBonus(cleanPhone, cleanFullName, referrerPhone);
       }
@@ -924,32 +918,6 @@ app.post('/api/user/sync', async (req, res) => {
         VALUES (?, ?, '123456', '9jaCash User', ?, ?, 'active', ?)
       `, [cleanPhone, `${cleanPhone}@9jacash.com`, initialBalance, initialTotalMined, new Date().toISOString()]);
       dbUser = await findUserByPhoneOrEmail(cleanPhone);
-    } else {
-      let dbReferredBy = dbUser.referred_by || null;
-      let dbJuniorAdminCode = dbUser.junior_admin_code || null;
-      let needsUpdate = false;
-
-      // Dynamic referral linking: if they landed via a referral code, sync it to database
-      if (!dbReferredBy && referredBy) {
-        const refUser = await resolveReferrerUser(referredBy);
-        dbReferredBy = refUser ? refUser.phone : (normalizePhone(referredBy) || referredBy.trim().toUpperCase());
-        dbJuniorAdminCode = await findJuniorAdminCode(dbReferredBy);
-        needsUpdate = true;
-
-        if (dbReferredBy) {
-          await creditReferralBonus(dbUser.phone, dbUser.full_name || '9jaCash User', dbReferredBy);
-        }
-      }
-
-      if (needsUpdate) {
-        await db.query(`
-          UPDATE users 
-          SET referred_by = ?, junior_admin_code = ? 
-          WHERE phone = ?
-        `, [dbReferredBy, dbJuniorAdminCode, dbUser.phone]);
-        const updatedUser = await findUserByPhoneOrEmail(dbUser.phone);
-        dbUser = updatedUser || dbUser;
-      }
     }
 
     const actualPhone = dbUser ? dbUser.phone : cleanPhone;
@@ -1017,24 +985,33 @@ app.post('/api/user/sync', async (req, res) => {
     }
     const referralEarnings = referralsCount * referralBonus;
 
+    const effectiveTotalMined = Math.max(parseFloat(dbUser.total_mined) || 0, localTotalMined, parseFloat(dbUser.balance) || 0, localBalance);
+    if (effectiveTotalMined > (parseFloat(dbUser.total_mined) || 0)) {
+      await db.query('UPDATE users SET total_mined = ? WHERE phone = ?', [effectiveTotalMined, actualPhone]).catch(() => {});
+    }
+
+    const totalEarnings = Math.max(parseFloat(dbUser.balance) || localBalance, effectiveTotalMined + referralEarnings);
+
     const mapped = mapUserKeys(dbUser) || {
       phone: actualPhone,
       email: `${actualPhone}@9jacash.com`,
       fullName: '9jaCash User',
       balance: parseFloat(dbUser.balance) || 10000,
       miningPower: 1,
-      totalMined: parseFloat(dbUser.total_mined) || 0,
+      totalMined: effectiveTotalMined,
       planName: 'Free Miner',
       status: 'active'
     };
-    mapped.balance = parseFloat(dbUser.balance) || 0;
-    mapped.totalMined = parseFloat(dbUser.total_mined) || 0;
+    mapped.balance = parseFloat(dbUser.balance) || localBalance || 0;
+    mapped.totalMined = effectiveTotalMined;
     mapped.hasBouncedBefore = hasBouncedBefore;
     mapped.withdrawalCount = finalWithdrawalCount;
     mapped.verified = verified;
     mapped.referralsCount = referralsCount;
     mapped.activeReferralsCount = activeReferralsCount;
     mapped.referralEarnings = referralEarnings;
+    mapped.totalEarnings = totalEarnings;
+
 
     const juniorLinks = await getJuniorLinks(dbUser);
     res.json({ status: true, user: Object.assign({}, mapped, juniorLinks) });
@@ -1486,28 +1463,43 @@ app.get('/api/admin/junior/receipts', async (req, res) => {
 
   try {
     const codeUp = referralCode.trim().toUpperCase();
-    const referredUsers = await db.query('SELECT phone FROM users WHERE UPPER(junior_admin_code) = ? OR UPPER(referred_by) = ?', [codeUp, codeUp]);
-    const phones = (referredUsers || []).map(u => u.phone);
-
-    if (phones.length === 0) {
-      return res.json({ status: true, receipts: [] });
-    }
-
-    let placeholders = phones.map(() => '?').join(',');
+    
+    // Select metadata only — avoid massive multi-megabyte base64 receipt_image in listing
+    // (Receipt images are streamed individually on-demand via /api/receipts/image/:id)
     const list = await db.query(`
-      SELECT r.*, u.full_name, u.is_verified 
+      SELECT r.id, r.phone, r.user_name, r.type, r.plan_name, r.amount, r.status, r.created_at, u.full_name, u.is_verified 
       FROM receipts r
       LEFT JOIN users u ON r.phone = u.phone
-      WHERE r.phone IN (${placeholders})
-         OR UPPER(u.referred_by) = ?
+      WHERE UPPER(COALESCE(u.junior_admin_code, '')) = ?
+         OR UPPER(COALESCE(u.referred_by, '')) = ?
+         OR UPPER(COALESCE(r.phone, '')) = ?
       ORDER BY r.created_at DESC
-    `, [...phones, codeUp]);
-    res.json({ status: true, receipts: list });
+    `, [codeUp, codeUp, codeUp]);
+
+    const formatted = (list || []).map(r => ({
+      id: r.id,
+      phone: r.phone,
+      userId: r.phone,
+      userName: r.full_name || r.user_name || 'User',
+      full_name: r.full_name || r.user_name || 'User',
+      type: r.type || 'payment',
+      plan_name: r.plan_name || 'Verification',
+      flowType: r.type || 'Payment',
+      amount: parseFloat(r.amount || 0),
+      feeAmount: parseFloat(r.amount || 0),
+      status: r.status || 'pending',
+      created_at: r.created_at,
+      date: r.created_at ? new Date(r.created_at).toLocaleDateString() : '—',
+      is_verified: r.is_verified
+    }));
+
+    res.json({ status: true, receipts: formatted });
   } catch (err) {
     console.error('Failed to fetch junior receipts:', err);
     res.status(500).json({ status: false, error: 'Failed to fetch receipts' });
   }
 });
+
 
 // GET /api/admin/junior/stats — Fetch statistics for Junior Admin's referred network
 app.get('/api/admin/junior/stats', async (req, res) => {
@@ -2436,7 +2428,7 @@ app.get('/api/admin/super/juniors', async (req, res) => {
       ? await Promise.all([
           db.query('SELECT phone, junior_admin_code, referred_by, created_at FROM users WHERE junior_admin_code IS NOT NULL OR referred_by IS NOT NULL'),
           db.query(`SELECT phone, amount, created_at FROM receipts WHERE LOWER(status) IN ('approved', 'verified', 'completed', 'success') AND (type != 'junior_settlement' OR type IS NULL)`),
-          db.query(`SELECT phone as email, status, amount, created_at FROM receipts WHERE type = 'junior_settlement'`)
+          db.query(`SELECT id, phone, user_name, status, amount, created_at FROM receipts WHERE type = 'junior_settlement'`)
         ])
       : [[], [], []];
 
@@ -2462,12 +2454,20 @@ app.get('/api/admin/super/juniors', async (req, res) => {
       }
     }
 
-    // Pre-index settlements by email
+    // Pre-index settlements by both referral code and email
+    const settlementsByCodeMap = new Map();
     const settlementsByEmailMap = new Map();
     for (const s of settlements) {
-      const em = (s.email || '').trim().toLowerCase();
-      if (!settlementsByEmailMap.has(em)) settlementsByEmailMap.set(em, []);
-      settlementsByEmailMap.get(em).push(s);
+      const cd = (s.phone || '').trim().toUpperCase();
+      const em = (s.user_name || '').trim().toLowerCase();
+      if (cd) {
+        if (!settlementsByCodeMap.has(cd)) settlementsByCodeMap.set(cd, []);
+        settlementsByCodeMap.get(cd).push(s);
+      }
+      if (em) {
+        if (!settlementsByEmailMap.has(em)) settlementsByEmailMap.set(em, []);
+        settlementsByEmailMap.get(em).push(s);
+      }
     }
 
     const sevenDaysAgo = nowTime - (7 * 24 * 60 * 60 * 1000);
@@ -2475,8 +2475,9 @@ app.get('/api/admin/super/juniors', async (req, res) => {
 
     for (const j of list) {
       const code = (j.referral_code || '').trim().toUpperCase();
+      const lowerEmail = (j.email || '').trim().toLowerCase();
       const manualResetTime = j.reset_at ? safeParseDate(j.reset_at).getTime() : 0;
-      const resetTime = Math.max(sevenDaysAgo, manualResetTime);
+      const resetTime = manualResetTime;
 
       const candidateUsers = usersByCodeMap.get(code) || [];
       const juniorUsers = candidateUsers.filter(u => {
@@ -2486,6 +2487,7 @@ app.get('/api/admin/super/juniors', async (req, res) => {
 
       const totalUsers = juniorUsers.length;
       let totalEarnings = 0;
+      let weeklyEarnings = 0;
 
       for (const u of juniorUsers) {
         const userReceipts = receiptsByPhoneMap.get(u.phone) || [];
@@ -2495,16 +2497,33 @@ app.get('/api/admin/super/juniors', async (req, res) => {
             let amt = parseFloat(r.amount);
             if (isNaN(amt) || amt <= 0) amt = 35200;
             totalEarnings += amt;
+            if (createdTime >= sevenDaysAgo) {
+              weeklyEarnings += amt;
+            }
           }
         }
       }
 
-      const commission = totalEarnings * ((100 - adminPercentage) / 100);
+      const adminCut = totalEarnings * (adminPercentage / 100);
+      const juniorCut = totalEarnings * ((100 - adminPercentage) / 100);
+
+      // Collect settlements matching either referral_code or email
+      const matchedSettlementIds = new Set();
+      const candidateSettlements = [];
+      const rawSettlements = [
+        ...(settlementsByCodeMap.get(code) || []),
+        ...(settlementsByEmailMap.get(lowerEmail) || [])
+      ];
+      for (const s of rawSettlements) {
+        const sId = s.id || (s.amount + '_' + s.created_at);
+        if (!matchedSettlementIds.has(sId)) {
+          matchedSettlementIds.add(sId);
+          candidateSettlements.push(s);
+        }
+      }
 
       let totalPaid = 0;
       let pendingSettlement = 0;
-      const lowerEmail = j.email.trim().toLowerCase();
-      const candidateSettlements = settlementsByEmailMap.get(lowerEmail) || [];
 
       for (const s of candidateSettlements) {
         const createdTime = s.created_at ? safeParseDate(s.created_at).getTime() : 0;
@@ -2519,9 +2538,11 @@ app.get('/api/admin/super/juniors', async (req, res) => {
         }
       }
 
+      const adminCutDue = Math.max(0, adminCut - totalPaid);
+
       juniorsWithStats.push({
         email: j.email,
-        code: j.referral_code, // original mapped key
+        code: j.referral_code,
         referral_code: j.referral_code,
         bank_name: j.bank_name,
         account_number: j.account_number,
@@ -2529,26 +2550,46 @@ app.get('/api/admin/super/juniors', async (req, res) => {
         is_active: j.is_active,
         created_at: j.created_at,
         reset_at: j.reset_at || null,
+        adminPercentage,
         stats: {
           totalGross: totalEarnings,
-          adminShare: totalEarnings * (adminPercentage / 100),
-          juniorShare: commission,
+          weeklyGross: weeklyEarnings,
+          adminPercentage,
+          adminShare: adminCut,
+          juniorShare: juniorCut,
+          adminCutDue,
           totalUsers,
           totalPaid,
           pendingSettlement
         },
         totalUsers,
         totalEarnings,
-        commission,
+        weeklyEarnings,
+        commission: juniorCut,
+        adminShare: adminCut,
+        adminCutDue,
         totalPaid,
         pendingSettlement
       });
     }
 
-    res.json({ status: true, juniors: juniorsWithStats });
+    res.json({ status: true, adminPercentage, juniors: juniorsWithStats });
   } catch (err) {
     console.error('Failed to fetch junior admins list with stats:', err.message);
     res.json({ status: false, error: err.message, juniors: [] });
+  }
+});
+
+// POST /api/admin/super/detach-user — Detach a misassigned user from Junior Admin back to Super Admin (Direct)
+app.post('/api/admin/super/detach-user', async (req, res) => {
+  const { phone } = req.body || {};
+  if (!phone) return res.status(400).json({ status: false, error: 'Phone number required' });
+  try {
+    await db.query('UPDATE users SET junior_admin_code = NULL, referred_by = NULL WHERE phone = ?', [phone]);
+    res.json({ status: true, message: `User ${phone} successfully detached and restored to Super Admin Direct.` });
+  } catch (err) {
+    console.error('Error detaching user:', err);
+    res.status(500).json({ status: false, error: 'Failed to detach user: ' + err.message });
   }
 });
 
@@ -4170,7 +4211,6 @@ async function handleUserRegistration(req, res) {
   }
 }
 
-app.post('/api/register', handleUserRegistration);
 app.post('/api/user/register', handleUserRegistration);
 
 
@@ -4854,7 +4894,7 @@ app.get('/api/admin/junior/analytics', async (req, res) => {
     }
 
     let placeholders = phones.map(() => '?').join(',');
-    const receipts = await db.query(`SELECT * FROM receipts WHERE phone IN (${placeholders}) AND (status = 'Approved' OR status = 'approved' OR status = 'verified' OR status = 'completed' OR status = 'success')`, phones);
+    const receipts = await db.query(`SELECT amount, type, plan_name, created_at FROM receipts WHERE phone IN (${placeholders}) AND (status = 'Approved' OR status = 'approved' OR status = 'verified' OR status = 'completed' OR status = 'success')`, phones);
 
     const keysCount = await db.query(`
       SELECT COUNT(*) as cnt FROM receipts 

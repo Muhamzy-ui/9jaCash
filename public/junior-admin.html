@@ -950,7 +950,7 @@ function submitSettlement(e) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        code: adminSession.referralCode || adminSession.email,
+        code: adminSession.referral_code || adminSession.referralCode || adminSession.email,
         email: adminSession.email,
         amount: Number(amtInput.value),
         receiptImage: base64data
@@ -1595,8 +1595,16 @@ function loadDashboardReceipts(isSilent = false) {
     table.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading receipts...</td></tr>';
   }
   
-  fetch(API_URL + '/api/admin/junior/receipts?referralCode=' + encodeURIComponent(refCode))
-    .then(r => r.ok ? r.json() : null)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(function() { controller.abort(); }, 15000);
+
+  fetch(API_URL + '/api/admin/junior/receipts?referralCode=' + encodeURIComponent(refCode), {
+    signal: controller.signal
+  })
+    .then(r => {
+      clearTimeout(timeoutId);
+      return r.ok ? r.json() : null;
+    })
     .then(data => {
       if (data && data.status && Array.isArray(data.receipts)) {
         allReceipts = data.receipts;
@@ -1611,8 +1619,11 @@ function loadDashboardReceipts(isSilent = false) {
       }
     })
     .catch(err => {
+      clearTimeout(timeoutId);
       console.error('Error fetching receipts:', err);
-      if (table && !isSilent) table.innerHTML = '<tr><td colspan="7" class="text-center text-red-400 py-6">Failed to load network receipts</td></tr>';
+      if (table && !isSilent) {
+        table.innerHTML = '<tr><td colspan="7" class="text-center text-amber-400 py-6"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Connection slow. <button onclick="loadDashboardReceipts()" class="underline font-bold ml-1 text-violet-400">Retry Now</button></td></tr>';
+      }
     });
 }
 

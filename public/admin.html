@@ -1198,8 +1198,13 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         <div class="panel-icon purple"><i class="fa-solid fa-users"></i></div>
         <div><div class="panel-title">Users Directory</div><div class="panel-sub">Total: <span id="usersListCount">0</span> users</div></div>
       </div>
-      <div>
-        <input type="text" id="userSearchInput" oninput="filterUsers()" placeholder="Search users by name, phone or email..." class="form-input" style="width: 280px; margin-bottom: 0; padding: 8px 12px; font-size: 13px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <select id="userFilterAdmin" onchange="filterUsersByAdmin()" style="background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 12px; font-size: 13px; font-weight: 600;">
+          <option value="ALL">All Networks</option>
+          <option value="DIRECT">Direct (Super Admin) Only</option>
+          <option value="JUNIOR">Junior Admin Referrals Only</option>
+        </select>
+        <input type="text" id="userSearchInput" oninput="filterUsers()" placeholder="Search users by name, phone or email..." class="form-input" style="width: 260px; margin-bottom: 0; padding: 8px 12px; font-size: 13px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
       </div>
     </div>
     <div class="table-wrap overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
@@ -1210,6 +1215,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Name</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Phone</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Email</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Network / Admin</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Referred By</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Payout Key</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Balance</th>
@@ -1219,7 +1225,7 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         </thead>
         <tbody id="allUsersListTable">
           <tr>
-            <td colspan="9" style="padding: 15px; text-align: center; color: var(--text3);">Loading registered users...</td>
+            <td colspan="10" style="padding: 15px; text-align: center; color: var(--text3);">Loading registered users...</td>
           </tr>
         </tbody>
       </table>
@@ -1321,16 +1327,53 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Email</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Referral Code</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Bank Details</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Weekly Gross</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Admin Cut (20%)</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Junior Share (80%)</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Total Gross</th>
+            <th id="hdrAdminCut" style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Admin Cut</th>
+            <th id="hdrJuniorShare" style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Junior Share</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Settled Paid</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Admin Due</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
             <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: right;">Action</th>
           </tr>
         </thead>
         <tbody id="juniorAdminListTable">
           <tr>
-            <td colspan="8" style="padding: 15px; text-align: center; color: var(--text3);">Loading junior admins...</td>
+            <td colspan="10" style="padding: 15px; text-align: center; color: var(--text3);">Loading junior admins...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Junior Commission Settlements Panel -->
+  <div class="panel" style="margin-top: 24px;">
+    <div class="panel-header">
+      <div class="panel-icon green" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="fa-solid fa-receipt"></i></div>
+      <div>
+        <div class="panel-title">Junior Admin Commission Settlements</div>
+        <div class="panel-sub">Review payment proofs submitted by Junior Admins for Admin Cut</div>
+      </div>
+      <div style="margin-left:auto;">
+        <button onclick="loadJuniorSettlements()" class="save-btn" style="margin-bottom:0; padding:6px 14px; font-size:12px; height:auto; background:var(--surface2);">
+          <i class="fa-solid fa-rotate mr-1"></i> Refresh Settlements
+        </button>
+      </div>
+    </div>
+    <div class="table-wrap overflow-x-auto">
+      <table class="w-full text-left" style="border-collapse: collapse; width:100%;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Date</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Junior Admin</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Amount Paid</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Payment Proof</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
+            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="juniorSettlementsTable">
+          <tr>
+            <td colspan="6" style="padding: 15px; text-align: center; color: var(--text3);">Loading settlement proofs...</td>
           </tr>
         </tbody>
       </table>
@@ -1784,6 +1827,7 @@ async function loadData(){
     
     // Stagger secondary table loads in background tasks so UI remains smooth and instant
     setTimeout(loadJuniorAdminsList, 50);
+    setTimeout(loadJuniorSettlements, 75);
     setTimeout(loadSuperWithdrawals, 100);
     setTimeout(loadAllReceipts, 150);
     setTimeout(loadAllVideoSubmissions, 200);
@@ -2016,9 +2060,29 @@ async function saveAll(){
       db.collection('settings').doc('videoChallenge').set(videoChallenge),
       db.collection('settings').doc('verificationVideo').set(verificationVideo),
       db.collection('settings').doc('admin_percentage').set(adminPct),
-      db.collection('settings').doc('referral_bonus').set(refBonus)
+      db.collection('settings').doc('referral_bonus').set(refBonus),
+      fetch(API_URL + '/api/settings/admin_percentage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: { percentage: adminPctVal } })
+      }).catch(e => console.warn('Sync admin_percentage to SQL failed', e)),
+      fetch(API_URL + '/api/settings/referral_bonus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: { amount: refBonusVal } })
+      }).catch(e => console.warn('Sync referral_bonus to SQL failed', e)),
+      fetch(API_URL + '/api/settings/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: pay })
+      }).catch(e => console.warn('Sync payment to SQL failed', e)),
+      fetch(API_URL + '/api/settings/secondBilling', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: fee })
+      }).catch(e => console.warn('Sync secondBilling to SQL failed', e))
     ]);
-    updatePreview();showToast('All saved!','success');
+    updatePreview();showToast('All saved & synced to SQL!','success');
   }catch(err){showToast('Failed: '+err.message,'error');}
   finally{btn.disabled=false;txt.textContent=orig;}
 }
@@ -2048,9 +2112,15 @@ function loadJuniorAdminsList() {
       let sumAdmin = 0;
       let sumJunior = 0;
       
+      const pct = data.adminPercentage || 20;
+      const hdrAdminCut = document.getElementById('hdrAdminCut');
+      if (hdrAdminCut) hdrAdminCut.textContent = `Admin Cut (${pct}%)`;
+      const hdrJuniorShare = document.getElementById('hdrJuniorShare');
+      if (hdrJuniorShare) hdrJuniorShare.textContent = `Junior Share (${100 - pct}%)`;
+
       if (data.status && Array.isArray(data.juniors)) {
         if (data.juniors.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" style="padding:15px; text-align:center; color:var(--text3);">No junior admins found</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="10" style="padding:15px; text-align:center; color:var(--text3);">No junior admins found</td></tr>';
           document.getElementById('juniorTotalGross').textContent = '₦0';
           document.getElementById('juniorTotalAdminShare').textContent = '₦0';
           document.getElementById('juniorTotalNetShare').textContent = '₦0';
@@ -2065,10 +2135,18 @@ function loadJuniorAdminsList() {
             ? `<b>${j.bank_name}</b><br><span style="font-family:monospace;font-size:11px;">${j.account_number}</span><br><span style="font-size:10px;color:var(--text3);">${j.account_name || '—'}</span>` 
             : '<span style="color:var(--text3);">None (Super Admin details)</span>';
 
-          const stats = j.stats || { totalGross: 0, adminShare: 0, juniorShare: 0 };
-          sumGross += parseFloat(stats.totalGross || 0);
-          sumAdmin += parseFloat(stats.adminShare || 0);
-          sumJunior += parseFloat(stats.juniorShare || 0);
+          const stats = j.stats || { totalGross: 0, adminShare: 0, juniorShare: 0, totalPaid: 0, adminCutDue: 0 };
+          const grossVal = parseFloat(stats.totalGross || 0);
+          const adminCutVal = parseFloat(stats.adminShare || 0);
+          const juniorShareVal = parseFloat(stats.juniorShare || 0);
+          const settledPaidVal = parseFloat(stats.totalPaid || 0);
+          const adminDueVal = parseFloat(stats.adminCutDue || 0);
+
+          sumGross += grossVal;
+          sumAdmin += adminCutVal;
+          sumJunior += juniorShareVal;
+
+          const dueColor = adminDueVal > 0 ? 'var(--danger)' : 'var(--accent)';
 
           const tr = document.createElement('tr');
           tr.style.borderBottom = '1px solid var(--border)';
@@ -2076,9 +2154,11 @@ function loadJuniorAdminsList() {
             <td style="padding:12px; color:var(--text); font-weight:600;">${j.email}</td>
             <td style="padding:12px; color:var(--accent); font-family:monospace; font-weight:700;">${j.referral_code}</td>
             <td style="padding:12px; color:var(--text2); font-size:12px; line-height:1.4;">${bankDetailsStr}</td>
-            <td style="padding:12px; color:var(--text); font-weight:700; font-family:monospace;">₦${parseFloat(stats.totalGross || 0).toLocaleString()}</td>
-            <td style="padding:12px; color:var(--danger); font-weight:700; font-family:monospace;">₦${parseFloat(stats.adminShare || 0).toLocaleString()}</td>
-            <td style="padding:12px; color:var(--accent); font-weight:700; font-family:monospace;">₦${parseFloat(stats.juniorShare || 0).toLocaleString()}</td>
+            <td style="padding:12px; color:var(--text); font-weight:700; font-family:monospace;">₦${grossVal.toLocaleString()}</td>
+            <td style="padding:12px; color:var(--danger); font-weight:700; font-family:monospace;">₦${adminCutVal.toLocaleString()}</td>
+            <td style="padding:12px; color:var(--accent); font-weight:700; font-family:monospace;">₦${juniorShareVal.toLocaleString()}</td>
+            <td style="padding:12px; color:#10b981; font-weight:700; font-family:monospace;">₦${settledPaidVal.toLocaleString()}</td>
+            <td style="padding:12px; color:${dueColor}; font-weight:800; font-family:monospace;">₦${adminDueVal.toLocaleString()}</td>
             <td style="padding:12px; color:${statusColor}; font-weight:800; font-size:12px;">${statusText}</td>
             <td style="padding:12px; text-align:right;">
               <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
@@ -2104,6 +2184,71 @@ function loadJuniorAdminsList() {
     })
     .catch(err => {
       console.error('Error fetching junior admins:', err);
+    });
+}
+
+// ========== JUNIOR COMMISSION SETTLEMENTS ==========
+function loadJuniorSettlements() {
+  const tbody = document.getElementById('juniorSettlementsTable');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="padding:15px; text-align:center; color:var(--text3);"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading settlement proofs...</td></tr>';
+
+  fetch(API_URL + '/api/receipts/list')
+    .then(res => res.json())
+    .then(data => {
+      const receipts = data.receipts || [];
+      const settlements = receipts.filter(r => r.type === 'junior_settlement' || r.type === 'junior_payment');
+      
+      if (settlements.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:15px; text-align:center; color:var(--text3);">No junior settlement proofs submitted yet.</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = '';
+      settlements.forEach(s => {
+        const isPending = (s.status || '').toLowerCase() === 'pending' || (s.status || '').toLowerCase() === 'pending_verification';
+        let statusBadge = `<span style="background:rgba(245,158,11,0.15); color:#f59e0b; padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px;">Pending</span>`;
+        if ((s.status || '').toLowerCase() === 'approved' || (s.status || '').toLowerCase() === 'verified') {
+          statusBadge = `<span style="background:rgba(16,185,129,0.15); color:#10b981; padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px;">Approved ✅</span>`;
+        } else if ((s.status || '').toLowerCase() === 'declined' || (s.status || '').toLowerCase() === 'rejected') {
+          statusBadge = `<span style="background:rgba(239,68,68,0.15); color:#ef4444; padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px;">Declined ❌</span>`;
+        }
+
+        const dateStr = s.date || (s.created_at ? new Date(s.created_at).toLocaleDateString() : '—');
+
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--border)';
+        tr.innerHTML = `
+          <td style="padding:12px; font-size:12px; color:var(--text3);">${dateStr}</td>
+          <td style="padding:12px; font-size:12px;">
+            <div style="font-weight:700; color:var(--text);">${s.userName || 'Junior Admin'}</div>
+            <div style="font-size:11px; color:var(--accent); font-family:monospace; font-weight:700;">Code: ${s.userId || s.phone || '—'}</div>
+          </td>
+          <td style="padding:12px; font-size:13px; font-weight:700; font-family:monospace; color:var(--accent);">₦${parseFloat(s.amount || 0).toLocaleString()}</td>
+          <td style="padding:12px; font-size:12px;">
+            <button onclick="viewReceiptImage('${s.id}')" style="background:#4f46e5; border:none; padding:6px 12px; border-radius:6px; color:white; font-size:11px; font-weight:700; cursor:pointer;">
+              <i class="fa-solid fa-image"></i> View Proof
+            </button>
+          </td>
+          <td style="padding:12px; font-size:12px;">${statusBadge}</td>
+          <td style="padding:12px; font-size:12px; text-align:right;">
+            <div style="display:inline-flex; gap:8px; align-items:center; justify-content:flex-end;">
+              ${isPending ? `
+                <button onclick="approveReceipt('${s.id}'); setTimeout(loadJuniorSettlements, 1500); setTimeout(loadJuniorAdminsList, 1500);" style="background:#10b981; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Approve</button>
+                <button onclick="declineReceipt('${s.id}'); setTimeout(loadJuniorSettlements, 1500); setTimeout(loadJuniorAdminsList, 1500);" style="background:#ef4444; border:none; padding:6px 12px; border-radius:8px; color:white; font-weight:800; cursor:pointer;">Decline</button>
+              ` : ''}
+              <button onclick="deleteReceipt('${s.id}'); setTimeout(loadJuniorSettlements, 1500);" style="background:#ef4444; border:none; padding:6px 10px; border-radius:8px; color:white; font-weight:700; cursor:pointer; margin-left:6px;" title="Delete Record">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(err => {
+      console.error('Error loading junior settlements:', err);
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:15px; text-align:center; color:var(--text3);">Failed to load settlements.</td></tr>';
     });
 }
 
@@ -2550,7 +2695,7 @@ function loadAllUsersList(page = 1) {
   
   const tbody = document.getElementById('allUsersListTable');
   if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center; color:var(--text3);"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading users...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="padding:20px; text-align:center; color:var(--text3);"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading users...</td></tr>';
   }
 
   let url = `${API_URL}/api/admin/super/users?page=${page}&limit=${usersLimit}`;
@@ -2637,7 +2782,7 @@ function renderAllUsers(users, isFiltering = false) {
   }
   
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:15px; text-align:center; color:var(--text3);">No registered users found in SQL database</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="padding:15px; text-align:center; color:var(--text3);">No registered users found in SQL database</td></tr>';
     return;
   }
   
@@ -2649,6 +2794,14 @@ function renderAllUsers(users, isFiltering = false) {
     const payoutKeyStr = u.payout_key || '<span style="color:var(--text3);">None</span>';
     const isUserVerified = u.is_verified === 1 || u.is_verified === true || u.is_verified === '1';
     const verifiedBadge = isUserVerified ? ' <i class="fa-solid fa-circle-check" style="color:#1d9bf0; font-size:13px;" title="Verified Account"></i>' : '';
+    const jaCode = (u.junior_admin_code || '').trim();
+
+    let networkBadge = '';
+    if (jaCode) {
+      networkBadge = `<span style="background:rgba(139,92,246,0.15); color:#a78bfa; border:1px solid rgba(139,92,246,0.3); padding:3px 8px; border-radius:6px; font-weight:700; font-size:11px; font-family:monospace;"><i class="fa-solid fa-users-line mr-1"></i> Junior: ${jaCode}</span>`;
+    } else {
+      networkBadge = `<span style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25); padding:3px 8px; border-radius:6px; font-weight:700; font-size:11px;"><i class="fa-solid fa-shield-halved mr-1"></i> Direct (Super Admin)</span>`;
+    }
     
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid var(--border)';
@@ -2657,12 +2810,18 @@ function renderAllUsers(users, isFiltering = false) {
       <td style="padding:10px; color:var(--text); font-weight:600;">${u.full_name || '9jaCash User'}${verifiedBadge}</td>
       <td style="padding:10px; color:var(--text2); font-family:monospace; font-size:12px;">${u.phone || '—'}</td>
       <td style="padding:10px; color:var(--text2); font-size:12px;">${u.email || '—'}</td>
+      <td style="padding:10px;">${networkBadge}</td>
       <td style="padding:10px; color:var(--accent); font-weight:700; font-size:12px;">${u.referred_by || 'Direct'}</td>
       <td style="padding:10px; color:var(--warning); font-family:monospace; font-size:12px; font-weight:700;">${payoutKeyStr}</td>
       <td style="padding:10px; color:var(--text); font-weight:700;">₦${Number(u.balance || 0).toLocaleString()}</td>
       <td style="padding:10px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase;">${u.status || 'ACTIVE'}</td>
       <td style="padding:10px; text-align:right;">
-        <div style="display:flex; gap:12px; justify-content:flex-end; align-items:center;">
+        <div style="display:flex; gap:10px; justify-content:flex-end; align-items:center; flex-wrap:wrap;">
+          ${jaCode ? `
+            <button onclick="detachUserFromJunior('${u.phone}', '${cleanName}', '${jaCode}')" style="background:none; border:none; color:#f59e0b; font-weight:700; cursor:pointer;" class="hover:underline" title="Detach user to Direct Super Admin">
+              <i class="fa-solid fa-link-slash"></i> Detach
+            </button>
+          ` : ''}
           <button onclick="toggleVerifyUser('${u.phone}', ${isUserVerified ? 'false' : 'true'})" style="background:none; border:none; color:${isUserVerified ? '#1d9bf0' : 'var(--text3)'}; font-weight:700; cursor:pointer;" class="hover:underline" title="Toggle Verified Badge">
             <i class="fa-solid fa-certificate"></i> ${isUserVerified ? 'Verified' : 'Verify'}
           </button>
@@ -2692,6 +2851,51 @@ function renderAllUsers(users, isFiltering = false) {
     `;
     tbody.appendChild(tr);
   });
+}
+
+function detachUserFromJunior(phone, name, code) {
+  Swal.fire({
+    title: 'Detach User from Junior Admin?',
+    html: `<p>Move <b>${name}</b> (${phone}) out of Junior Admin <b>${code}</b>?</p><p style="color:#10b981; font-size:13px; margin-top:8px;">This user will become a <b>Direct Super Admin user</b>. All subsequent deposits will go 100% directly to you.</p>`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#f59e0b',
+    cancelButtonColor: '#2f3542',
+    confirmButtonText: 'Detach to Super Admin',
+    background: '#0f1623',
+    color: '#c8d6e5'
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch(API_URL + '/api/admin/super/detach-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          showToast(`User detached successfully to Super Admin!`, 'success');
+          loadAllUsersList(usersCurrentPage);
+        } else {
+          showToast(data.error || 'Failed to detach user', 'error');
+        }
+      })
+      .catch(err => showToast('Connection error', 'error'));
+    }
+  });
+}
+
+function filterUsersByAdmin() {
+  const filterVal = document.getElementById('userFilterAdmin')?.value || 'ALL';
+  if (filterVal === 'ALL') {
+    renderAllUsers(allUsersCache, true);
+  } else if (filterVal === 'DIRECT') {
+    const filtered = allUsersCache.filter(u => !u.junior_admin_code && (!u.referred_by || u.referred_by === 'Direct'));
+    renderAllUsers(filtered, true);
+  } else if (filterVal === 'JUNIOR') {
+    const filtered = allUsersCache.filter(u => !!u.junior_admin_code || (u.referred_by && u.referred_by !== 'Direct'));
+    renderAllUsers(filtered, true);
+  }
 }
 
 function toggleVerifyUser(phone, isVerified) {

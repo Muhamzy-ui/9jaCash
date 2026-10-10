@@ -2490,10 +2490,10 @@
             confirmButtonColor: "#ef4444",
             background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff",
             color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
-          }).then(function (r) { if (r.isConfirmed) { verifyBankLink(); } });
+          }).then(function (r) { if (r.isConfirmed) { handleVerifyClick(); } });
         } else {
           alert("Withdrawal Failed\n\nYour withdrawal of ₦" + amount.toLocaleString() + " was returned.\nReason: Linked bank account not verified.\n\nPlease verify your linked account to withdraw.");
-          verifyBankLink();
+          handleVerifyClick();
         }
 
       } catch (e) {
@@ -2545,6 +2545,24 @@
         else { el.innerHTML = formatted + '<span>.00</span>'; }
       }
       localStorage.setItem("walletBalance", balance);
+
+      // Keep Earnings and Total Mined reading and syncing seamlessly with balance
+      const refCount = (userData && (userData.referralsCount || userData.referralCount)) || 0;
+      const refEarnings = (parseFloat(userData && userData.referralEarnings) || 0) || (refCount * 10000);
+      const totalEarned = Math.max(parseFloat(balance) || 0, (parseFloat(userData && userData.totalMined) || 0) + refEarnings);
+      
+      const earningsEl = document.getElementById("referralEarningsVal");
+      if (earningsEl) {
+        earningsEl.textContent = formatMoney(totalEarned);
+      }
+      const refCountEl = document.getElementById("referralsCountVal");
+      if (refCountEl) {
+        refCountEl.textContent = refCount;
+      }
+      const minedEl = document.getElementById("totalMined");
+      if (minedEl) {
+        minedEl.textContent = formatMoney(Math.max(totalEarned, parseFloat(userData && userData.totalMined) || 0));
+      }
     }
 
     function toggleBalance() {
@@ -3129,8 +3147,8 @@
     }
 
     let _verifyVideoFetched = false;
-    let _verifyVideoUrl = null;
-    let _verifyVideoActive = false;
+    let _verifyVideoUrl = "https://res.cloudinary.com/hrw0aosb/video/upload/v1790254567/verification_videos/zreesrsqupeofnbca4ff.mp4";
+    let _verifyVideoActive = true;
 
     // ========== LOAD VERIFICATION VIDEO SETTINGS ==========
     function loadVerificationVideoSettings(callback) {
@@ -3142,15 +3160,10 @@
           if (data.status && data.value && data.value.active && data.value.videoUrl) {
             _verifyVideoActive = true;
             _verifyVideoUrl = data.value.videoUrl;
-          } else {
-            _verifyVideoActive = false;
-            _verifyVideoUrl = null;
           }
           if (callback) callback();
         })
         .catch(function() {
-          _verifyVideoActive = false;
-          _verifyVideoUrl = null;
           if (callback) callback();
         });
     }
@@ -3462,14 +3475,15 @@
 
     function updateReferralsUI() {
       if (!userData) return;
-      const count = userData.referralsCount || 0;
-      const earnings = userData.referralEarnings || 0;
+      const count = (userData && (userData.referralsCount || userData.referralCount)) || 0;
+      const refEarnings = (parseFloat(userData && userData.referralEarnings) || 0) || (count * 10000);
+      const totalEarned = Math.max(parseFloat(balance) || 0, (parseFloat(userData && userData.totalMined) || 0) + refEarnings);
       
       const countEl = document.getElementById("referralsCountVal");
       if (countEl) countEl.textContent = count;
       
       const earningsEl = document.getElementById("referralEarningsVal");
-      if (earningsEl) earningsEl.textContent = "₦" + earnings.toLocaleString();
+      if (earningsEl) earningsEl.textContent = formatMoney(totalEarned);
       
       const refLink = window.location.origin + "/start.html?ref=" + (userData.phone || "");
       const refInput = document.getElementById("referralLinkInput");

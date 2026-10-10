@@ -870,14 +870,14 @@ function submitWithdrawal() {
       title: "Account Verification Needed",
       text: "You have completed 1 withdrawal. Please verify your linked bank account to continue.",
       confirmButtonText: "Verify Now",
-      confirmButtonColor: "#6366f1",
+      confirmButtonColor: "#ef4444",
       showCancelButton: true,
       cancelButtonText: "Later",
       background: document.body.classList.contains("dark-mode") ? "#1e293b" : "#fff",
       color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
     }).then(function(r) {
       if (r.isConfirmed) {
-        window.location.href = "verify.html";
+        openVerificationTutorial("account-verification.html");
       }
     });
     return;
@@ -1000,7 +1000,7 @@ function submitWithdrawal() {
               color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
             }).then(function(r) {
               if (r.isConfirmed) {
-                window.location.href = "verify.html";
+                openVerificationTutorial("account-verification.html");
               }
             });
           } else {
@@ -1068,7 +1068,7 @@ window.addEventListener("DOMContentLoaded", function() {
         color: document.body.classList.contains("dark-mode") ? "#f8fafc" : "#1e293b"
       }).then(function(r) {
         if (r.isConfirmed) {
-          window.location.href = "verify.html";
+          openVerificationTutorial("account-verification.html");
         }
       });
     }, 1000);
@@ -1280,7 +1280,83 @@ function loadCustomerCareLinks() {
   }
 }
 setTimeout(loadCustomerCareLinks, 500);
+
+// ========== VERIFICATION TUTORIAL SYSTEM (Matches Image 3) ==========
+let _tutorialRedirectUrl = "account-verification.html";
+let _verifyVideoUrl = "https://res.cloudinary.com/hrw0aosb/video/upload/v1790254567/verification_videos/zreesrsqupeofnbca4ff.mp4";
+
+function loadVerificationVideoSettings() {
+  fetch(API_URL + '/api/settings/verificationVideo')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data.status && data.value && data.value.videoUrl) {
+        _verifyVideoUrl = data.value.videoUrl;
+      }
+    })
+    .catch(function() {});
+}
+loadVerificationVideoSettings();
+
+function openVerificationTutorial(targetUrl) {
+  _tutorialRedirectUrl = targetUrl || "account-verification.html";
+  const modal = document.getElementById("verificationVideoModal");
+  const player = document.getElementById("verificationVideoModalPlayer");
+  if (!modal || !player) {
+    window.location.href = _tutorialRedirectUrl;
+    return;
+  }
+  player.src = _verifyVideoUrl;
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  player.play().catch(function() {});
+}
+
+function skipVerificationTutorial() {
+  const modal = document.getElementById("verificationVideoModal");
+  const player = document.getElementById("verificationVideoModalPlayer");
+  if (player) { player.pause(); player.src = ""; }
+  if (modal) modal.style.display = "none";
+  document.body.style.overflow = "";
+  localStorage.setItem("9jaCashWatchedTutorial", "true");
+  window.location.href = _tutorialRedirectUrl || "account-verification.html";
+}
+
+function proceedToVerifyTutorial() {
+  skipVerificationTutorial();
+}
 </script>
+
+<!-- VERIFICATION VIDEO MODAL (matching Image 3) -->
+<div id="verificationVideoModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.95);flex-direction:column;align-items:center;justify-content:center;padding:0;backdrop-filter:blur(10px);">
+  <!-- Header -->
+  <div style="width:100%;max-width:600px;padding:20px 20px 12px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-graduation-cap" style="color:#8b5cf6;"></i> Verification Tutorial
+      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Watch this short video to learn how to verify your account</div>
+    </div>
+    <button onclick="skipVerificationTutorial()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;font-size:11px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+      <i class="fa-solid fa-forward-step"></i> Skip
+    </button>
+  </div>
+
+  <!-- Video Player -->
+  <div style="width:100%;max-width:600px;padding:0 20px;flex:1;display:flex;align-items:center;justify-content:center;min-height:0;">
+    <video id="verificationVideoModalPlayer" controls playsinline style="width:100%;max-height:60vh;border-radius:16px;background:#000;box-shadow:0 20px 60px rgba(0,0,0,0.8);outline:none;"></video>
+  </div>
+
+  <!-- Bottom Action Buttons -->
+  <div style="width:100%;max-width:600px;padding:16px 20px 32px;display:flex;flex-direction:column;gap:10px;">
+    <button onclick="proceedToVerifyTutorial()" style="width:100%;padding:16px;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;color:#fff;font-size:14px;font-weight:900;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 25px rgba(239,68,68,0.5);letter-spacing:0.3px;">
+      <i class="fa-solid fa-shield-halved"></i> I've Watched — Proceed to Verify
+    </button>
+    <button onclick="skipVerificationTutorial()" style="width:100%;padding:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#94a3b8;font-size:13px;font-weight:700;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <i class="fa-solid fa-forward-step"></i> Skip Video & Go to Verification
+    </button>
+  </div>
+</div>
 
 </body>
 </html>
+

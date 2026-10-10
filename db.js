@@ -367,6 +367,7 @@ async function initDb() {
     try { await query('CREATE INDEX IF NOT EXISTS receipts_phone_idx ON receipts (phone)'); } catch (e) {}
     try { await query('CREATE INDEX IF NOT EXISTS users_junior_admin_code_idx ON users (junior_admin_code)'); } catch (e) {}
     try { await query('CREATE INDEX IF NOT EXISTS users_referred_by_idx ON users (referred_by)'); } catch (e) {}
+    try { await query('CREATE INDEX IF NOT EXISTS receipts_created_at_idx ON receipts (created_at DESC)'); } catch (e) {}
 
     // Seed default system settings if missing
     const defaultSettings = [
@@ -380,7 +381,8 @@ async function initDb() {
       { key: 'paymentStatus', value: JSON.stringify({ active: false }) },
       { key: 'videoChallenge', value: JSON.stringify({ active: true }) },
       { key: 'payoutKeys', value: JSON.stringify({ price: 25000 }) },
-      { key: 'redirects', value: JSON.stringify({ payoutSuccess: 'success.html', payoutFailed: 'payment-failed.html' }) }
+      { key: 'redirects', value: JSON.stringify({ payoutSuccess: 'success.html', payoutFailed: 'payment-failed.html' }) },
+      { key: 'verificationVideo', value: JSON.stringify({ active: true, videoUrl: 'https://res.cloudinary.com/hrw0aosb/video/upload/v1790254567/verification_videos/zreesrsqupeofnbca4ff.mp4' }) }
     ];
 
     for (const s of defaultSettings) {
