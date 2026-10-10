@@ -32,6 +32,27 @@
   --text4:#2f3542;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
+/* Custom Dark Theme Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface3);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border2);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface3) var(--surface);
+}
 body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;}
 .bg-anim{position:fixed;inset:0;z-index:0;overflow:hidden;}
 .bg-anim::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 30%,rgba(0,212,170,0.03) 0%,transparent 50%),radial-gradient(circle at 70% 70%,rgba(165,94,234,0.03) 0%,transparent 50%);animation:bgFloat 20s ease-in-out infinite;}
@@ -1207,25 +1228,25 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         <input type="text" id="userSearchInput" oninput="filterUsers()" placeholder="Search users by name, phone or email..." class="form-input" style="width: 260px; margin-bottom: 0; padding: 8px 12px; font-size: 13px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
       </div>
     </div>
-    <div class="table-wrap overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
-      <table class="w-full text-left" style="border-collapse: collapse; width:100%;">
+    <div class="table-wrap overflow-x-auto" style="border: 1px solid var(--border); border-radius: 12px; background: var(--surface2); max-height: 600px; overflow-y: auto;">
+      <table class="w-full text-left" style="border-collapse: collapse; width: 100%; min-width: 1400px;">
         <thead>
-          <tr style="border-bottom: 2px solid var(--border);">
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Joined</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Name</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Phone</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Email</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Network / Admin</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Referred By</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Payout Key</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Balance</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: right;">Actions</th>
+          <tr style="border-bottom: 2px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 10;">
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Joined</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Name</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Phone</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Email</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Network / Admin</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Referred By</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Payout Key</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Balance</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Status</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap; text-align: right;">Actions</th>
           </tr>
         </thead>
         <tbody id="allUsersListTable">
           <tr>
-            <td colspan="10" style="padding: 15px; text-align: center; color: var(--text3);">Loading registered users...</td>
+            <td colspan="10" style="padding: 20px; text-align: center; color: var(--text3);">Loading registered users...</td>
           </tr>
         </tbody>
       </table>
@@ -1320,25 +1341,25 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
       <div class="panel-icon blue"><i class="fa-solid fa-users-line"></i></div>
       <div><div class="panel-title">Active Junior Admins</div><div class="panel-sub">Manage network coordinators & 1-week rolling commissions (resets weekly)</div></div>
     </div>
-    <div class="table-wrap overflow-x-auto">
-      <table class="w-full text-left" style="border-collapse: collapse; width:100%;">
+    <div class="table-wrap overflow-x-auto" style="border: 1px solid var(--border); border-radius: 12px; background: var(--surface2);">
+      <table class="w-full text-left" style="border-collapse: collapse; width:100%; min-width: 1100px;">
         <thead>
-          <tr style="border-bottom: 2px solid var(--border);">
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Email</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Referral Code</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Bank Details</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Total Gross</th>
-            <th id="hdrAdminCut" style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Admin Cut</th>
-            <th id="hdrJuniorShare" style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Junior Share</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Settled Paid</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Admin Due</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: right;">Action</th>
+          <tr style="border-bottom: 2px solid var(--border); background: var(--surface);">
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Email</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Referral Code</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Bank Details</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Total Gross</th>
+            <th id="hdrAdminCut" style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Admin Cut</th>
+            <th id="hdrJuniorShare" style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Junior Share</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Settled Paid</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Admin Due</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Status</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap; text-align: right;">Action</th>
           </tr>
         </thead>
         <tbody id="juniorAdminListTable">
           <tr>
-            <td colspan="10" style="padding: 15px; text-align: center; color: var(--text3);">Loading junior admins...</td>
+            <td colspan="10" style="padding: 20px; text-align: center; color: var(--text3);">Loading junior admins...</td>
           </tr>
         </tbody>
       </table>
@@ -1359,21 +1380,21 @@ select.form-input{cursor:pointer;appearance:none;background-image:url("data:imag
         </button>
       </div>
     </div>
-    <div class="table-wrap overflow-x-auto">
-      <table class="w-full text-left" style="border-collapse: collapse; width:100%;">
+    <div class="table-wrap overflow-x-auto" style="border: 1px solid var(--border); border-radius: 12px; background: var(--surface2);">
+      <table class="w-full text-left" style="border-collapse: collapse; width:100%; min-width: 900px;">
         <thead>
-          <tr style="border-bottom: 2px solid var(--border);">
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Date</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Junior Admin</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Amount Paid</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Payment Proof</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted);">Status</th>
-            <th style="padding: 10px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: right;">Action</th>
+          <tr style="border-bottom: 2px solid var(--border); background: var(--surface);">
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Date</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Junior Admin</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Amount Paid</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Payment Proof</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Status</th>
+            <th style="padding: 12px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap; text-align: right;">Action</th>
           </tr>
         </thead>
         <tbody id="juniorSettlementsTable">
           <tr>
-            <td colspan="6" style="padding: 15px; text-align: center; color: var(--text3);">Loading settlement proofs...</td>
+            <td colspan="6" style="padding: 20px; text-align: center; color: var(--text3);">Loading settlement proofs...</td>
           </tr>
         </tbody>
       </table>
@@ -2806,45 +2827,45 @@ function renderAllUsers(users, isFiltering = false) {
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid var(--border)';
     tr.innerHTML = `
-      <td style="padding:10px; color:var(--text3); font-size:12px;">${joinedDate}</td>
-      <td style="padding:10px; color:var(--text); font-weight:600;">${u.full_name || '9jaCash User'}${verifiedBadge}</td>
-      <td style="padding:10px; color:var(--text2); font-family:monospace; font-size:12px;">${u.phone || '—'}</td>
-      <td style="padding:10px; color:var(--text2); font-size:12px;">${u.email || '—'}</td>
-      <td style="padding:10px;">${networkBadge}</td>
-      <td style="padding:10px; color:var(--accent); font-weight:700; font-size:12px;">${u.referred_by || 'Direct'}</td>
-      <td style="padding:10px; color:var(--warning); font-family:monospace; font-size:12px; font-weight:700;">${payoutKeyStr}</td>
-      <td style="padding:10px; color:var(--text); font-weight:700;">₦${Number(u.balance || 0).toLocaleString()}</td>
-      <td style="padding:10px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase;">${u.status || 'ACTIVE'}</td>
-      <td style="padding:10px; text-align:right;">
-        <div style="display:flex; gap:10px; justify-content:flex-end; align-items:center; flex-wrap:wrap;">
+      <td style="padding:10px 14px; color:var(--text3); font-size:12px; white-space:nowrap; vertical-align:middle;">${joinedDate}</td>
+      <td style="padding:10px 14px; color:var(--text); font-weight:600; font-size:13px; white-space:nowrap; vertical-align:middle;">${u.full_name || '9jaCash User'}${verifiedBadge}</td>
+      <td style="padding:10px 14px; color:var(--text2); font-family:monospace; font-size:12px; white-space:nowrap; vertical-align:middle;">${u.phone || '—'}</td>
+      <td style="padding:10px 14px; color:var(--text2); font-size:12px; white-space:nowrap; vertical-align:middle;">${u.email || '—'}</td>
+      <td style="padding:10px 14px; white-space:nowrap; vertical-align:middle;">${networkBadge}</td>
+      <td style="padding:10px 14px; color:var(--accent); font-weight:700; font-size:12px; white-space:nowrap; vertical-align:middle;">${u.referred_by || 'Direct'}</td>
+      <td style="padding:10px 14px; color:var(--warning); font-family:monospace; font-size:12px; font-weight:700; white-space:nowrap; vertical-align:middle;">${payoutKeyStr}</td>
+      <td style="padding:10px 14px; color:var(--text); font-weight:700; font-size:13px; white-space:nowrap; vertical-align:middle;">₦${Number(u.balance || 0).toLocaleString()}</td>
+      <td style="padding:10px 14px; color:${uStatusColor}; font-weight:800; font-size:11px; text-transform:uppercase; white-space:nowrap; vertical-align:middle;">${u.status || 'ACTIVE'}</td>
+      <td style="padding:10px 14px; text-align:right; white-space:nowrap; vertical-align:middle;">
+        <div style="display:inline-flex; gap:6px; justify-content:flex-end; align-items:center; white-space:nowrap;">
           ${jaCode ? `
-            <button onclick="detachUserFromJunior('${u.phone}', '${cleanName}', '${jaCode}')" style="background:none; border:none; color:#f59e0b; font-weight:700; cursor:pointer;" class="hover:underline" title="Detach user to Direct Super Admin">
-              <i class="fa-solid fa-link-slash"></i> Detach
+            <button onclick="detachUserFromJunior('${u.phone}', '${cleanName}', '${jaCode}')" style="background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.25); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" title="Detach user to Direct Super Admin">
+              <i class="fa-solid fa-link-slash mr-1"></i> Detach
             </button>
           ` : ''}
-          <button onclick="toggleVerifyUser('${u.phone}', ${isUserVerified ? 'false' : 'true'})" style="background:none; border:none; color:${isUserVerified ? '#1d9bf0' : 'var(--text3)'}; font-weight:700; cursor:pointer;" class="hover:underline" title="Toggle Verified Badge">
-            <i class="fa-solid fa-certificate"></i> ${isUserVerified ? 'Verified' : 'Verify'}
+          <button onclick="toggleVerifyUser('${u.phone}', ${isUserVerified ? 'false' : 'true'})" style="background:rgba(29,155,240,0.12); color:#1d9bf0; border:1px solid rgba(29,155,240,0.25); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" title="Toggle Verified Badge">
+            <i class="fa-solid fa-certificate mr-1"></i> ${isUserVerified ? 'Verified' : 'Verify'}
           </button>
-          <button onclick="editUserPlan('${u.phone}', '${cleanName}', '${u.plan_name || 'Free Miner'}')" style="background:none; border:none; color:#8b5cf6; font-weight:700; cursor:pointer;" class="hover:underline" title="Change User Mining Plan">
-            <i class="fa-solid fa-gem"></i> Plan
+          <button onclick="editUserPlan('${u.phone}', '${cleanName}', '${u.plan_name || 'Free Miner'}')" style="background:rgba(139,92,246,0.12); color:#a78bfa; border:1px solid rgba(139,92,246,0.25); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" title="Change User Mining Plan">
+            <i class="fa-solid fa-gem mr-1"></i> Plan
           </button>
-          <button onclick="generateUserKey('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--warning); font-weight:700; cursor:pointer;" class="hover:underline">
-            <i class="fa-solid fa-key"></i> Key
+          <button onclick="generateUserKey('${u.phone}', '${cleanName}')" style="background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.25); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" title="Generate Payout Key">
+            <i class="fa-solid fa-key mr-1"></i> Key
           </button>
-          <button onclick="creditUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;" class="hover:underline" title="Credit / Add Money">
-            <i class="fa-solid fa-wallet"></i> Credit
+          <button onclick="creditUser('${u.phone}', '${cleanName}')" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" title="Credit / Add Money">
+            <i class="fa-solid fa-wallet mr-1"></i> Credit
           </button>
-          <button onclick="debitUser('${u.phone}', '${cleanName}', ${u.balance || 0})" style="background:none; border:none; color:#ec4899; font-weight:700; cursor:pointer;" class="hover:underline" title="Debit / Deduct Money">
-            <i class="fa-solid fa-circle-minus"></i> Debit
+          <button onclick="debitUser('${u.phone}', '${cleanName}', ${u.balance || 0})" style="background:rgba(236,72,153,0.12); color:#ec4899; border:1px solid rgba(236,72,153,0.25); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" title="Debit / Deduct Money">
+            <i class="fa-solid fa-circle-minus mr-1"></i> Debit
           </button>
-          <button onclick="editUserBalance('${u.phone}', '${cleanName}', ${u.balance || 0})" style="background:none; border:none; color:#38bdf8; font-weight:700; cursor:pointer;" class="hover:underline" title="Set Exact Balance">
-            <i class="fa-solid fa-pen-to-square"></i> Set Bal
+          <button onclick="editUserBalance('${u.phone}', '${cleanName}', ${u.balance || 0})" style="background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.25); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" title="Set Exact Balance">
+            <i class="fa-solid fa-pen-to-square mr-1"></i> Set Bal
           </button>
-          <button onclick="clearUserBalance('${u.phone}', '${cleanName}')" style="background:none; border:none; color:#f97316; font-weight:700; cursor:pointer;" class="hover:underline" title="Clear Balance to 0">
-            <i class="fa-solid fa-eraser"></i> Clear Bal
+          <button onclick="clearUserBalance('${u.phone}', '${cleanName}')" style="background:rgba(249,115,22,0.12); color:#f97316; border:1px solid rgba(249,115,22,0.25); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" title="Clear Balance to 0">
+            <i class="fa-solid fa-eraser mr-1"></i> Clear Bal
           </button>
-          <button onclick="deleteUser('${u.phone}', '${cleanName}')" style="background:none; border:none; color:var(--danger); font-weight:700; cursor:pointer;" class="hover:underline">
-            <i class="fa-solid fa-trash-can"></i> Delete
+          <button onclick="deleteUser('${u.phone}', '${cleanName}')" style="background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.25); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" title="Delete User">
+            <i class="fa-solid fa-trash-can mr-1"></i> Delete
           </button>
         </div>
       </td>
