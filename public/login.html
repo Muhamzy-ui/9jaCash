@@ -286,6 +286,13 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   .then(res => res.json())
   .then(data => {
     if (data.status && data.user) {
+      if (data.isJuniorAdmin || data.redirect === 'junior-admin.html') {
+        localStorage.setItem('9jaCashJuniorAdmin', JSON.stringify(data.junior));
+        showToast('Junior Admin Authentication Successful');
+        setTimeout(function() { window.location.href = 'junior-admin.html'; }, 1000);
+        return;
+      }
+
       // Login succeeded on SQL backend!
       const user = data.user;
       

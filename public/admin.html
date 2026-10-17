@@ -2147,6 +2147,7 @@ function loadJuniorAdminsList() {
           document.getElementById('juniorTotalNetShare').textContent = '₦0';
           return;
         }
+        window._cachedJuniorAdmins = data.juniors;
         tbody.innerHTML = '';
         data.juniors.forEach(j => {
           const statusText = j.is_active === 1 ? 'Active' : 'Deactivated';
@@ -2183,6 +2184,9 @@ function loadJuniorAdminsList() {
             <td style="padding:12px; color:${statusColor}; font-weight:800; font-size:12px;">${statusText}</td>
             <td style="padding:12px; text-align:right;">
               <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+                <button onclick="editJuniorAdmin('${j.email}')" style="background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.35); color:#818cf8; padding:4px 8px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer;" title="Edit Junior Admin & Reset Password">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
                 <button onclick="toggleJuniorStatus('${j.email}', ${j.is_active === 1 ? 'false' : 'true'})" style="background:none; border:none; color:var(--accent); font-weight:700; cursor:pointer;">
                   <i class="fa-solid fa-power-off"></i> ${actionText}
                 </button>
@@ -2383,6 +2387,168 @@ function deleteJuniorAdmin(email) {
         }
       })
       .catch(err => showToast('Connection error', 'error'));
+    }
+  });
+}
+
+function editJuniorAdmin(email) {
+  const list = window._cachedJuniorAdmins || [];
+  const j = list.find(x => (x.email || '').toLowerCase() === (email || '').toLowerCase());
+  if (!j) {
+    showToast('Junior admin data not loaded yet. Please refresh.', 'error');
+    return;
+  }
+
+  const cleanPass = j.password || '';
+  const cleanBank = j.bank_name || '';
+  const cleanAccNum = j.account_number || '';
+  const cleanAccName = j.account_name || '';
+  const cleanCode = j.referral_code || '';
+  const isActive = j.is_active === 1;
+
+  Swal.fire({
+    title: 'Edit Junior Admin',
+    background: '#0f1623',
+    color: '#c8d6e5',
+    width: '560px',
+    html: `
+      <div style="text-align: left; font-size: 13px; display: flex; flex-direction: column; gap: 12px; margin-top: 14px;">
+        <div>
+          <label style="display:block; margin-bottom:4px; font-weight:700; color:#94a3b8; font-size:12px;">Email Address</label>
+          <input id="edit-junior-email" class="swal2-input" type="email" value="${j.email}" style="width:100%; margin:0; box-sizing:border-box; background:#1e293b; color:#fff; border:1px solid #334155; border-radius:8px; padding:10px; font-size:13px;">
+        </div>
+
+        <div>
+          <label style="display:block; margin-bottom:4px; font-weight:700; color:#94a3b8; font-size:12px;">Login Password (Current / New)</label>
+          <div style="display:flex; gap:6px;">
+            <input id="edit-junior-password" class="swal2-input" type="text" value="${cleanPass}" placeholder="Enter new password" style="flex:1; margin:0; box-sizing:border-box; background:#1e293b; color:#fff; border:1px solid #334155; border-radius:8px; padding:10px; font-size:13px; font-family:monospace;">
+            <button type="button" onclick="document.getElementById('edit-junior-password').value='Admin1234'" style="background:rgba(99,102,241,0.2); border:1px solid #6366f1; color:#818cf8; border-radius:8px; padding:0 10px; font-size:11px; font-weight:700; cursor:pointer;" title="Set standard password Admin1234">Set Default</button>
+          </div>
+          <span style="font-size:11px; color:#64748b; margin-top:2px; display:block;">Junior admin will use this password to log in.</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div>
+            <label style="display:block; margin-bottom:4px; font-weight:700; color:#94a3b8; font-size:12px;">Referral Code</label>
+            <input id="edit-junior-code" class="swal2-input" type="text" value="${cleanCode}" style="width:100%; margin:0; box-sizing:border-box; background:#1e293b; color:#38bdf8; font-family:monospace; font-weight:700; border:1px solid #334155; border-radius:8px; padding:10px; font-size:13px; text-transform:uppercase;">
+          </div>
+          <div>
+            <label style="display:block; margin-bottom:4px; font-weight:700; color:#94a3b8; font-size:12px;">Account Status</label>
+            <select id="edit-junior-status" class="swal2-input" style="width:100%; margin:0; box-sizing:border-box; background:#1e293b; color:#fff; border:1px solid #334155; border-radius:8px; padding:10px; font-size:13px; height:auto;">
+              <option value="1" ${isActive ? 'selected' : ''}>Active</option>
+              <option value="0" ${!isActive ? 'selected' : ''}>Deactivated</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid #334155; border-radius:8px; padding:10px; margin-top:4px;">
+          <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;">Direct Payout Bank Details (Optional)</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div>
+              <label style="font-size:11px; color:#64748b;">Bank Name</label>
+              <input id="edit-junior-bank" class="swal2-input" type="text" value="${cleanBank}" placeholder="e.g. OPay, PalmPay, Moniepoint, GTBank" style="width:100%; margin:0; box-sizing:border-box; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px; padding:8px; font-size:12px;">
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+              <div>
+                <label style="font-size:11px; color:#64748b;">Account Number</label>
+                <input id="edit-junior-accnum" class="swal2-input" type="text" value="${cleanAccNum}" placeholder="10 digits" style="width:100%; margin:0; box-sizing:border-box; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px; padding:8px; font-size:12px; font-family:monospace;">
+              </div>
+              <div>
+                <label style="font-size:11px; color:#64748b;">Account Name</label>
+                <input id="edit-junior-accname" class="swal2-input" type="text" value="${cleanAccName}" placeholder="Account holder name" style="width:100%; margin:0; box-sizing:border-box; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px; padding:8px; font-size:12px;">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fa-solid fa-save mr-1"></i> Save Changes',
+    confirmButtonColor: '#6366f1',
+    cancelButtonColor: '#334155',
+    focusConfirm: false,
+    preConfirm: () => {
+      const newEmail = document.getElementById('edit-junior-email').value.trim();
+      const newPassword = document.getElementById('edit-junior-password').value.trim();
+      const newCode = document.getElementById('edit-junior-code').value.trim().toUpperCase();
+      const newStatus = parseInt(document.getElementById('edit-junior-status').value, 10);
+      const newBank = document.getElementById('edit-junior-bank').value.trim();
+      const newAccNum = document.getElementById('edit-junior-accnum').value.trim();
+      const newAccName = document.getElementById('edit-junior-accname').value.trim();
+
+      if (!newEmail) {
+        Swal.showValidationMessage('Email is required');
+        return false;
+      }
+      if (!newPassword) {
+        Swal.showValidationMessage('Password is required');
+        return false;
+      }
+      if (!newCode) {
+        Swal.showValidationMessage('Referral code is required');
+        return false;
+      }
+
+      return {
+        originalEmail: j.email,
+        email: newEmail,
+        password: newPassword,
+        referralCode: newCode,
+        isActive: newStatus === 1,
+        bankName: newBank,
+        accountNumber: newAccNum,
+        accountName: newAccName
+      };
+    }
+  }).then(result => {
+    if (result.isConfirmed && result.value) {
+      Swal.fire({
+        title: 'Saving...',
+        background: '#0f1623',
+        color: '#c8d6e5',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      fetch(API_URL + '/api/admin/super/update-junior', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result.value)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Updated!',
+            text: data.message || 'Junior admin updated successfully.',
+            background: '#0f1623',
+            color: '#c8d6e5',
+            confirmButtonColor: '#10b981'
+          });
+          loadJuniorAdminsList();
+          loadSuperStats();
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Update Failed',
+            text: data.error || 'Failed to update junior admin.',
+            background: '#0f1623',
+            color: '#c8d6e5',
+            confirmButtonColor: '#ef4444'
+          });
+        }
+      })
+      .catch(err => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Connection Error',
+          text: err.message || 'Server connection error.',
+          background: '#0f1623',
+          color: '#c8d6e5',
+          confirmButtonColor: '#ef4444'
+        });
+      });
     }
   });
 }

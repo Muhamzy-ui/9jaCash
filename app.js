@@ -330,6 +330,8 @@ let juniorAnalyticsCache = {}; // Key: juniorCode, Value: { data, cachedAt }
 function invalidateDashboardCaches() {
   superStatsCache = null;
   superStatsCachedAt = 0;
+  superJuniorsCache = null;
+  superJuniorsCachedAt = 0;
   juniorAnalyticsCache = {};
   console.log('🔄 Dashboard statistics caches invalidated.');
 }
@@ -872,7 +874,34 @@ app.post('/api/login', async (req, res) => {
     `, [cleanInput, normPhone, cleanLower, cleanLower, cleanPass]);
 
     if (!users || users.length === 0) {
-      // Check if user exists to give precise feedback
+      // Check if credentials match a Junior Admin
+      const jaList = await db.query('SELECT * FROM junior_admins WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))', [cleanLower]);
+      if (jaList && jaList.length > 0) {
+        const ja = jaList[0];
+        if (ja.password === cleanPass) {
+          if (ja.is_active !== 1) {
+            return res.status(403).json({ status: false, error: 'Junior Admin account is deactivated. Contact Super Admin.' });
+          }
+          return res.json({
+            status: true,
+            isJuniorAdmin: true,
+            redirect: 'junior-admin.html',
+            junior: ja,
+            user: {
+              phone: ja.referral_code,
+              email: ja.email,
+              full_name: 'Junior Admin (' + ja.referral_code + ')',
+              fullName: 'Junior Admin (' + ja.referral_code + ')',
+              balance: 0,
+              status: 'active'
+            }
+          });
+        } else {
+          return res.status(401).json({ status: false, error: 'Incorrect password for Junior Admin account.' });
+        }
+      }
+
+      // Check if regular user exists to give precise feedback
       const checkUser = await db.query(`
         SELECT * FROM users 
         WHERE phone = ? OR phone = ? OR LOWER(phone) = ? OR LOWER(email) = ?
@@ -1406,9 +1435,18 @@ app.post('/api/admin/junior/login', async (req, res) => {
   }
 
   try {
-    const list = await db.query('SELECT * FROM junior_admins WHERE email = ? AND password = ? AND is_active = 1', [email, password]);
+    const cleanEmail = email ? email.trim() : '';
+    const cleanPassword = password ? password.trim() : '';
+    const list = await db.query('SELECT * FROM junior_admins WHERE LOWER(TRIM(email)) = LOWER(TRIM(?)) AND password = ? AND is_active = 1', [cleanEmail, cleanPassword]);
     if (list.length === 0) {
-      return res.status(401).json({ status: false, error: 'Invalid Junior Admin credentials.' });
+      const emailCheck = await db.query('SELECT * FROM junior_admins WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))', [cleanEmail]);
+      if (emailCheck && emailCheck.length > 0) {
+        if (emailCheck[0].is_active !== 1) {
+          return res.status(403).json({ status: false, error: 'Junior admin account is deactivated. Contact Super Admin.' });
+        }
+        return res.status(401).json({ status: false, error: 'Incorrect password for this Junior Admin account.' });
+      }
+      return res.status(401).json({ status: false, error: 'No Junior Admin account found with this email.' });
     }
     res.json({ status: true, junior: list[0] });
   } catch (err) {
@@ -2095,6 +2133,81 @@ app.post('/api/admin/super/create-junior', async (req, res) => {
   }
 });
 
+// POST /api/admin/super/update-junior — Edit Junior Admin details & password (Super Admin)
+app.post('/api/admin/super/update-junior', async (req, res) => {
+  const { originalEmail, email, password, referralCode, bankName, accountNumber, accountName, cryptoAddress, cryptoNetwork, isActive } = req.body || {};
+  if (!originalEmail) {
+    return res.status(400).json({ status: false, error: 'Original junior admin email is required' });
+  }
+
+  try {
+    const existing = await db.query('SELECT * FROM junior_admins WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))', [originalEmail]);
+    if (!existing || existing.length === 0) {
+      return res.status(404).json({ status: false, error: 'Junior admin not found' });
+    }
+    const current = existing[0];
+
+    const targetEmail = (email && email.trim()) ? email.trim() : current.email;
+    const targetCode = (referralCode && referralCode.trim()) ? referralCode.trim().toUpperCase() : current.referral_code;
+    const targetPassword = (password && password.trim()) ? password.trim() : current.password;
+    const targetActive = isActive !== undefined ? (isActive ? 1 : 0) : current.is_active;
+
+    // Check duplicate email if changed
+    if (targetEmail.toLowerCase() !== current.email.toLowerCase()) {
+      const emailDup = await db.query('SELECT email FROM junior_admins WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))', [targetEmail]);
+      if (emailDup.length > 0) {
+        return res.status(409).json({ status: false, error: 'Email already in use by another junior admin' });
+      }
+    }
+
+    // Check duplicate code if changed
+    if (targetCode.toUpperCase() !== (current.referral_code || '').toUpperCase()) {
+      const codeDup = await db.query('SELECT referral_code FROM junior_admins WHERE UPPER(TRIM(referral_code)) = UPPER(TRIM(?))', [targetCode]);
+      if (codeDup.length > 0) {
+        return res.status(409).json({ status: false, error: 'Referral code already in use by another junior admin' });
+      }
+      // Re-assign referred users in users table so users stay connected to their junior admin
+      await db.query('UPDATE users SET junior_admin_code = ? WHERE UPPER(TRIM(junior_admin_code)) = ?', [targetCode, (current.referral_code || '').toUpperCase()]);
+      await db.query('UPDATE users SET referred_by = ? WHERE UPPER(TRIM(referred_by)) = ?', [targetCode, (current.referral_code || '').toUpperCase()]);
+    }
+
+    await db.query(`
+      UPDATE junior_admins 
+      SET email = ?,
+          password = ?,
+          referral_code = ?,
+          bank_name = ?,
+          account_number = ?,
+          account_name = ?,
+          crypto_address = ?,
+          crypto_network = ?,
+          is_active = ?
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))
+    `, [
+      targetEmail,
+      targetPassword,
+      targetCode,
+      bankName !== undefined ? (bankName ? bankName.trim() : null) : current.bank_name,
+      accountNumber !== undefined ? (accountNumber ? accountNumber.trim() : null) : current.account_number,
+      accountName !== undefined ? (accountName ? accountName.trim() : null) : current.account_name,
+      cryptoAddress !== undefined ? (cryptoAddress ? cryptoAddress.trim() : null) : current.crypto_address,
+      cryptoNetwork !== undefined ? (cryptoNetwork ? cryptoNetwork.trim() : null) : current.crypto_network,
+      targetActive,
+      originalEmail
+    ]);
+
+    superJuniorsCache = null;
+    superJuniorsCachedAt = 0;
+    invalidateDashboardCaches();
+
+    console.log(`[UPDATE-JUNIOR] Successfully updated junior admin: ${originalEmail} -> ${targetEmail}`);
+    res.json({ status: true, message: 'Junior admin successfully updated' });
+  } catch (err) {
+    console.error('[UPDATE-JUNIOR] Error:', err.message);
+    res.status(500).json({ status: false, error: 'Failed to update junior admin: ' + err.message });
+  }
+});
+
 // GET /api/admin/seed-junior?code=011&email=test@test.com&pass=pass123 — Emergency seed endpoint
 app.get('/api/admin/seed-junior', async (req, res) => {
   const { code, email, pass } = req.query;
@@ -2409,7 +2522,7 @@ app.get('/api/admin/super/juniors', async (req, res) => {
       return res.json(superJuniorsCache);
     }
 
-    const list = await db.query('SELECT email, referral_code, bank_name, account_number, account_name, is_active, created_at, reset_at FROM junior_admins ORDER BY created_at DESC');
+    const list = await db.query('SELECT email, password, referral_code, bank_name, account_number, account_name, crypto_address, crypto_network, is_active, created_at, reset_at FROM junior_admins ORDER BY created_at DESC');
 
     // Get setting for admin percentage
     let adminPercentage = 20;
@@ -2542,11 +2655,14 @@ app.get('/api/admin/super/juniors', async (req, res) => {
 
       juniorsWithStats.push({
         email: j.email,
+        password: j.password,
         code: j.referral_code,
         referral_code: j.referral_code,
         bank_name: j.bank_name,
         account_number: j.account_number,
         account_name: j.account_name,
+        crypto_address: j.crypto_address || null,
+        crypto_network: j.crypto_network || null,
         is_active: j.is_active,
         created_at: j.created_at,
         reset_at: j.reset_at || null,
@@ -2601,7 +2717,10 @@ app.post('/api/admin/super/toggle-junior-status', async (req, res) => {
   }
   try {
     const statusVal = isActive ? 1 : 0;
-    await db.query('UPDATE junior_admins SET is_active = ? WHERE email = ?', [statusVal, email]);
+    await db.query('UPDATE junior_admins SET is_active = ? WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))', [statusVal, email]);
+    superJuniorsCache = null;
+    superJuniorsCachedAt = 0;
+    invalidateDashboardCaches();
     res.json({ status: true, message: `Junior Admin status updated to ${isActive ? 'Active' : 'Deactivated'}` });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Failed to update junior admin status' });
@@ -3059,7 +3178,10 @@ app.post('/api/admin/super/delete-junior', async (req, res) => {
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ status: false, error: 'Email required' });
   try {
-    await db.query('DELETE FROM junior_admins WHERE email = ?', [email]);
+    await db.query('DELETE FROM junior_admins WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))', [email]);
+    superJuniorsCache = null;
+    superJuniorsCachedAt = 0;
+    invalidateDashboardCaches();
     res.json({ status: true, message: 'Junior admin deleted successfully' });
   } catch (err) {
     res.status(500).json({ status: false, error: 'Failed to delete junior admin' });
@@ -3293,7 +3415,9 @@ app.post('/api/admin/junior/generate-user-key', async (req, res) => {
 
   try {
     // 1. Authenticate Junior Admin
-    const list = await db.query('SELECT referral_code, is_active FROM junior_admins WHERE email = ? AND password = ?', [email, password]);
+    const cleanEmail = email ? email.trim() : '';
+    const cleanPassword = password ? password.trim() : '';
+    const list = await db.query('SELECT referral_code, is_active FROM junior_admins WHERE LOWER(TRIM(email)) = LOWER(TRIM(?)) AND password = ?', [cleanEmail, cleanPassword]);
     if (list.length === 0 || list[0].is_active !== 1) {
       return res.status(401).json({ status: false, error: 'Unauthorized or inactive junior admin' });
     }
@@ -3514,7 +3638,9 @@ app.post('/api/admin/junior/update-payment-settings', async (req, res) => {
     return res.status(400).json({ status: false, error: 'Email and password are required' });
   }
   try {
-    const list = await db.query('SELECT * FROM junior_admins WHERE email = ? AND password = ?', [email, password]);
+    const cleanEmail = email ? email.trim() : '';
+    const cleanPassword = password ? password.trim() : '';
+    const list = await db.query('SELECT * FROM junior_admins WHERE LOWER(TRIM(email)) = LOWER(TRIM(?)) AND password = ?', [cleanEmail, cleanPassword]);
     if (list.length === 0) {
       return res.status(401).json({ status: false, error: 'Invalid admin credentials' });
     }
@@ -3575,7 +3701,9 @@ app.post('/api/admin/junior/get-payment-settings', async (req, res) => {
     return res.status(400).json({ status: false, error: 'Email and password are required' });
   }
   try {
-    const list = await db.query('SELECT * FROM junior_admins WHERE email = ? AND password = ?', [email, password]);
+    const cleanEmail = email ? email.trim() : '';
+    const cleanPassword = password ? password.trim() : '';
+    const list = await db.query('SELECT * FROM junior_admins WHERE LOWER(TRIM(email)) = LOWER(TRIM(?)) AND password = ?', [cleanEmail, cleanPassword]);
     if (list.length === 0) {
       return res.status(401).json({ status: false, error: 'Invalid credentials' });
     }
